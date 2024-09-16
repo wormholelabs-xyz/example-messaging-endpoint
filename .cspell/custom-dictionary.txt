@@ -1,0 +1,6 @@
+# Custom Dictionary Words
+Aptos
+Devnet
+Ruleset
+Rulesets
+Solana

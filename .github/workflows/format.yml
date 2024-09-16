@@ -1,0 +1,38 @@
+name: format
+on: pull_request
+jobs:
+  prettier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: "package-lock.json"
+      - run: npm ci
+      - run: npx prettier --check .
+  forge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run Forge format
+        working-directory: evm
+        run: forge fmt --check
+  spellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Pinned version of the v6 tag, which is a lightweight and hence mutable tag
+      - uses: streetsidesoftware/cspell-action@214db1e3138f326d33b7a6a51c92852e89ab0618
+        with:
+          # For now, only lint markdown files
+          files: "**/*.md"
+          inline: warning
+          # Only check files in the PR or push
+          incremental_files_only: true
