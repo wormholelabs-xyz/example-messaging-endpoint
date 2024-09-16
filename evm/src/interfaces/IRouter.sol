@@ -2,16 +2,9 @@
 pragma solidity ^0.8.13;
 
 import "../libraries/TransceiverStructs.sol";
+import "./IMessageSequence.sol";
 
-interface IRouter {
-    struct _Sequence {
-        uint64 num;
-    }
-
-    /// @notice Returns the next message sequence for a given sender.
-    /// @param sender The address of the sender,
-    function nextMessageSequence(address sender) external view returns (uint64);
-
+interface IRouter is IMessageSequence {
     /// @dev Send a message to another chain.
     /// @param recipientChain The Wormhole chain ID of the recipient.
     /// @param recipientAddress The Wormhole formatted address of the peer NTT Manager on the recipient chain.
