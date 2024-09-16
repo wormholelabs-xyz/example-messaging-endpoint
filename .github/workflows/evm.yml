@@ -12,6 +12,9 @@ jobs:
 
     name: Foundry project
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: evm
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,14 +26,27 @@ jobs:
           version: nightly
 
       - name: Run Forge build
-        working-directory: evm
         run: |
           forge --version
           forge build --sizes
         id: build
 
       - name: Run Forge tests
-        working-directory: evm
         run: |
           forge test -vvv
         id: test
+
+      - name: Run Forge coverage
+        run: |
+          forge coverage --report lcov
+        id: coverage
+
+      - name: Setup LCOV
+        uses: hrishikesh-kadam/setup-lcov@v1
+
+      - name: Check Forge coverage
+        uses: zgosalvez/github-actions-report-lcov@v3
+        with:
+          coverage-files: evm/lcov.info
+          minimum-coverage: 100
+          working-directory: evm
