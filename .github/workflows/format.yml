@@ -12,18 +12,6 @@ jobs:
           cache-dependency-path: "package-lock.json"
       - run: npm ci
       - run: npx prettier --check .
-  forge:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
-        with:
-          version: nightly
-
-      - name: Run Forge format
-        working-directory: evm
-        run: forge fmt --check
   spellcheck:
     runs-on: ubuntu-latest
     steps:
