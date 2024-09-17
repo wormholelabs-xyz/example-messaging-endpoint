@@ -2,6 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./IMessageSequence.sol";
+import "../libraries/UniversalAddress.sol";
 
 interface IRouter is IMessageSequence {
     /// @dev Send a message to another chain.

@@ -10,7 +10,7 @@ contract Router is IRouter, MessageSequence {
     // =============== External ==============================================================
 
     /// @inheritdoc IRouter
-    function sendMessage(uint16 recipientChain, bytes32 recipientAddress, bytes memory message)
+    function sendMessage(uint16 recipientChain, UniversalAddress recipientAddress, bytes memory message)
         external
         payable
         returns (uint64)
@@ -22,7 +22,7 @@ contract Router is IRouter, MessageSequence {
 
     function _sendMessage(
         uint16, // recipientChain,
-        bytes32, // _recipientAddress,
+        UniversalAddress, // _recipientAddress,
         bytes memory, // _message,
         address sender
     ) internal returns (uint64 sequence) {

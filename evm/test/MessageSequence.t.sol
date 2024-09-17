@@ -4,7 +4,6 @@ pragma solidity ^0.8.13;
 import {Test, console} from "forge-std/Test.sol";
 import "../src/MessageSequence.sol";
 import "../src/Router.sol";
-import "../src/libraries/RouterUtils.sol";
 
 contract MessageSequenceTest is Test, MessageSequence {
     address addr = address(0x123);
