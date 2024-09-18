@@ -10,13 +10,12 @@ contract Router is IRouter, MessageSequence {
     // =============== External ==============================================================
 
     /// @inheritdoc IRouter
-    function sendMessage(
-        uint16 recipientChain,
-        bytes32 recipientAddress,
-        bytes memory message,
-        TransceiverStructs.TransceiverInstruction[] memory instructions
-    ) external payable returns (uint64) {
-        return _sendMessage(recipientChain, recipientAddress, message, instructions, msg.sender);
+    function sendMessage(uint16 recipientChain, bytes32 recipientAddress, bytes memory message)
+        external
+        payable
+        returns (uint64)
+    {
+        return _sendMessage(recipientChain, recipientAddress, message, msg.sender);
     }
 
     // =============== Internal ==============================================================
@@ -25,7 +24,6 @@ contract Router is IRouter, MessageSequence {
         uint16, // recipientChain,
         bytes32, // _recipientAddress,
         bytes memory, // _message,
-        TransceiverStructs.TransceiverInstruction[] memory, // _instructions,
         address sender
     ) internal returns (uint64 sequence) {
         sequence = _useMessageSequence(sender);
