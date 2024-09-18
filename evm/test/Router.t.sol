@@ -10,6 +10,8 @@ contract RouterTest is Test {
 
     address userA = address(0x123);
     address userB = address(0x456);
+    address addr1 = address(0x789);
+    UniversalAddress refundAddr = UniversalAddressLibrary.fromAddress(addr1);
     bytes message = "hello, world";
 
     function setUp() public {
@@ -20,17 +22,17 @@ contract RouterTest is Test {
         assertEq(router.nextMessageSequence(userA), 0);
         // Send inital message from userA, going from unset to 1
         vm.startPrank(userA);
-        router.sendMessage(1, UniversalAddressLibrary.fromAddress(userB), message);
+        router.sendMessage(1, UniversalAddressLibrary.fromAddress(userB), refundAddr, message);
         assertEq(router.nextMessageSequence(userA), 1);
         // Send additional message from userA, incrementing the existing sequence
-        router.sendMessage(1, UniversalAddressLibrary.fromAddress(userB), message);
+        router.sendMessage(1, UniversalAddressLibrary.fromAddress(userB), refundAddr, message);
         assertEq(router.nextMessageSequence(userA), 2);
     }
 
     function testFuzz_sendMessage(address user) public {
         uint64 beforeSequence = router.nextMessageSequence(user);
         vm.startPrank(user);
-        router.sendMessage(1, UniversalAddressLibrary.fromAddress(user), message);
+        router.sendMessage(1, UniversalAddressLibrary.fromAddress(user), refundAddr, message);
         assertEq(router.nextMessageSequence(user), beforeSequence + 1);
     }
 }
