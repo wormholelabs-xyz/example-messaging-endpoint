@@ -3,7 +3,6 @@ pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
 import "../src/libraries/RouterUtils.sol";
-import "../src/libraries/TransceiverStructs.sol";
 import {Router} from "../src/Router.sol";
 
 contract RouterTest is Test {
@@ -21,19 +20,17 @@ contract RouterTest is Test {
         assertEq(router.nextMessageSequence(userA), 0);
         // Send inital message from userA, going from unset to 1
         vm.startPrank(userA);
-        TransceiverStructs.TransceiverInstruction[] memory instructions;
-        router.sendMessage(1, RouterUtils.toWormholeFormat(userB), message, instructions);
+        router.sendMessage(1, RouterUtils.toWormholeFormat(userB), message);
         assertEq(router.nextMessageSequence(userA), 1);
         // Send additional message from userA, incrementing the existing sequence
-        router.sendMessage(1, RouterUtils.toWormholeFormat(userB), message, instructions);
+        router.sendMessage(1, RouterUtils.toWormholeFormat(userB), message);
         assertEq(router.nextMessageSequence(userA), 2);
     }
 
     function testFuzz_sendMessage(address user) public {
         uint64 beforeSequence = router.nextMessageSequence(user);
         vm.startPrank(user);
-        TransceiverStructs.TransceiverInstruction[] memory instructions;
-        router.sendMessage(1, RouterUtils.toWormholeFormat(user), message, instructions);
+        router.sendMessage(1, RouterUtils.toWormholeFormat(user), message);
         assertEq(router.nextMessageSequence(user), beforeSequence + 1);
     }
 }
