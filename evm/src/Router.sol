@@ -7,6 +7,8 @@ import "./MessageSequence.sol";
 contract Router is IRouter, MessageSequence {
     string public constant ROUTER_VERSION = "0.0.1";
 
+    // =============== External ==============================================================
+
     /// @inheritdoc IRouter
     function sendMessage(
         uint16 recipientChain,
