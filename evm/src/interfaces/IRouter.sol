@@ -10,7 +10,7 @@ interface IRouter is IMessageSequence {
     /// @param recipientAddress The Wormhole formatted address of the peer NTT Manager on the recipient chain.
     /// @param message A message to be sent to the nttManager on the recipient chain.
     /// @return uint64 The sequence number of the message.
-    function sendMessage(uint16 recipientChain, bytes32 recipientAddress, bytes memory message)
+    function sendMessage(uint16 recipientChain, UniversalAddress recipientAddress, bytes memory message)
         external
         payable
         returns (uint64);
