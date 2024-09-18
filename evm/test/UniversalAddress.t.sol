@@ -30,18 +30,19 @@ contract UtilsTest is Test {
         invalid.toAddress();
     }
 
-    function testFuzz_address(address _addr) public {
-        bytes32 _bytes32Address = (UniversalAddressLibrary.fromAddress(_addr)).toBytes32();
-        if (uint256(_bytes32Address) >> 160 != 0) {
-            vm.expectRevert(abi.encodeWithSelector(UniversalAddressLibrary.NotAnEvmAddress.selector, _bytes32Address));
+    function testFuzz_address(bytes32 _addr) public {
+        if (uint256(_addr) >> 160 != 0) {
+            vm.expectRevert(abi.encodeWithSelector(UniversalAddressLibrary.NotAnEvmAddress.selector, _addr));
         }
-        assertEq((UniversalAddressLibrary.fromAddress(_addr)).toAddress(), _addr);
+        address addrFromBytes32 = UniversalAddressLibrary.fromBytes32(_addr).toAddress();
+        assertEq(UniversalAddressLibrary.fromAddress(addrFromBytes32).toBytes32(), _addr);
     }
 
-    function testFuzz_toAndFrom(address _addr) public pure {
-        assert(
-            UniversalAddressLibrary.fromBytes32((UniversalAddressLibrary.fromAddress(_addr)).toBytes32())
-                == UniversalAddressLibrary.fromAddress(_addr)
-        );
+    function testFuzz_toAndFromAddress(address _addr) public pure {
+        assert(UniversalAddressLibrary.fromAddress(_addr).toAddress() == _addr);
+    }
+
+    function testFuzz_toAndFromBytes32(bytes32 _addr) public pure {
+        assert(UniversalAddressLibrary.fromBytes32(_addr).toBytes32() == _addr);
     }
 }
