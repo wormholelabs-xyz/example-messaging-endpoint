@@ -13,7 +13,7 @@ contract Router is IRouter, MessageSequence {
     function sendMessage(
         uint16 recipientChain,
         UniversalAddress recipientAddress,
-        UniversalAddress refundAddress,
+        address refundAddress,
         bytes memory message
     ) external payable returns (uint64) {
         return _sendMessage(recipientChain, recipientAddress, refundAddress, message, msg.sender);
@@ -24,7 +24,7 @@ contract Router is IRouter, MessageSequence {
     function _sendMessage(
         uint16, // recipientChain,
         UniversalAddress, // recipientAddress,
-        UniversalAddress, // refundAddress,
+        address, // refundAddress,
         bytes memory, // _message,
         address sender
     ) internal returns (uint64 sequence) {

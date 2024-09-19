@@ -10,8 +10,7 @@ contract RouterTest is Test {
 
     address userA = address(0x123);
     address userB = address(0x456);
-    address addr1 = address(0x789);
-    UniversalAddress refundAddr = UniversalAddressLibrary.fromAddress(addr1);
+    address refundAddr = address(0x789);
     bytes message = "hello, world";
 
     function setUp() public {
