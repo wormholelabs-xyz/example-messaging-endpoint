@@ -1,6 +1,6 @@
-use anchor_lang::prelude::*;
-use crate::state::{Config, Integrator};
 use crate::error::RouterError;
+use crate::state::{Config, Integrator};
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct RegisterIntegrator<'info> {

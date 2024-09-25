@@ -1,3 +1,5 @@
+#![cfg(feature = "test-sbf")]
+
 mod common;
 
 use common::setup::{get_account, setup};
