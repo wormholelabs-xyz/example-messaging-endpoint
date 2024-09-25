@@ -19,7 +19,7 @@ pub struct Initialize {
     pub config: Pubkey,
 }
 
-pub async fn setup() -> (TestContext, Pubkey, Pubkey) {
+pub async fn setup() -> (TestContext, Keypair, Pubkey) {
     // Set up the program test environment
     let program_id = id();
     let program_test = ProgramTest::new("router", program_id, None);
@@ -42,7 +42,7 @@ pub async fn setup() -> (TestContext, Pubkey, Pubkey) {
         last_blockhash: ctx.last_blockhash,
     };
 
-    (test_context, owner.pubkey(), config_pda)
+    (test_context, owner, config_pda)
 }
 
 pub fn initialize(accounts: Initialize, args: InitializeArgs) -> Instruction {
