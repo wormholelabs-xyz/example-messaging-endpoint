@@ -11,7 +11,9 @@ describe("router", () => {
   it("Is initialized!", async () => {
     // Add your test here.
     const owner = anchor.web3.Keypair.generate();
-    const tx = await program.methods.initialize({ owner: owner.publicKey }).rpc();
+    const tx = await program.methods
+      .initialize({ owner: owner.publicKey })
+      .rpc();
     console.log("Your transaction signature", tx);
   });
 });
