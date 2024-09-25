@@ -30,4 +30,5 @@ jobs:
 
       - run: cargo fmt --check --all
       - run: cargo clippy
+      - run: cargo test-sbf
       - run: cargo test

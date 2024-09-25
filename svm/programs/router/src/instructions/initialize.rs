@@ -1,5 +1,5 @@
-use anchor_lang::prelude::*;
 use crate::state::Config;
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 #[instruction(args: InitializeArgs)]
