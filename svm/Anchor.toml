@@ -7,7 +7,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-svm = "Gfo1Jn4zHvc8BBGWNPQpNDZob5DsG2bhmS4wEA2GKFx6"
+router = "7qtLhNMdb9dNAWwFvNBMok64EJrS1toY9TQoedVhU1xp"
 
 [registry]
 url = "https://api.apr.dev"
