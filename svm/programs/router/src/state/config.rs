@@ -8,3 +8,7 @@ pub struct Config {
     pub paused: bool,
     pub next_integrator_id: u16,
 }
+
+impl Config {
+    pub const SEED_PREFIX: &'static [u8] = b"config";
+}
