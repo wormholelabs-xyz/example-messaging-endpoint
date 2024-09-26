@@ -41,7 +41,6 @@ pub fn register_integrator(ctx: Context<RegisterIntegrator>, authority: Pubkey) 
         bump: ctx.bumps.integrator,
         id: integrator_id,
         authority,
-        next_transceiver_id: 0,
     });
 
     Ok(())

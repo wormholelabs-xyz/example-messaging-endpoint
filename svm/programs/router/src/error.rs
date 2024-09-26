@@ -6,4 +6,6 @@ pub enum RouterError {
     ProgramPaused,
     #[msg("Invalid integrator authority")]
     InvalidIntegratorAuthority,
+    #[msg("Maximum transceivers reached")]
+    MaxTransceiversReached,
 }

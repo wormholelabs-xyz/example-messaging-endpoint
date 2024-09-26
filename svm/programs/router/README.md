@@ -3,26 +3,37 @@
 ## Project Structure
 
 ```mermaid
-graph TD
-    subgraph "Router Program Accounts"
-        Config[Config Account]
-        Integrator[Integrator Account]
-        RegisteredTransceiver[RegisteredTransceiver Account]
-    end
+classDiagram
+    class Config {
+        bump: u8
+        owner: Pubkey
+        paused: bool
+        next_integrator_id: u64
+    }
 
-    subgraph "Router Program Instructions"
-        Initialize[Initialize]
-        RegisterIntegrator[Register Integrator]
-        RegisterTransceiver[Register Transceiver]
-    end
+    class Integrator {
+        bump: u8
+        id: u64
+        authority: Pubkey
+    }
 
-    Initialize -->|creates| Config
-    RegisterIntegrator -->|reads & writes| Config
-    RegisterIntegrator -->|creates| Integrator
-    RegisterTransceiver -->|reads| Config
-    RegisterTransceiver -->|reads & writes| Integrator
-    RegisterTransceiver -->|creates| RegisteredTransceiver
+    class IntegratorChainTransceivers {
+        bump: u8
+        integrator_id: u64
+        chain_id: u64
+        next_transceiver_id: u64
+        transceiver_bitmap: [u64; 4]
+    }
 
-    Config -->|tracks| Integrator
-    Integrator -->|tracks| RegisteredTransceiver
+    class RegisteredTransceiver {
+        bump: u8
+        integrator_id: u64
+        id: u64
+        chain_id: u64
+        address: Pubkey
+    }
+
+    Config "1" -- "*" Integrator : tracks
+    Integrator "1" -- "*" IntegratorChainTransceivers : has
+    IntegratorChainTransceivers "1" -- "*" RegisteredTransceiver : contains
 ```

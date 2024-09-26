@@ -6,7 +6,7 @@ pub struct Config {
     pub bump: u8,
     pub owner: Pubkey,
     pub paused: bool,
-    pub next_integrator_id: u16,
+    pub next_integrator_id: u64,
 }
 
 impl Config {

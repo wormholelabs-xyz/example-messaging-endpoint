@@ -1,8 +1,9 @@
 use crate::error::RouterError;
-use crate::state::{Config, Integrator, RegisteredTransceiver};
+use crate::state::{Config, Integrator, IntegratorChainTransceivers, RegisteredTransceiver};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
+#[instruction(chain_id: u64)]
 pub struct RegisterTransceiver<'info> {
     #[account(
         seeds = [Config::SEED_PREFIX],
@@ -25,13 +26,25 @@ pub struct RegisterTransceiver<'info> {
     pub payer: Signer<'info>,
 
     #[account(
+        mut,
+        seeds = [
+            IntegratorChainTransceivers::SEED_PREFIX,
+            integrator.id.to_le_bytes().as_ref(),
+            chain_id.to_le_bytes().as_ref(),
+        ],
+        bump,
+    )]
+    pub integrator_chain_transceivers: Account<'info, IntegratorChainTransceivers>,
+
+    #[account(
         init,
         payer = payer,
         space = 8 + RegisteredTransceiver::INIT_SPACE,
         seeds = [
             RegisteredTransceiver::SEED_PREFIX,
             integrator.id.to_le_bytes().as_ref(),
-            integrator.next_transceiver_id.to_le_bytes().as_ref()
+            chain_id.to_le_bytes().as_ref(),
+            integrator_chain_transceivers.next_transceiver_id.to_le_bytes().as_ref()
         ],
         bump
     )]
@@ -42,20 +55,31 @@ pub struct RegisterTransceiver<'info> {
 
 pub fn register_transceiver(
     ctx: Context<RegisterTransceiver>,
+    chain_id: u64,
     transceiver_address: Pubkey,
 ) -> Result<()> {
-    let integrator = &mut ctx.accounts.integrator;
-    let transceiver_id = integrator.next_transceiver_id;
-    integrator.next_transceiver_id += 1;
+    let chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
+    let transceiver_id = chain_transceivers.next_transceiver_id;
 
-    ctx.accounts
-        .registered_transceiver
-        .set_inner(RegisteredTransceiver {
-            bump: ctx.bumps.registered_transceiver,
-            integrator_id: integrator.id,
-            id: transceiver_id,
-            address: transceiver_address,
-        });
+    // Ensure we don't exceed the maximum number of transceivers
+    if transceiver_id >= 256 {
+        return Err(RouterError::MaxTransceiversReached.into());
+    }
+
+    // Update the bitmap
+    let bitmap_index = (transceiver_id / 64) as usize;
+    let bit_position = transceiver_id % 64;
+    chain_transceivers.transceiver_bitmap[bitmap_index] |= 1 << bit_position;
+
+    // Increment the next_transceiver_id
+    chain_transceivers.next_transceiver_id += 1;
+
+    // Initialize the RegisteredTransceiver account
+    let registered_transceiver = &mut ctx.accounts.registered_transceiver;
+    registered_transceiver.integrator_id = ctx.accounts.integrator.id;
+    registered_transceiver.id = transceiver_id;
+    registered_transceiver.chain_id = chain_id;
+    registered_transceiver.address = transceiver_address;
 
     Ok(())
 }
