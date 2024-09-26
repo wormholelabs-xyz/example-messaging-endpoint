@@ -4,3 +4,4 @@ Devnet
 Ruleset
 Rulesets
 Solana
+Pubkey
