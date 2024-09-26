@@ -4,8 +4,9 @@ use anchor_lang::prelude::*;
 #[derive(InitSpace)]
 pub struct RegisteredTransceiver {
     pub bump: u8,
-    pub integrator_id: u16,
-    pub id: u16,
+    pub integrator_id: u64,
+    pub id: u64,
+    pub chain_id: u64,
     pub address: Pubkey,
 }
 

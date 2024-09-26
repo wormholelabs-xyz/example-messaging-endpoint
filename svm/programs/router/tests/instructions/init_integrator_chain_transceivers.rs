@@ -1,5 +1,5 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use router::accounts::RegisterTransceiver;
+use router::accounts::InitIntegratorChainTransceivers;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -10,22 +10,18 @@ use solana_sdk::{
 
 use crate::common::setup::TestContext;
 
-pub async fn register_transceiver(
+pub async fn init_integrator_chain_transceivers(
     context: &mut TestContext,
     config_pda: Pubkey,
     integrator: Pubkey,
-    authority: &Keypair,
-    registered_transceiver: Pubkey,
     integrator_chain_transceivers: Pubkey,
     chain_id: u64,
-    transceiver_address: Pubkey,
+    payer: Pubkey,
 ) -> Result<(), BanksClientError> {
-    let accounts = RegisterTransceiver {
+    let accounts = InitIntegratorChainTransceivers {
         config: config_pda,
         integrator,
-        authority: authority.pubkey(),
-        payer: context.payer.pubkey(),
-        registered_transceiver,
+        payer,
         integrator_chain_transceivers,
         system_program: solana_sdk::system_program::id(),
     };
@@ -33,19 +29,15 @@ pub async fn register_transceiver(
     let ix = Instruction {
         program_id: router::id(),
         accounts: accounts.to_account_metas(None),
-        data: router::instruction::RegisterTransceiver {
-            chain_id,
-            transceiver_address,
-        }
-        .data(),
+        data: router::instruction::InitIntegratorChainTransceivers { chain_id }.data(),
     };
 
     let recent_blockhash = context.banks_client.get_latest_blockhash().await?;
 
     let transaction = Transaction::new_signed_with_payer(
         &[ix],
-        Some(&context.payer.pubkey()),
-        &[&context.payer, authority],
+        Some(&payer),
+        &[&context.payer],
         recent_blockhash,
     );
 

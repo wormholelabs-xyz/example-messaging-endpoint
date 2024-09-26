@@ -4,9 +4,8 @@ use anchor_lang::prelude::*;
 #[derive(InitSpace)]
 pub struct Integrator {
     pub bump: u8,
-    pub id: u16,
+    pub id: u64,
     pub authority: Pubkey,
-    pub next_transceiver_id: u16,
 }
 
 impl Integrator {
