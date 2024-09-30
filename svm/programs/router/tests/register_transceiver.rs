@@ -1,3 +1,5 @@
+#![cfg(feature = "test-sbf")]
+
 mod common;
 mod instructions;
 
@@ -40,7 +42,7 @@ async fn test_register_transceiver_success() {
 
     // Initialize integrator chain transceivers
     let integrator: Integrator = get_account(&mut context.banks_client, integrator_pda).await;
-    let chain_id: u64 = 1;
+    let chain_id: u16 = 1;
     let (integrator_chain_transceivers_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorChainTransceivers::SEED_PREFIX,
@@ -95,7 +97,7 @@ async fn test_register_transceiver_success() {
     );
     assert_eq!(integrator_chain_transceivers.chain_id, chain_id);
     assert_eq!(integrator_chain_transceivers.next_transceiver_id, 1);
-    assert_eq!(integrator_chain_transceivers.transceiver_bitmap[0], 1);
+    assert_eq!(integrator_chain_transceivers.transceiver_bitmap, 1);
 
     // Verify the RegisteredTransceiver account
     let registered_transceiver: RegisteredTransceiver =

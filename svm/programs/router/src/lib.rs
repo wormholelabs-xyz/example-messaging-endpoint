@@ -22,7 +22,7 @@ pub mod router {
 
     pub fn register_transceiver(
         ctx: Context<RegisterTransceiver>,
-        chain_id: u64,
+        chain_id: u16,
         transceiver_address: Pubkey,
     ) -> Result<()> {
         instructions::register_transceiver::register_transceiver(ctx, chain_id, transceiver_address)
@@ -30,7 +30,7 @@ pub mod router {
 
     pub fn init_integrator_chain_transceivers(
         ctx: Context<InitIntegratorChainTransceivers>,
-        chain_id: u64,
+        chain_id: u16,
     ) -> Result<()> {
         instructions::init_integrator_chain_transceivers::init_integrator_chain_transceivers(
             ctx, chain_id,

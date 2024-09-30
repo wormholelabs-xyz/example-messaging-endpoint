@@ -20,16 +20,16 @@ classDiagram
     class IntegratorChainTransceivers {
         bump: u8
         integrator_id: u64
-        chain_id: u64
+        chain_id: u16
         next_transceiver_id: u64
-        transceiver_bitmap: [u64; 4]
+        transceiver_bitmap: u64
     }
 
     class RegisteredTransceiver {
         bump: u8
         integrator_id: u64
         id: u64
-        chain_id: u64
+        chain_id: u16
         address: Pubkey
     }
 

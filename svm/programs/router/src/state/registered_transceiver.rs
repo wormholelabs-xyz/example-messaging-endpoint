@@ -6,7 +6,7 @@ pub struct RegisteredTransceiver {
     pub bump: u8,
     pub integrator_id: u64,
     pub id: u64,
-    pub chain_id: u64,
+    pub chain_id: u16,
     pub address: Pubkey,
 }
 

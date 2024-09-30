@@ -2,7 +2,7 @@ use crate::state::{Config, Integrator, IntegratorChainTransceivers};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
-#[instruction(chain_id: u64)]
+#[instruction(chain_id: u16)]
 pub struct InitIntegratorChainTransceivers<'info> {
     #[account(
         seeds = [Config::SEED_PREFIX],
@@ -37,7 +37,7 @@ pub struct InitIntegratorChainTransceivers<'info> {
 
 pub fn init_integrator_chain_transceivers(
     ctx: Context<InitIntegratorChainTransceivers>,
-    chain_id: u64,
+    chain_id: u16,
 ) -> Result<()> {
     let chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
     chain_transceivers.integrator_id = ctx.accounts.integrator.id;

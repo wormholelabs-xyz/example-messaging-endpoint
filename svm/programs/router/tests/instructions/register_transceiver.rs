@@ -17,7 +17,7 @@ pub async fn register_transceiver(
     authority: &Keypair,
     registered_transceiver: Pubkey,
     integrator_chain_transceivers: Pubkey,
-    chain_id: u64,
+    chain_id: u16,
     transceiver_address: Pubkey,
 ) -> Result<(), BanksClientError> {
     let accounts = RegisterTransceiver {
