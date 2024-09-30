@@ -1,12 +1,7 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
 use router::accounts::InitIntegratorChainTransceivers;
 use solana_program_test::*;
-use solana_sdk::{
-    instruction::Instruction,
-    pubkey::Pubkey,
-    signature::{Keypair, Signer},
-    transaction::Transaction,
-};
+use solana_sdk::{instruction::Instruction, pubkey::Pubkey, transaction::Transaction};
 
 use crate::common::setup::TestContext;
 
@@ -15,7 +10,7 @@ pub async fn init_integrator_chain_transceivers(
     config_pda: Pubkey,
     integrator: Pubkey,
     integrator_chain_transceivers: Pubkey,
-    chain_id: u64,
+    chain_id: u16,
     payer: Pubkey,
 ) -> Result<(), BanksClientError> {
     let accounts = InitIntegratorChainTransceivers {

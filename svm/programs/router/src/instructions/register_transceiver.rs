@@ -3,7 +3,7 @@ use crate::state::{Config, Integrator, IntegratorChainTransceivers, RegisteredTr
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
-#[instruction(chain_id: u64)]
+#[instruction(chain_id: u16)]
 pub struct RegisterTransceiver<'info> {
     #[account(
         seeds = [Config::SEED_PREFIX],
@@ -55,7 +55,7 @@ pub struct RegisterTransceiver<'info> {
 
 pub fn register_transceiver(
     ctx: Context<RegisterTransceiver>,
-    chain_id: u64,
+    chain_id: u16,
     transceiver_address: Pubkey,
 ) -> Result<()> {
     let chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
@@ -67,9 +67,8 @@ pub fn register_transceiver(
     }
 
     // Update the bitmap
-    let bitmap_index = (transceiver_id / 64) as usize;
     let bit_position = transceiver_id % 64;
-    chain_transceivers.transceiver_bitmap[bitmap_index] |= 1 << bit_position;
+    chain_transceivers.transceiver_bitmap |= 1u64 << bit_position;
 
     // Increment the next_transceiver_id
     chain_transceivers.next_transceiver_id += 1;
