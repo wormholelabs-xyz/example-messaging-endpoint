@@ -9,7 +9,9 @@ use instructions::{
     init_integrator_chain_transceivers::init_integrator_chain_transceivers,
     register_integrator::register_integrator, register_transceiver::register_transceiver,
 };
+use router::instructions::TransceiverType;
 use router::state::{Config, Integrator, IntegratorChainTransceivers, RegisteredTransceiver};
+use router::utils::bitmap::Bitmap;
 use solana_program_test::*;
 use solana_sdk::{signature::Keypair, signer::Signer};
 
@@ -83,6 +85,7 @@ async fn test_register_transceiver_success() {
         registered_transceiver_pda,
         integrator_chain_transceivers_pda,
         chain_id,
+        TransceiverType::In,
         transceiver_address,
     )
     .await
@@ -96,9 +99,16 @@ async fn test_register_transceiver_success() {
         integrator.id as u64
     );
     assert_eq!(integrator_chain_transceivers.chain_id, chain_id);
-    assert_eq!(integrator_chain_transceivers.next_transceiver_id, 1);
-    assert_eq!(integrator_chain_transceivers.transceiver_bitmap, 1);
-
+    assert_eq!(integrator_chain_transceivers.next_in_transceiver_id, 1);
+    let expected_bitmap = {
+        let mut bm = Bitmap::new();
+        bm.set(0, true).unwrap();
+        bm
+    };
+    assert_eq!(
+        integrator_chain_transceivers.in_transceiver_bitmap,
+        expected_bitmap
+    );
     // Verify the RegisteredTransceiver account
     let registered_transceiver: RegisteredTransceiver =
         get_account(&mut context.banks_client, registered_transceiver_pda).await;

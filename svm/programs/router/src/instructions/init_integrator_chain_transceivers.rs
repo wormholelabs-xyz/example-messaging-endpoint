@@ -1,4 +1,7 @@
-use crate::state::{Config, Integrator, IntegratorChainTransceivers};
+use crate::{
+    state::{Config, Integrator, IntegratorChainTransceivers},
+    utils::bitmap::Bitmap,
+};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
@@ -42,6 +45,10 @@ pub fn init_integrator_chain_transceivers(
     let chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
     chain_transceivers.integrator_id = ctx.accounts.integrator.id;
     chain_transceivers.chain_id = chain_id;
-    chain_transceivers.next_transceiver_id = 0;
+    chain_transceivers.next_in_transceiver_id = 0;
+    chain_transceivers.next_out_transceiver_id = 0;
+    chain_transceivers.in_transceiver_bitmap = Bitmap::new();
+    chain_transceivers.out_transceiver_bitmap = Bitmap::new();
+
     Ok(())
 }

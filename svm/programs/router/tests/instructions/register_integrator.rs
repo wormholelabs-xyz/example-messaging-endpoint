@@ -45,3 +45,13 @@ pub async fn register_integrator(
 
     context.banks_client.process_transaction(transaction).await
 }
+
+pub fn get_integrator_pda(integrator_id: u64) -> (Pubkey, u8) {
+    Pubkey::find_program_address(
+        &[
+            router::state::Integrator::SEED_PREFIX,
+            &integrator_id.to_le_bytes(),
+        ],
+        &router::id(),
+    )
+}
