@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 pub mod error;
 pub mod instructions;
 pub mod state;
+pub mod utils;
 
 use instructions::*;
 
@@ -23,9 +24,15 @@ pub mod router {
     pub fn register_transceiver(
         ctx: Context<RegisterTransceiver>,
         chain_id: u16,
+        transceiver_type: TransceiverType,
         transceiver_address: Pubkey,
     ) -> Result<()> {
-        instructions::register_transceiver::register_transceiver(ctx, chain_id, transceiver_address)
+        instructions::register_transceiver::register_transceiver(
+            ctx,
+            chain_id,
+            transceiver_type,
+            transceiver_address,
+        )
     }
 
     pub fn init_integrator_chain_transceivers(
