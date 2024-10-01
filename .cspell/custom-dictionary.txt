@@ -5,3 +5,4 @@ Ruleset
 Rulesets
 Solana
 Pubkey
+struct
