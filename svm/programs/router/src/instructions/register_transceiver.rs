@@ -104,11 +104,6 @@ pub fn register_transceiver(
         TransceiverType::Out => chain_transceivers.next_out_transceiver_id,
     };
 
-    // Ensure we don't exceed the maximum number of transceivers
-    if transceiver_id >= IntegratorChainTransceivers::MAX_TRANSCEIVERS as u8 {
-        return Err(RouterError::MaxTransceiversReached.into());
-    }
-
     // Update the bitmap
     match transceiver_type {
         TransceiverType::In => {
