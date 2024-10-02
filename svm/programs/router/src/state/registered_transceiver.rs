@@ -14,7 +14,7 @@ pub struct RegisteredTransceiver {
     pub integrator_id: u64,
 
     /// Unique identifier for the transceiver within its integrator and chain context
-    pub id: u64,
+    pub id: u8,
 
     /// Identifier for the blockchain this transceiver operates on
     pub chain_id: u16,

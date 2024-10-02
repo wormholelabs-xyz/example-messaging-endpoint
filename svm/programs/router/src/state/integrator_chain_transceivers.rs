@@ -19,10 +19,10 @@ pub struct IntegratorChainTransceivers {
     pub chain_id: u16,
 
     /// Counter for assigning IDs to incoming transceivers
-    pub next_in_transceiver_id: u64,
+    pub next_in_transceiver_id: u8,
 
     /// Counter for assigning IDs to outgoing transceivers
-    pub next_out_transceiver_id: u64,
+    pub next_out_transceiver_id: u8,
 
     /// Bitmap tracking the status of incoming transceivers
     pub in_transceiver_bitmap: Bitmap,
@@ -36,7 +36,7 @@ impl IntegratorChainTransceivers {
     pub const SEED_PREFIX: &'static [u8] = b"integrator_chain_transceivers";
 
     /// Maximum number of transceivers allowed per direction (in/out)
-    pub const MAX_TRANSCEIVERS: usize = 64;
+    pub const MAX_TRANSCEIVERS: u8 = 128;
 
     pub fn set_in_transceiver(&mut self, index: u8, value: bool) -> Result<()> {
         self.in_transceiver_bitmap

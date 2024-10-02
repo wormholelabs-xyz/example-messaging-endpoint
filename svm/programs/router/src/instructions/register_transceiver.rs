@@ -105,7 +105,7 @@ pub fn register_transceiver(
     };
 
     // Ensure we don't exceed the maximum number of transceivers
-    if transceiver_id >= IntegratorChainTransceivers::MAX_TRANSCEIVERS as u64 {
+    if transceiver_id >= IntegratorChainTransceivers::MAX_TRANSCEIVERS as u8 {
         return Err(RouterError::MaxTransceiversReached.into());
     }
 
