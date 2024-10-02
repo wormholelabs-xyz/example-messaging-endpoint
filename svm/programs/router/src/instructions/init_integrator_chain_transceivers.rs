@@ -62,13 +62,17 @@ pub fn init_integrator_chain_transceivers(
     ctx: Context<InitIntegratorChainTransceivers>,
     chain_id: u16,
 ) -> Result<()> {
-    let chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
-    chain_transceivers.integrator_id = ctx.accounts.integrator.id;
-    chain_transceivers.chain_id = chain_id;
-    chain_transceivers.next_in_transceiver_id = 0;
-    chain_transceivers.next_out_transceiver_id = 0;
-    chain_transceivers.in_transceiver_bitmap = Bitmap::new();
-    chain_transceivers.out_transceiver_bitmap = Bitmap::new();
+    ctx.accounts
+        .integrator_chain_transceivers
+        .set_inner(IntegratorChainTransceivers {
+            bump: ctx.bumps.integrator_chain_transceivers,
+            integrator_id: ctx.accounts.integrator.id,
+            chain_id,
+            next_in_transceiver_id: 0,
+            next_out_transceiver_id: 0,
+            in_transceiver_bitmap: Bitmap::new(),
+            out_transceiver_bitmap: Bitmap::new(),
+        });
 
     Ok(())
 }

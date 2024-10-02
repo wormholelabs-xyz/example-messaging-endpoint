@@ -229,10 +229,17 @@ async fn test_register_transceiver_bitmap_overflow() {
     .await;
 
     // Assert that the specific BitmapIndexOutOfBounds error is returned
-    // 0x1773 is the hexadecimal representation of error code 6003 (BitmapIndexOutOfBounds)
     assert!(
-        result.as_ref().unwrap_err().to_string().contains("0x1773"),
-        "Expected error containing '0x1773', but got: {:?}",
+        matches!(
+            result,
+            Err(solana_program_test::BanksClientError::TransactionError(
+                solana_sdk::transaction::TransactionError::InstructionError(
+                    0,
+                    solana_sdk::instruction::InstructionError::Custom(6002)
+                )
+            ))
+        ),
+        "Expected RouterError::BitmapIndexOutOfBounds, but got: {:?}",
         result
     );
 }
