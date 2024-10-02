@@ -9,9 +9,6 @@ pub enum RouterError {
     #[msg("Invalid integrator authority")]
     InvalidIntegratorAuthority,
 
-    #[msg("Maximum transceivers reached")]
-    MaxTransceiversReached,
-
     #[msg("Bitmap index is out of bounds")]
     BitmapIndexOutOfBounds,
 }
