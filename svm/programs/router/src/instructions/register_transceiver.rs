@@ -105,6 +105,8 @@ pub fn register_transceiver(
     };
 
     // Update the bitmap
+    // `set_in_transceiver` and `set_out_transceiver` returns `BitmapIndexOutOfBounds` if it
+    // exceeds [`Bitmap::BITS`].
     match transceiver_type {
         TransceiverType::In => {
             chain_transceivers.set_in_transceiver(transceiver_id as u8, true)?;
