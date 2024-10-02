@@ -39,10 +39,18 @@ classDiagram
         bitmap: u128
     }
 
+    class Outbox {
+        integrator: Pubkey
+        chain_id: u16
+        transceivers_pulled_bitmap: Bitmap
+        message: Vec<u8>
+    }
+
     Config "1" -- "*" Integrator : tracks
     Integrator "1" -- "*" IntegratorChainTransceivers : has
     IntegratorChainTransceivers "1" -- "2" Bitmap : uses
     Bitmap "1" -- "*" RegisteredTransceiver : tracks
+    Integrator "1" -- "*" Outbox : sends
 ```
 
 ### Key Components
@@ -70,6 +78,10 @@ classDiagram
 5. **Bitmap**: Utility struct for efficient storage and manipulation of boolean flags.
    - Used to track the status of transceivers (active/inactive).
 
+6. **Outbox**: Represents a message sent by an integrator to be pulled by registered transceivers.
+   - Contains the sender integrator, destination chain ID, a bitmap of transceivers that have pulled the message, and the message payload.
+   - Used to manage cross-chain message delivery and tracking.
+
 ### Relationships
 
 - The Config account tracks multiple Integrators.
@@ -77,7 +89,8 @@ classDiagram
 - IntegratorChainTransceivers use two Bitmaps to efficiently track incoming and outgoing transceiver statuses.
 - Each Bitmap tracks multiple RegisteredTransceivers.
 - RegisteredTransceivers are associated with a specific Integrator and chain.
+- Integrators can send messages to Outboxes, which are then pulled by registered transceivers.
 
-This structure allows for efficient management of multiple integrators, chains, and transceivers within the GMP Router system. It provides a scalable and flexible architecture for handling cross-chain message passing.
+This structure allows for efficient management of multiple integrators, chains, and transceivers within the GMP Router system. It provides a scalable and flexible architecture for handling cross-chain message passing, including the new Outbox functionality for message delivery and tracking.
 
 For detailed documentation on each component and its methods, please refer to the source files and generated API documentation.
