@@ -71,7 +71,7 @@ async fn test_register_transceiver_success() {
             RegisteredTransceiver::SEED_PREFIX,
             integrator.id.to_le_bytes().as_ref(),
             chain_id.to_le_bytes().as_ref(),
-            0u64.to_le_bytes().as_ref(),
+            0u8.to_le_bytes().as_ref(),
         ],
         &router::id(),
     );
@@ -109,6 +109,7 @@ async fn test_register_transceiver_success() {
         integrator_chain_transceivers.in_transceiver_bitmap,
         expected_bitmap
     );
+    
     // Verify the RegisteredTransceiver account
     let registered_transceiver: RegisteredTransceiver =
         get_account(&mut context.banks_client, registered_transceiver_pda).await;

@@ -21,8 +21,8 @@ classDiagram
         bump: u8
         integrator_id: u64
         chain_id: u16
-        next_in_transceiver_id: u64
-        next_out_transceiver_id: u64
+        next_in_transceiver_id: u8
+        next_out_transceiver_id: u8
         in_transceiver_bitmap: Bitmap
         out_transceiver_bitmap: Bitmap
     }
@@ -30,7 +30,7 @@ classDiagram
     class RegisteredTransceiver {
         bump: u8
         integrator_id: u64
-        id: u64
+        id: u8
         chain_id: u16
         address: Pubkey
     }
@@ -67,11 +67,7 @@ classDiagram
    - Associated with a specific integrator and chain.
    - Has a unique ID within its integrator and chain context.
 
-5. **TransceiverType**: Enum to distinguish between incoming and outgoing transceivers.
-
-   - Allows for different handling of inbound and outbound messages.
-
-6. **Bitmap**: Utility struct for efficient storage and manipulation of boolean flags.
+5. **Bitmap**: Utility struct for efficient storage and manipulation of boolean flags.
    - Used to track the status of transceivers (active/inactive).
 
 ### Relationships
