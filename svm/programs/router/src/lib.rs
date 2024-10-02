@@ -24,16 +24,6 @@ pub mod router {
         instructions::initialize::initialize(ctx, args)
     }
 
-    /// Registers a new integrator
-    ///
-    /// # Arguments
-    ///
-    /// * `ctx` - The context of the instruction
-    /// * `authority` - The public key of the integrator's authority
-    pub fn register_integrator(ctx: Context<RegisterIntegrator>, authority: Pubkey) -> Result<()> {
-        instructions::register_integrator::register_integrator(ctx, authority)
-    }
-
     /// Registers a new transceiver for an integrator
     ///
     /// # Arguments
