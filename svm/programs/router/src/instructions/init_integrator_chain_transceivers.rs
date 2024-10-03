@@ -1,5 +1,5 @@
 use crate::{
-    state::{Config, Integrator, IntegratorChainTransceivers},
+    state::{Config, IntegratorChainTransceivers},
     utils::bitmap::Bitmap,
 };
 use anchor_lang::prelude::*;
@@ -15,12 +15,7 @@ pub struct InitIntegratorChainTransceivers<'info> {
     )]
     pub config: Account<'info, Config>,
 
-    /// The Integrator account for which the chain transceivers are being initialized
-    #[account(
-        seeds = [Integrator::SEED_PREFIX, integrator.id.to_le_bytes().as_ref()],
-        bump = integrator.bump,
-    )]
-    pub integrator: Account<'info, Integrator>,
+    pub integrator: AccountInfo<'info>,
 
     /// The account paying for the initialization
     #[account(mut)]
@@ -33,7 +28,7 @@ pub struct InitIntegratorChainTransceivers<'info> {
         space = 8 + IntegratorChainTransceivers::INIT_SPACE,
         seeds = [
             IntegratorChainTransceivers::SEED_PREFIX,
-            integrator.id.to_le_bytes().as_ref(),
+            integrator.key().as_ref(),
             chain_id.to_le_bytes().as_ref(),
         ],
         bump
@@ -66,7 +61,6 @@ pub fn init_integrator_chain_transceivers(
         .integrator_chain_transceivers
         .set_inner(IntegratorChainTransceivers {
             bump: ctx.bumps.integrator_chain_transceivers,
-            integrator_id: ctx.accounts.integrator.id,
             chain_id,
             next_in_transceiver_id: 0,
             next_out_transceiver_id: 0,

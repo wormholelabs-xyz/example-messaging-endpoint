@@ -1,5 +1,5 @@
 use crate::error::RouterError;
-use crate::state::{Config, Integrator, IntegratorChainTransceivers, RegisteredTransceiver};
+use crate::state::{Config, IntegratorChainTransceivers, RegisteredTransceiver};
 use anchor_lang::prelude::*;
 
 /// Enum representing the type of transceiver being registered
@@ -23,14 +23,8 @@ pub struct RegisterTransceiver<'info> {
     )]
     pub config: Account<'info, Config>,
 
-    /// The Integrator account for which the transceiver is being registered
-    #[account(
-        mut,
-        seeds = [Integrator::SEED_PREFIX, integrator.id.to_le_bytes().as_ref()],
-        bump = integrator.bump,
-        has_one = authority @ RouterError::InvalidIntegratorAuthority,
-    )]
-    pub integrator: Account<'info, Integrator>,
+    /// The Integrator program account for which the transceiver is being registered
+    pub integrator: AccountInfo<'info>,
 
     /// The authority of the Integrator
     pub authority: Signer<'info>,
@@ -44,7 +38,7 @@ pub struct RegisterTransceiver<'info> {
         mut,
         seeds = [
             IntegratorChainTransceivers::SEED_PREFIX,
-            integrator.id.to_le_bytes().as_ref(),
+            integrator.key().as_ref(),
             chain_id.to_le_bytes().as_ref(),
         ],
         bump,
@@ -58,7 +52,7 @@ pub struct RegisterTransceiver<'info> {
         space = 8 + RegisteredTransceiver::INIT_SPACE,
         seeds = [
             RegisteredTransceiver::SEED_PREFIX,
-            integrator.id.to_le_bytes().as_ref(),
+            integrator.key().as_ref(),
             chain_id.to_le_bytes().as_ref(),
             {
                 let transceiver_id = match transceiver_type {
@@ -120,7 +114,6 @@ pub fn register_transceiver(
 
     // Initialize the RegisteredTransceiver account
     let registered_transceiver = &mut ctx.accounts.registered_transceiver;
-    registered_transceiver.integrator_id = ctx.accounts.integrator.id;
     registered_transceiver.id = transceiver_id;
     registered_transceiver.chain_id = chain_id;
     registered_transceiver.address = transceiver_address;

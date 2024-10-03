@@ -7,11 +7,11 @@ use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
 use instructions::{
     init_integrator_chain_transceivers::init_integrator_chain_transceivers,
-    register_integrator::register_integrator, register_transceiver::register_transceiver,
+    register_transceiver::register_transceiver,
 };
 use router::error::RouterError;
 use router::instructions::TransceiverType;
-use router::state::{Config, Integrator, IntegratorChainTransceivers, RegisteredTransceiver};
+use router::state::{Config, IntegratorChainTransceivers, RegisteredTransceiver};
 use router::utils::bitmap::Bitmap;
 use solana_program_test::*;
 use solana_sdk::{signature::Keypair, signer::Signer};
@@ -21,35 +21,14 @@ async fn test_register_transceiver_success() {
     // Set up the test environment
     let (mut context, owner, config_pda) = setup().await;
     let payer_pubkey = context.payer.pubkey();
-    let integrator_authority = Keypair::new();
-
-    // Register an integrator
-    let config: Config = get_account(&mut context.banks_client, config_pda).await;
-    let (integrator_pda, _) = Pubkey::find_program_address(
-        &[
-            Integrator::SEED_PREFIX,
-            config.next_integrator_id.to_le_bytes().as_ref(),
-        ],
-        &router::id(),
-    );
-
-    register_integrator(
-        &mut context,
-        &owner,
-        config_pda,
-        integrator_pda,
-        integrator_authority.pubkey(),
-    )
-    .await
-    .unwrap();
-
+    //
     // Initialize integrator chain transceivers
-    let integrator: Integrator = get_account(&mut context.banks_client, integrator_pda).await;
+    let integrator = Keypair::new();
     let chain_id: u16 = 1;
     let (integrator_chain_transceivers_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorChainTransceivers::SEED_PREFIX,
-            integrator.id.to_le_bytes().as_ref(),
+            integrator.pubkey().as_ref(),
             chain_id.to_le_bytes().as_ref(),
         ],
         &router::id(),
@@ -58,7 +37,7 @@ async fn test_register_transceiver_success() {
     init_integrator_chain_transceivers(
         &mut context,
         config_pda,
-        integrator_pda,
+        integrator.pubkey(),
         integrator_chain_transceivers_pda,
         chain_id,
         payer_pubkey,
@@ -74,7 +53,7 @@ async fn test_register_transceiver_success() {
         let (registered_transceiver_pda, _) = Pubkey::find_program_address(
             &[
                 RegisteredTransceiver::SEED_PREFIX,
-                integrator.id.to_le_bytes().as_ref(),
+                integrator.pubkey().as_ref(),
                 chain_id.to_le_bytes().as_ref(),
                 (i as u8).to_le_bytes().as_ref(),
             ],
@@ -85,8 +64,8 @@ async fn test_register_transceiver_success() {
         register_transceiver(
             &mut context,
             config_pda,
-            integrator_pda,
-            &integrator_authority,
+            integrator.pubkey(),
+            &integrator,
             registered_transceiver_pda,
             integrator_chain_transceivers_pda,
             chain_id,
@@ -101,7 +80,6 @@ async fn test_register_transceiver_success() {
         // Verify the RegisteredTransceiver account
         let registered_transceiver: RegisteredTransceiver =
             get_account(&mut context.banks_client, registered_transceiver_pda).await;
-        assert_eq!(registered_transceiver.integrator_id, integrator.id);
         assert_eq!(registered_transceiver.id, i);
         assert_eq!(registered_transceiver.chain_id, chain_id);
         assert_eq!(registered_transceiver.address, transceiver_address);
@@ -110,10 +88,6 @@ async fn test_register_transceiver_success() {
     // Verify the IntegratorChainTransceivers account
     let integrator_chain_transceivers: IntegratorChainTransceivers =
         get_account(&mut context.banks_client, integrator_chain_transceivers_pda).await;
-    assert_eq!(
-        integrator_chain_transceivers.integrator_id,
-        integrator.id as u64
-    );
     assert_eq!(integrator_chain_transceivers.chain_id, chain_id);
     assert_eq!(
         integrator_chain_transceivers.next_in_transceiver_id,
@@ -130,35 +104,14 @@ async fn test_register_transceiver_bitmap_overflow() {
     // Set up the test environment
     let (mut context, owner, config_pda) = setup().await;
     let payer_pubkey = context.payer.pubkey();
-    let integrator_authority = Keypair::new();
-
-    // Register an integrator
-    let config: Config = get_account(&mut context.banks_client, config_pda).await;
-    let (integrator_pda, _) = Pubkey::find_program_address(
-        &[
-            Integrator::SEED_PREFIX,
-            config.next_integrator_id.to_le_bytes().as_ref(),
-        ],
-        &router::id(),
-    );
-
-    register_integrator(
-        &mut context,
-        &owner,
-        config_pda,
-        integrator_pda,
-        integrator_authority.pubkey(),
-    )
-    .await
-    .unwrap();
+    let integrator = Keypair::new();
 
     // Initialize integrator chain transceivers
-    let integrator: Integrator = get_account(&mut context.banks_client, integrator_pda).await;
     let chain_id: u16 = 1;
     let (integrator_chain_transceivers_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorChainTransceivers::SEED_PREFIX,
-            integrator.id.to_le_bytes().as_ref(),
+            integrator.pubkey().as_ref(),
             chain_id.to_le_bytes().as_ref(),
         ],
         &router::id(),
@@ -167,7 +120,7 @@ async fn test_register_transceiver_bitmap_overflow() {
     init_integrator_chain_transceivers(
         &mut context,
         config_pda,
-        integrator_pda,
+        integrator.pubkey(),
         integrator_chain_transceivers_pda,
         chain_id,
         payer_pubkey,
@@ -180,7 +133,7 @@ async fn test_register_transceiver_bitmap_overflow() {
         let (registered_transceiver_pda, _) = Pubkey::find_program_address(
             &[
                 RegisteredTransceiver::SEED_PREFIX,
-                integrator.id.to_le_bytes().as_ref(),
+                integrator.pubkey().as_ref(),
                 chain_id.to_le_bytes().as_ref(),
                 (i as u8).to_le_bytes().as_ref(),
             ],
@@ -191,8 +144,8 @@ async fn test_register_transceiver_bitmap_overflow() {
         register_transceiver(
             &mut context,
             config_pda,
-            integrator_pda,
-            &integrator_authority,
+            integrator.pubkey(),
+            &integrator,
             registered_transceiver_pda,
             integrator_chain_transceivers_pda,
             chain_id,
@@ -207,7 +160,7 @@ async fn test_register_transceiver_bitmap_overflow() {
     let (registered_transceiver_pda, _) = Pubkey::find_program_address(
         &[
             RegisteredTransceiver::SEED_PREFIX,
-            integrator.id.to_le_bytes().as_ref(),
+            integrator.pubkey().as_ref(),
             chain_id.to_le_bytes().as_ref(),
             (128u8).to_le_bytes().as_ref(),
         ],
@@ -218,8 +171,8 @@ async fn test_register_transceiver_bitmap_overflow() {
     let result = register_transceiver(
         &mut context,
         config_pda,
-        integrator_pda,
-        &integrator_authority,
+        integrator.pubkey(),
+        &integrator,
         registered_transceiver_pda,
         integrator_chain_transceivers_pda,
         chain_id,

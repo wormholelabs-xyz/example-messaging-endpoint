@@ -71,15 +71,3 @@ pub fn get_registered_transceiver_pda(
         &router::id(),
     )
 }
-
-// Helper function to get the PDA for integrator chain transceivers
-pub fn get_integrator_chain_transceivers_pda(integrator_id: u64, chain_id: u16) -> (Pubkey, u8) {
-    Pubkey::find_program_address(
-        &[
-            router::state::IntegratorChainTransceivers::SEED_PREFIX,
-            &integrator_id.to_le_bytes(),
-            &chain_id.to_le_bytes(),
-        ],
-        &router::id(),
-    )
-}

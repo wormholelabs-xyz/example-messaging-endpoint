@@ -12,9 +12,6 @@ pub struct IntegratorChainTransceivers {
     /// Bump seed for PDA derivation
     pub bump: u8,
 
-    /// ID of the integrator this account belongs to
-    pub integrator_id: u64,
-
     /// Identifier for the blockchain
     pub chain_id: u16,
 

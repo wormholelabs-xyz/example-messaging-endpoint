@@ -10,9 +10,6 @@ pub struct RegisteredTransceiver {
     /// Bump seed for PDA derivation
     pub bump: u8,
 
-    /// ID of the integrator this transceiver belongs to
-    pub integrator_id: u64,
-
     /// Unique identifier for the transceiver within its integrator and chain context
     pub id: u8,
 
