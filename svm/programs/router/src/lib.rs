@@ -54,12 +54,23 @@ pub mod router {
     pub fn init_integrator_chain_transceivers(
         ctx: Context<InitIntegratorChainTransceivers>,
         chain_id: u16,
-        integrator_program_id: Pubkey,
     ) -> Result<()> {
         instructions::init_integrator_chain_transceivers::init_integrator_chain_transceivers(
-            ctx,
-            chain_id,
-            integrator_program_id,
+            ctx, chain_id,
         )
+    }
+
+    /// Transfers the ownership of integrator chain transceivers
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `new_owner` - The public key of the new owner
+    pub fn transfer_integrator_chain_transceivers_ownership(
+        ctx: Context<TransferIntegratorChainTransceiversOwnership>,
+        new_owner: Pubkey,
+    ) -> Result<()> {
+        // Calls the function to transfer ownership of the integrator chain transceivers
+        transfer_integrator_chain_transceivers_ownership::transfer_integrator_chain_transceivers_ownership(ctx, new_owner)
     }
 }
