@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::utils::bitmap::Bitmap;
+use crate::{error::RouterError, utils::bitmap::Bitmap};
 
 /// Manages the transceivers for a specific integrator on a particular chain.
 ///
@@ -21,6 +21,9 @@ pub struct IntegratorChainTransceivers {
 
     /// Identifier for the blockchain
     pub chain_id: u16,
+
+    /// Owner of the IntegratorChainTransceivers account
+    pub owner: Pubkey,
 
     /// Counter for assigning IDs to incoming transceivers
     pub next_in_transceiver_id: u8,
@@ -62,5 +65,14 @@ impl IntegratorChainTransceivers {
         self.out_transceiver_bitmap
             .get(index)
             .map_err(|e| error!(e))
+    }
+
+    pub fn transfer_ownership(&mut self, current_owner: &Signer, new_owner: Pubkey) -> Result<()> {
+        require!(
+            self.owner == current_owner.key(),
+            RouterError::InvalidIntegratorAuthority
+        );
+        self.owner = new_owner;
+        Ok(())
     }
 }

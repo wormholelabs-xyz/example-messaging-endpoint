@@ -54,9 +54,12 @@ pub mod router {
     pub fn init_integrator_chain_transceivers(
         ctx: Context<InitIntegratorChainTransceivers>,
         chain_id: u16,
+        integrator_program_id: Pubkey,
     ) -> Result<()> {
         instructions::init_integrator_chain_transceivers::init_integrator_chain_transceivers(
-            ctx, chain_id,
+            ctx,
+            chain_id,
+            integrator_program_id,
         )
     }
 }

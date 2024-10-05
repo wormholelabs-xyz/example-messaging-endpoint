@@ -19,15 +19,14 @@ use solana_sdk::{signature::Keypair, signer::Signer};
 async fn test_register_transceiver_success() {
     // Set up the test environment
     let (mut context, config_pda) = setup().await;
-    let payer_pubkey = context.payer.pubkey();
-
-    // Initialize integrator chain transceivers
-    let integrator = Keypair::new();
+    let payer = context.payer.insecure_clone(); // Clone the payer keypair
+    let owner = Keypair::new();
+    let integrator_program_id = Keypair::new().pubkey();
     let chain_id: u16 = 1;
     let (integrator_chain_transceivers_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorChainTransceivers::SEED_PREFIX,
-            integrator.pubkey().as_ref(),
+            integrator_program_id.as_ref(),
             chain_id.to_le_bytes().as_ref(),
         ],
         &router::id(),
@@ -36,10 +35,11 @@ async fn test_register_transceiver_success() {
     init_integrator_chain_transceivers(
         &mut context,
         config_pda,
-        integrator.pubkey(),
+        &owner,
+        &payer,
         integrator_chain_transceivers_pda,
         chain_id,
-        payer_pubkey,
+        integrator_program_id,
     )
     .await
     .unwrap();
@@ -52,7 +52,7 @@ async fn test_register_transceiver_success() {
         let (registered_transceiver_pda, _) = Pubkey::find_program_address(
             &[
                 RegisteredTransceiver::SEED_PREFIX,
-                integrator.pubkey().as_ref(),
+                integrator_program_id.as_ref(),
                 chain_id.to_le_bytes().as_ref(),
                 (i as u8).to_le_bytes().as_ref(),
             ],
@@ -63,8 +63,9 @@ async fn test_register_transceiver_success() {
         register_transceiver(
             &mut context,
             config_pda,
-            integrator.pubkey(),
-            &integrator,
+            integrator_program_id,
+            &owner,
+            &payer,
             registered_transceiver_pda,
             integrator_chain_transceivers_pda,
             chain_id,
@@ -102,15 +103,14 @@ async fn test_register_transceiver_success() {
 async fn test_register_transceiver_bitmap_overflow() {
     // Set up the test environment
     let (mut context, config_pda) = setup().await;
-    let payer_pubkey = context.payer.pubkey();
-    let integrator = Keypair::new();
-
-    // Initialize integrator chain transceivers
+    let payer = context.payer.insecure_clone(); // Clone the payer keypair
+    let owner = Keypair::new();
+    let integrator_program_id = Keypair::new().pubkey();
     let chain_id: u16 = 1;
     let (integrator_chain_transceivers_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorChainTransceivers::SEED_PREFIX,
-            integrator.pubkey().as_ref(),
+            integrator_program_id.as_ref(),
             chain_id.to_le_bytes().as_ref(),
         ],
         &router::id(),
@@ -119,10 +119,11 @@ async fn test_register_transceiver_bitmap_overflow() {
     init_integrator_chain_transceivers(
         &mut context,
         config_pda,
-        integrator.pubkey(),
+        &owner,
+        &payer,
         integrator_chain_transceivers_pda,
         chain_id,
-        payer_pubkey,
+        integrator_program_id,
     )
     .await
     .unwrap();
@@ -132,7 +133,7 @@ async fn test_register_transceiver_bitmap_overflow() {
         let (registered_transceiver_pda, _) = Pubkey::find_program_address(
             &[
                 RegisteredTransceiver::SEED_PREFIX,
-                integrator.pubkey().as_ref(),
+                integrator_program_id.as_ref(),
                 chain_id.to_le_bytes().as_ref(),
                 (i as u8).to_le_bytes().as_ref(),
             ],
@@ -143,8 +144,9 @@ async fn test_register_transceiver_bitmap_overflow() {
         register_transceiver(
             &mut context,
             config_pda,
-            integrator.pubkey(),
-            &integrator,
+            integrator_program_id,
+            &owner,
+            &payer,
             registered_transceiver_pda,
             integrator_chain_transceivers_pda,
             chain_id,
@@ -159,7 +161,7 @@ async fn test_register_transceiver_bitmap_overflow() {
     let (registered_transceiver_pda, _) = Pubkey::find_program_address(
         &[
             RegisteredTransceiver::SEED_PREFIX,
-            integrator.pubkey().as_ref(),
+            integrator_program_id.as_ref(),
             chain_id.to_le_bytes().as_ref(),
             (128u8).to_le_bytes().as_ref(),
         ],
@@ -170,8 +172,9 @@ async fn test_register_transceiver_bitmap_overflow() {
     let result = register_transceiver(
         &mut context,
         config_pda,
-        integrator.pubkey(),
-        &integrator,
+        integrator_program_id,
+        &owner,
+        &payer,
         registered_transceiver_pda,
         integrator_chain_transceivers_pda,
         chain_id,
@@ -192,6 +195,79 @@ async fn test_register_transceiver_bitmap_overflow() {
             ))
         ),
         "Expected RouterError::BitmapIndexOutOfBounds, but got: {:?}",
+        result
+    );
+}
+
+#[tokio::test]
+async fn test_register_transceiver_non_authority() {
+    // Set up the test environment
+    let (mut context, config_pda) = setup().await;
+    let payer = context.payer.insecure_clone();
+    let owner = Keypair::new(); // This will be the actual authority
+    let non_authority = Keypair::new(); // This keypair will attempt to register a transceiver
+    let integrator_program_id = Keypair::new().pubkey();
+    let chain_id: u16 = 1;
+    let (integrator_chain_transceivers_pda, _) = Pubkey::find_program_address(
+        &[
+            IntegratorChainTransceivers::SEED_PREFIX,
+            integrator_program_id.as_ref(),
+            chain_id.to_le_bytes().as_ref(),
+        ],
+        &router::id(),
+    );
+
+    // Initialize the integrator chain transceivers with the correct authority (owner)
+    init_integrator_chain_transceivers(
+        &mut context,
+        config_pda,
+        &owner,
+        &payer,
+        integrator_chain_transceivers_pda,
+        chain_id,
+        integrator_program_id,
+    )
+    .await
+    .unwrap();
+
+    // Attempt to register a transceiver with a non-authority account
+    let (registered_transceiver_pda, _) = Pubkey::find_program_address(
+        &[
+            RegisteredTransceiver::SEED_PREFIX,
+            integrator_program_id.as_ref(),
+            chain_id.to_le_bytes().as_ref(),
+            0u8.to_le_bytes().as_ref(),
+        ],
+        &router::id(),
+    );
+    let transceiver_address = Keypair::new().pubkey();
+
+    let result = register_transceiver(
+        &mut context,
+        config_pda,
+        integrator_program_id,
+        &non_authority, // Using the non-authority keypair
+        &payer,
+        registered_transceiver_pda,
+        integrator_chain_transceivers_pda,
+        chain_id,
+        TransceiverType::In,
+        transceiver_address,
+    )
+    .await;
+
+    // Assert that the transaction failed due to invalid authority
+    assert!(
+        matches!(
+            result,
+            Err(solana_program_test::BanksClientError::TransactionError(
+                solana_sdk::transaction::TransactionError::InstructionError(
+                    0,
+                    solana_sdk::instruction::InstructionError::Custom(6000)
+                )
+            ))
+        ),
+        "Expected RouterError::InvalidAuthority, but got: {:?}",
         result
     );
 }
