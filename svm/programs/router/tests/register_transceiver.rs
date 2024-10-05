@@ -19,7 +19,7 @@ use solana_sdk::{signature::Keypair, signer::Signer};
 #[tokio::test]
 async fn test_register_transceiver_success() {
     // Set up the test environment
-    let (mut context, owner, config_pda) = setup().await;
+    let (mut context, config_pda) = setup().await;
     let payer_pubkey = context.payer.pubkey();
     //
     // Initialize integrator chain transceivers
@@ -102,7 +102,7 @@ async fn test_register_transceiver_success() {
 #[tokio::test]
 async fn test_register_transceiver_bitmap_overflow() {
     // Set up the test environment
-    let (mut context, owner, config_pda) = setup().await;
+    let (mut context, config_pda) = setup().await;
     let payer_pubkey = context.payer.pubkey();
     let integrator = Keypair::new();
 

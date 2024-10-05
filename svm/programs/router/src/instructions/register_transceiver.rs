@@ -1,4 +1,3 @@
-use crate::error::RouterError;
 use crate::state::{Config, IntegratorChainTransceivers, RegisteredTransceiver};
 use anchor_lang::prelude::*;
 
@@ -19,7 +18,6 @@ pub struct RegisterTransceiver<'info> {
     #[account(
         seeds = [Config::SEED_PREFIX],
         bump = config.bump,
-        constraint = !config.paused @ RouterError::ProgramPaused,
     )]
     pub config: Account<'info, Config>,
 
