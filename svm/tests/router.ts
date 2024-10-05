@@ -9,11 +9,7 @@ describe("router", () => {
   const program = anchor.workspace.Router as Program<Router>;
 
   it("Is initialized!", async () => {
-    // Add your test here.
-    const owner = anchor.web3.Keypair.generate();
-    const tx = await program.methods
-      .initialize({ owner: owner.publicKey })
-      .rpc();
+    const tx = await program.methods.initialize().rpc();
     console.log("Your transaction signature", tx);
   });
 });
