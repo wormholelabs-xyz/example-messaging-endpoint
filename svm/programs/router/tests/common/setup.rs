@@ -1,7 +1,7 @@
 use anchor_lang::{
     prelude::*, solana_program::instruction::Instruction, system_program, InstructionData,
 };
-use router::{id, instructions::initialize::*, state::Config};
+use router::{id, state::Config};
 use solana_program_test::ProgramTest;
 use solana_sdk::{
     hash::Hash,
@@ -19,7 +19,7 @@ pub struct Initialize {
     pub config: Pubkey,
 }
 
-pub async fn setup() -> (TestContext, Keypair, Pubkey) {
+pub async fn setup() -> (TestContext, Pubkey) {
     // Set up the program test environment
     let program_id = id();
     let program_test = ProgramTest::new("router", program_id, None);
@@ -27,14 +27,11 @@ pub async fn setup() -> (TestContext, Keypair, Pubkey) {
     // Start the test context
     let mut ctx = program_test.start_with_context().await;
 
-    // Generate a new keypair for the owner
-    let owner = Keypair::new();
-
     // Derive the config PDA
     let (config_pda, _bump) = Pubkey::find_program_address(&[Config::SEED_PREFIX], &program_id);
 
     // Initialize the program
-    initialize_program(&mut ctx, &owner, config_pda).await;
+    initialize_program(&mut ctx, config_pda).await;
 
     let test_context = TestContext {
         banks_client: ctx.banks_client,
@@ -42,12 +39,10 @@ pub async fn setup() -> (TestContext, Keypair, Pubkey) {
         last_blockhash: ctx.last_blockhash,
     };
 
-    (test_context, owner, config_pda)
+    (test_context, config_pda)
 }
 
-pub fn initialize(accounts: Initialize, args: InitializeArgs) -> Instruction {
-    let data = router::instruction::Initialize { args };
-
+pub fn initialize(accounts: Initialize) -> Instruction {
     let accounts = router::accounts::Initialize {
         payer: accounts.payer,
         config: accounts.config,
@@ -57,25 +52,17 @@ pub fn initialize(accounts: Initialize, args: InitializeArgs) -> Instruction {
     Instruction {
         program_id: id(),
         accounts: accounts.to_account_metas(None),
-        data: data.data(),
+        data: router::instruction::Initialize {}.data(),
     }
 }
 
-async fn initialize_program(
-    ctx: &mut solana_program_test::ProgramTestContext,
-    owner: &Keypair,
-    config_pda: Pubkey,
-) {
+async fn initialize_program(ctx: &mut solana_program_test::ProgramTestContext, config_pda: Pubkey) {
     let initialize_accounts = Initialize {
         payer: ctx.payer.pubkey(),
         config: config_pda,
     };
 
-    let args = InitializeArgs {
-        owner: owner.pubkey(),
-    };
-
-    let ix = initialize(initialize_accounts, args);
+    let ix = initialize(initialize_accounts);
 
     let transaction = solana_sdk::transaction::Transaction::new_signed_with_payer(
         &[ix],
