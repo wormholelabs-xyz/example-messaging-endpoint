@@ -56,6 +56,17 @@ classDiagram
 4. **Bitmap**: Utility struct for efficient storage and manipulation of boolean flags.
     - Used to track the status of transceivers (active/inactive).
 
+### PDA Derivation
+
+1. **IntegratorChainTransceivers**
+   - Seeds: [SEED_PREFIX, integrator_program_id, chain_id]
+   - Unique for each integrator and chain combination
+
+2. **RegisteredTransceiver**
+   - Seeds: [SEED_PREFIX, integrator_program_id, chain_id, transceiver_id]
+   - Derived using information from IntegratorChainTransceivers
+   - Unique for each transceiver within an integrator and chain context
+
 ### Relationships
 
 - The Config account tracks multiple IntegratorChainTransceivers.
@@ -63,8 +74,6 @@ classDiagram
 - IntegratorChainTransceivers use two Bitmaps to efficiently track incoming and outgoing transceiver statuses.
 - Each Bitmap tracks multiple RegisteredTransceivers.
 - RegisteredTransceivers are associated with a specific integrator (via public key) and chain.
-
-This structure allows for efficient management of multiple integrators, chains, and transceivers within the GMP Router system. It provides a scalable and flexible architecture for handling cross-chain message passing.
 
 For detailed documentation on each component and its methods, please refer to the source files and generated API documentation.
 
