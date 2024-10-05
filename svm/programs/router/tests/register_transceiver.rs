@@ -21,7 +21,7 @@ async fn test_register_transceiver_success() {
     // Set up the test environment
     let (mut context, config_pda) = setup().await;
     let payer_pubkey = context.payer.pubkey();
-    //
+
     // Initialize integrator chain transceivers
     let integrator = Keypair::new();
     let chain_id: u16 = 1;

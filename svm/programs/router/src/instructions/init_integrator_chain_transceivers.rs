@@ -15,6 +15,7 @@ pub struct InitIntegratorChainTransceivers<'info> {
     )]
     pub config: Account<'info, Config>,
 
+    /// CHECK: This is not dangerous because we don't read or write from this account
     pub integrator: AccountInfo<'info>,
 
     /// The account paying for the initialization
