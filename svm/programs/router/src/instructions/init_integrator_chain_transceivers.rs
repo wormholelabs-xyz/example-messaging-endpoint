@@ -6,7 +6,7 @@ use anchor_lang::prelude::*;
 
 /// Accounts struct for initializing an IntegratorChainTransceivers account
 #[derive(Accounts)]
-#[instruction(chain_id: u16, integrator_program_id: Pubkey)]
+#[instruction(chain_id: u16)]
 pub struct InitIntegratorChainTransceivers<'info> {
     /// The global configuration account
     #[account(
@@ -29,12 +29,16 @@ pub struct InitIntegratorChainTransceivers<'info> {
     space = 8 + IntegratorChainTransceivers::INIT_SPACE,
     seeds = [
         IntegratorChainTransceivers::SEED_PREFIX,
-        integrator_program_id.as_ref(),
+        integrator_program.key().as_ref(),
         chain_id.to_le_bytes().as_ref(),
     ],
     bump
 )]
     pub integrator_chain_transceivers: Account<'info, IntegratorChainTransceivers>,
+
+    /// The integrator program
+    /// CHECK: This account is not read or written in this instruction
+    pub integrator_program: UncheckedAccount<'info>,
 
     /// The System Program
     pub system_program: Program<'info, System>,
@@ -57,7 +61,6 @@ pub struct InitIntegratorChainTransceivers<'info> {
 pub fn init_integrator_chain_transceivers(
     ctx: Context<InitIntegratorChainTransceivers>,
     chain_id: u16,
-    integrator_program_id: Pubkey,
 ) -> Result<()> {
     ctx.accounts
         .integrator_chain_transceivers
@@ -70,9 +73,6 @@ pub fn init_integrator_chain_transceivers(
             in_transceiver_bitmap: Bitmap::new(),
             out_transceiver_bitmap: Bitmap::new(),
         });
-
-    // We don't store integrator_program_id in the account,
-    // but we use it for PDA derivation in the #[account(...)] macro
 
     Ok(())
 }

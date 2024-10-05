@@ -3,12 +3,12 @@
 mod common;
 mod instructions;
 
-use anchor_lang::prelude::*;
-use common::setup::{get_account, setup};
-use instructions::{
+use crate::instructions::{
     init_integrator_chain_transceivers::init_integrator_chain_transceivers,
     register_transceiver::register_transceiver,
 };
+use anchor_lang::prelude::*;
+use common::setup::{get_account, setup};
 use router::instructions::TransceiverType;
 use router::state::{IntegratorChainTransceivers, RegisteredTransceiver};
 use router::utils::bitmap::Bitmap;
