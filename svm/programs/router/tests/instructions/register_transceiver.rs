@@ -54,20 +54,3 @@ pub async fn register_transceiver(
 
     context.banks_client.process_transaction(transaction).await
 }
-
-// Helper function to get the PDA for a registered transceiver
-pub fn get_registered_transceiver_pda(
-    integrator_id: u64,
-    chain_id: u16,
-    transceiver_id: u64,
-) -> (Pubkey, u8) {
-    Pubkey::find_program_address(
-        &[
-            router::state::RegisteredTransceiver::SEED_PREFIX,
-            &integrator_id.to_le_bytes(),
-            &chain_id.to_le_bytes(),
-            &transceiver_id.to_le_bytes(),
-        ],
-        &router::id(),
-    )
-}

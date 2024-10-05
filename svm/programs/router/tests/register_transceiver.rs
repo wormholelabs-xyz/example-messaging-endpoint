@@ -9,9 +9,8 @@ use instructions::{
     init_integrator_chain_transceivers::init_integrator_chain_transceivers,
     register_transceiver::register_transceiver,
 };
-use router::error::RouterError;
 use router::instructions::TransceiverType;
-use router::state::{Config, IntegratorChainTransceivers, RegisteredTransceiver};
+use router::state::{IntegratorChainTransceivers, RegisteredTransceiver};
 use router::utils::bitmap::Bitmap;
 use solana_program_test::*;
 use solana_sdk::{signature::Keypair, signer::Signer};
@@ -188,7 +187,7 @@ async fn test_register_transceiver_bitmap_overflow() {
             Err(solana_program_test::BanksClientError::TransactionError(
                 solana_sdk::transaction::TransactionError::InstructionError(
                     0,
-                    solana_sdk::instruction::InstructionError::Custom(6002)
+                    solana_sdk::instruction::InstructionError::Custom(6001)
                 )
             ))
         ),
