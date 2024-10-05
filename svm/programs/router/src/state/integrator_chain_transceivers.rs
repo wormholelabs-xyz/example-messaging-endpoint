@@ -6,6 +6,13 @@ use crate::utils::bitmap::Bitmap;
 ///
 /// This struct keeps track of both incoming and outgoing transceivers
 /// using bitmaps and counters for efficient storage and lookup.
+///
+/// Note: While separating incoming and outgoing transceiver data into
+/// different accounts could improve parallelism, we've chosen to keep
+/// them together to save on account creation and storage costs. This
+/// is based on the expectation that transceiver registration is a
+/// low-frequency operation, making the potential parallelism benefits
+/// less significant than the account efficiency gains.
 #[account]
 #[derive(InitSpace)]
 pub struct IntegratorChainTransceivers {

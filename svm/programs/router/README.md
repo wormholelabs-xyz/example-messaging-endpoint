@@ -6,8 +6,6 @@
 classDiagram
     class Config {
         bump: u8
-        owner: Pubkey
-        paused: bool
         next_integrator_id: u64
     }
 
@@ -40,7 +38,7 @@ classDiagram
 
 1. **Config**: Stores global configuration for the GMP Router.
 
-   - Tracks the program owner, pause state, and integrator ID counter.
+   - Tracks the integrator ID counter.
    - Singleton account created during program initialization.
 
 2. **IntegratorChainTransceivers**: Manages transceivers for a specific integrator on a particular chain.

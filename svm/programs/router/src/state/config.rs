@@ -3,7 +3,6 @@ use anchor_lang::prelude::*;
 /// Represents the global configuration of the GMP Router.
 ///
 /// This struct stores important global state including:
-/// - Whether the program is paused
 /// - A counter for assigning unique IDs to integrators
 ///
 /// The Config account is a singleton, created during program initialization.
