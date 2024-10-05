@@ -19,9 +19,8 @@ pub mod router {
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
-    /// * `args` - Initialization arguments
-    pub fn initialize(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
-        instructions::initialize::initialize(ctx, args)
+    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        instructions::initialize::initialize(ctx)
     }
 
     /// Registers a new transceiver for an integrator
