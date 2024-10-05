@@ -22,6 +22,7 @@ pub struct RegisterTransceiver<'info> {
     pub config: Account<'info, Config>,
 
     /// The Integrator program account for which the transceiver is being registered
+    /// CHECK: This account is not read from or written to. We just use its key as a seed for PDA derivation.
     pub integrator: AccountInfo<'info>,
 
     /// The authority of the Integrator
@@ -111,10 +112,14 @@ pub fn register_transceiver(
     }
 
     // Initialize the RegisteredTransceiver account
-    let registered_transceiver = &mut ctx.accounts.registered_transceiver;
-    registered_transceiver.id = transceiver_id;
-    registered_transceiver.chain_id = chain_id;
-    registered_transceiver.address = transceiver_address;
+    ctx.accounts
+        .registered_transceiver
+        .set_inner(RegisteredTransceiver {
+            id: transceiver_id,
+            chain_id,
+            address: transceiver_address,
+            bump: ctx.bumps.registered_transceiver,
+        });
 
     Ok(())
 }
