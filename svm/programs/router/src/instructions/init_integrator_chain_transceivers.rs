@@ -6,7 +6,7 @@ use anchor_lang::prelude::*;
 
 /// Accounts struct for initializing an IntegratorChainTransceivers account
 #[derive(Accounts)]
-#[instruction(chain_id: u16)]
+#[instruction(chain_id: u16, integrator_program_id: Pubkey)]
 pub struct InitIntegratorChainTransceivers<'info> {
     /// The global configuration account
     #[account(
@@ -15,8 +15,8 @@ pub struct InitIntegratorChainTransceivers<'info> {
     )]
     pub config: Account<'info, Config>,
 
-    /// CHECK: This is not dangerous because we don't read or write from this account
-    pub integrator: AccountInfo<'info>,
+    /// The owner of the IntegratorChainTransceivers account
+    pub owner: Signer<'info>,
 
     /// The account paying for the initialization
     #[account(mut)]
@@ -24,16 +24,16 @@ pub struct InitIntegratorChainTransceivers<'info> {
 
     /// The IntegratorChainTransceivers account being initialized
     #[account(
-        init,
-        payer = payer,
-        space = 8 + IntegratorChainTransceivers::INIT_SPACE,
-        seeds = [
-            IntegratorChainTransceivers::SEED_PREFIX,
-            integrator.key().as_ref(),
-            chain_id.to_le_bytes().as_ref(),
-        ],
-        bump
-    )]
+    init,
+    payer = payer,
+    space = 8 + IntegratorChainTransceivers::INIT_SPACE,
+    seeds = [
+        IntegratorChainTransceivers::SEED_PREFIX,
+        integrator_program_id.as_ref(),
+        chain_id.to_le_bytes().as_ref(),
+    ],
+    bump
+)]
     pub integrator_chain_transceivers: Account<'info, IntegratorChainTransceivers>,
 
     /// The System Program
@@ -57,17 +57,22 @@ pub struct InitIntegratorChainTransceivers<'info> {
 pub fn init_integrator_chain_transceivers(
     ctx: Context<InitIntegratorChainTransceivers>,
     chain_id: u16,
+    integrator_program_id: Pubkey,
 ) -> Result<()> {
     ctx.accounts
         .integrator_chain_transceivers
         .set_inner(IntegratorChainTransceivers {
             bump: ctx.bumps.integrator_chain_transceivers,
             chain_id,
+            owner: ctx.accounts.owner.key(),
             next_in_transceiver_id: 0,
             next_out_transceiver_id: 0,
             in_transceiver_bitmap: Bitmap::new(),
             out_transceiver_bitmap: Bitmap::new(),
         });
+
+    // We don't store integrator_program_id in the account,
+    // but we use it for PDA derivation in the #[account(...)] macro
 
     Ok(())
 }

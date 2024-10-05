@@ -1,6 +1,6 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
 use router::accounts::RegisterTransceiver;
-use router::instructions::TransceiverType; // Add this import
+use router::instructions::TransceiverType;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -16,17 +16,18 @@ pub async fn register_transceiver(
     config_pda: Pubkey,
     integrator: Pubkey,
     authority: &Keypair,
+    payer: &Keypair,
     registered_transceiver: Pubkey,
     integrator_chain_transceivers: Pubkey,
     chain_id: u16,
-    transceiver_type: TransceiverType, // Add this parameter
+    transceiver_type: TransceiverType,
     transceiver_address: Pubkey,
 ) -> Result<(), BanksClientError> {
     let accounts = RegisterTransceiver {
         config: config_pda,
         integrator,
         authority: authority.pubkey(),
-        payer: context.payer.pubkey(),
+        payer: payer.pubkey(),
         registered_transceiver,
         integrator_chain_transceivers,
         system_program: solana_sdk::system_program::id(),
@@ -37,7 +38,7 @@ pub async fn register_transceiver(
         accounts: accounts.to_account_metas(None),
         data: router::instruction::RegisterTransceiver {
             chain_id,
-            transceiver_type, // Add this field
+            transceiver_type,
             transceiver_address,
         }
         .data(),
@@ -47,8 +48,8 @@ pub async fn register_transceiver(
 
     let transaction = Transaction::new_signed_with_payer(
         &[ix],
-        Some(&context.payer.pubkey()),
-        &[&context.payer, authority],
+        Some(&payer.pubkey()),
+        &[payer, authority],
         recent_blockhash,
     );
 

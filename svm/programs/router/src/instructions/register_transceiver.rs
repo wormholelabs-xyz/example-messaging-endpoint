@@ -1,4 +1,7 @@
-use crate::state::{Config, IntegratorChainTransceivers, RegisteredTransceiver};
+use crate::{
+    error::RouterError,
+    state::{Config, IntegratorChainTransceivers, RegisteredTransceiver},
+};
 use anchor_lang::prelude::*;
 
 /// Enum representing the type of transceiver being registered
@@ -22,10 +25,13 @@ pub struct RegisterTransceiver<'info> {
     pub config: Account<'info, Config>,
 
     /// The Integrator program account for which the transceiver is being registered
-    /// CHECK: This account is not read from or written to. We just use its key as a seed for PDA derivation.
-    pub integrator: AccountInfo<'info>,
+    /// CHECK: This is a program account, but we don't need to verify its executable status
+    pub integrator: UncheckedAccount<'info>,
 
     /// The authority of the Integrator
+    #[account(
+        constraint = authority.key() == integrator_chain_transceivers.owner @ RouterError::InvalidIntegratorAuthority
+    )]
     pub authority: Signer<'info>,
 
     /// The account paying for the registration
