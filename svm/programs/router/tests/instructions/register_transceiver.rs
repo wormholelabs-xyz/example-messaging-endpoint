@@ -14,7 +14,7 @@ use crate::common::setup::TestContext;
 pub async fn register_transceiver(
     context: &mut TestContext,
     config_pda: Pubkey,
-    integrator: Pubkey,
+    integrator_program: Pubkey,
     authority: &Keypair,
     payer: &Keypair,
     registered_transceiver: Pubkey,
@@ -25,7 +25,7 @@ pub async fn register_transceiver(
 ) -> Result<(), BanksClientError> {
     let accounts = RegisterTransceiver {
         config: config_pda,
-        integrator,
+        integrator_program,
         authority: authority.pubkey(),
         payer: payer.pubkey(),
         registered_transceiver,
