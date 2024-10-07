@@ -44,10 +44,10 @@ pub struct InitIntegratorChainTransceivers<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// Initializes an IntegratorChainTransceivers account for a specific integrator and chain
+/// Initializes an IntegratorChainTransceivers account for a specific integrator_program and chain
 ///
 /// This function sets up the initial state for managing transceivers on a particular chain
-/// for a given integrator. It initializes counters and bitmaps for both incoming and outgoing
+/// for a given integrator_program. It initializes counters and bitmaps for both incoming and outgoing
 /// transceivers.
 ///
 /// # Arguments

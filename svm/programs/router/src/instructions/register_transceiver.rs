@@ -26,9 +26,9 @@ pub struct RegisterTransceiver<'info> {
 
     /// The Integrator program account for which the transceiver is being registered
     /// CHECK: This is a program account, but we don't need to verify its executable status
-    pub integrator: UncheckedAccount<'info>,
+    pub integrator_program: UncheckedAccount<'info>,
 
-    /// The authority of the Integrator
+    /// The authority of the Integrator Program
     #[account(
         constraint = authority.key() == integrator_chain_transceivers.owner @ RouterError::InvalidIntegratorAuthority
     )]
@@ -43,7 +43,7 @@ pub struct RegisterTransceiver<'info> {
         mut,
         seeds = [
             IntegratorChainTransceivers::SEED_PREFIX,
-            integrator.key().as_ref(),
+            integrator_program.key().as_ref(),
             chain_id.to_le_bytes().as_ref(),
         ],
         bump,
@@ -57,7 +57,7 @@ pub struct RegisterTransceiver<'info> {
         space = 8 + RegisteredTransceiver::INIT_SPACE,
         seeds = [
             RegisteredTransceiver::SEED_PREFIX,
-            integrator.key().as_ref(),
+            integrator_program.key().as_ref(),
             chain_id.to_le_bytes().as_ref(),
             {
                 let transceiver_id = match transceiver_type {
@@ -75,7 +75,7 @@ pub struct RegisterTransceiver<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// Registers a new transceiver for a specific integrator and chain
+/// Registers a new transceiver for a specific integrator_program and chain
 ///
 /// This function creates a new RegisteredTransceiver account and updates the
 /// IntegratorChainTransceivers account to reflect the new transceiver.
