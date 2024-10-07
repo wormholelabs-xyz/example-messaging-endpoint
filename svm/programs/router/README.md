@@ -39,26 +39,27 @@ classDiagram
 
 1. **Config**: Stores global configuration for the GMP Router.
 
-    - Tracks the integrator ID counter.
-    - Singleton account created during program initialization.
+   - Tracks the integrator ID counter.
+   - Singleton account created during program initialization.
 
 2. **IntegratorChainTransceivers**: Manages transceivers for a specific integrator on a particular chain.
 
-    - Uses bitmaps for efficient storage and lookup of transceiver statuses.
-    - Maintains separate counters for incoming and outgoing transceivers.
-    - Stores the owner of the account.
+   - Uses bitmaps for efficient storage and lookup of transceiver statuses.
+   - Maintains separate counters for incoming and outgoing transceivers.
+   - Stores the owner of the account.
 
 3. **RegisteredTransceiver**: Represents a registered transceiver in the GMP Router.
 
-    - Associated with a specific integrator and chain.
-    - Has a unique ID within its integrator and chain context.
+   - Associated with a specific integrator and chain.
+   - Has a unique ID within its integrator and chain context.
 
 4. **Bitmap**: Utility struct for efficient storage and manipulation of boolean flags.
-    - Used to track the status of transceivers (active/inactive).
+   - Used to track the status of transceivers (active/inactive).
 
 ### PDA Derivation
 
 1. **IntegratorChainTransceivers**
+
    - Seeds: [SEED_PREFIX, integrator_program_id, chain_id]
    - Unique for each integrator and chain combination
 
@@ -80,6 +81,7 @@ For detailed documentation on each component and its methods, please refer to th
 ### Tests
 
 1. **InitIntegratorChainTransceivers**
+
    - [x] Test init_integrator_chain_transceivers success
    - [x] Test init_integrator_chain_transceivers already initialized
    - [x] Test init_integrator_chain_transceivers for different chains
@@ -87,6 +89,7 @@ For detailed documentation on each component and its methods, please refer to th
    - [ ] Test init_integrator_chain_transceivers with invalid owner
 
 2. **RegisterTransceiver**
+
    - [x] Test register_transceiver success
    - [x] Test register_transceiver bitmap overflow
    - [x] Test register_transceiver with non-authority
