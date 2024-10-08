@@ -1,12 +1,9 @@
 use anchor_lang::prelude::*;
 use router::id;
-use solana_program_test::ProgramTest;
-use solana_sdk::{hash::Hash, signature::Keypair};
+use solana_program_test::{ProgramTest, ProgramTestContext};
 
 pub struct TestContext {
-    pub banks_client: solana_program_test::BanksClient,
-    pub payer: Keypair,
-    pub last_blockhash: Hash,
+    pub program_test_context: ProgramTestContext,
 }
 
 pub async fn setup() -> TestContext {
@@ -18,9 +15,7 @@ pub async fn setup() -> TestContext {
     let ctx = program_test.start_with_context().await;
 
     let test_context = TestContext {
-        banks_client: ctx.banks_client,
-        payer: ctx.payer,
-        last_blockhash: ctx.last_blockhash,
+        program_test_context: ctx,
     };
 
     test_context
