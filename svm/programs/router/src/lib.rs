@@ -33,54 +33,18 @@ pub mod router {
         instructions::initialize_integrator_config::init_integrator_config(ctx)
     }
 
-    /// Registers a new transceiver for an integrator
-    ///
-    /// # Arguments
-    ///
-    /// * `ctx` - The context of the instruction
-    /// * `chain_id` - The ID of the chain for which the transceiver is being registered
-    /// * `transceiver_type` - The type of the transceiver (In or Out)
-    /// * `transceiver_address` - The public key of the transceiver address
-    pub fn register_transceiver(
-        ctx: Context<RegisterTransceiver>,
-        chain_id: u16,
-        transceiver_type: TransceiverType,
-        transceiver_address: Pubkey,
-    ) -> Result<()> {
-        instructions::register_transceiver::register_transceiver(
-            ctx,
-            chain_id,
-            transceiver_type,
-            transceiver_address,
-        )
-    }
-
     /// Initializes the chain transceivers for an integrator
     ///
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
     /// * `chain_id` - The ID of the chain for which the transceivers are being initialized
-    pub fn init_integrator_chain_transceivers(
-        ctx: Context<InitIntegratorChainTransceivers>,
+    pub fn initialize_integrator_chain_transceivers(
+        ctx: Context<InitializeIntegratorChainTransceivers>,
         chain_id: u16,
     ) -> Result<()> {
-        instructions::init_integrator_chain_transceivers::init_integrator_chain_transceivers(
+        instructions::initialize_integrator_chain_transceivers::initialize_integrator_chain_transceivers(
             ctx, chain_id,
         )
-    }
-
-    /// Transfers the ownership of integrator chain transceivers
-    ///
-    /// # Arguments
-    ///
-    /// * `ctx` - The context of the instruction
-    /// * `new_owner` - The public key of the new owner
-    pub fn transfer_integrator_chain_transceivers_ownership(
-        ctx: Context<TransferIntegratorChainTransceiversOwnership>,
-        new_owner: Pubkey,
-    ) -> Result<()> {
-        // Calls the function to transfer ownership of the integrator chain transceivers
-        transfer_integrator_chain_transceivers_ownership::transfer_integrator_chain_transceivers_ownership(ctx, new_owner)
     }
 }
