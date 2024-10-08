@@ -14,7 +14,7 @@ use solana_sdk::{signature::Keypair, signer::Signer};
 #[tokio::test]
 async fn test_register_transceiver_success() {
     // Set up the test environment
-    let (mut context, config_pda) = setup().await;
+    let mut context = setup().await;
     let payer = context.payer.insecure_clone();
     let authority = Keypair::new();
     let integrator_program_id = Keypair::new().pubkey();
@@ -81,7 +81,7 @@ async fn test_register_transceiver_success() {
 #[tokio::test]
 async fn test_register_multiple_transceivers() {
     // Set up the test environment
-    let (mut context, config_pda) = setup().await;
+    let mut context = setup().await;
     let payer = context.payer.insecure_clone();
     let authority = Keypair::new();
     let integrator_program_id = Keypair::new().pubkey();

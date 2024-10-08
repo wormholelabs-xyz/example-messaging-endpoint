@@ -13,7 +13,7 @@ use solana_sdk::{signature::Keypair, signer::Signer};
 #[tokio::test]
 async fn test_initialize_integrator_config_success() {
     // Set up the test environment
-    let (mut context, config_pda) = setup().await;
+    let mut context = setup().await;
     let payer = context.payer.insecure_clone();
     let authority = Keypair::new();
     let integrator_program_id = Keypair::new().pubkey();
@@ -91,7 +91,7 @@ async fn test_initialize_integrator_config_success() {
 #[tokio::test]
 async fn test_initialize_integrator_config_different_programs() {
     // Set up the test environment
-    let (mut context, config_pda) = setup().await;
+    let mut context = setup().await;
     let payer = context.payer.insecure_clone();
     let authority = Keypair::new();
     let integrator_program_id_1 = Keypair::new().pubkey();
