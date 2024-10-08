@@ -8,10 +8,8 @@ use solana_sdk::{
     transaction::Transaction,
 };
 
-use crate::common::setup::TestContext;
-
 pub async fn initialize_integrator_config(
-    context: &mut TestContext,
+    context: &mut ProgramTestContext,
     authority: &Keypair,
     payer: &Keypair,
     integrator_config: Pubkey,
@@ -31,7 +29,7 @@ pub async fn initialize_integrator_config(
         data: router::instruction::InitIntegratorConfig {}.data(),
     };
 
-    let recent_blockhash = context.program_test_context.banks_client.get_latest_blockhash().await?;
+    let recent_blockhash = context.banks_client.get_latest_blockhash().await?;
 
     let transaction = Transaction::new_signed_with_payer(
         &[ix],
@@ -40,5 +38,5 @@ pub async fn initialize_integrator_config(
         recent_blockhash,
     );
 
-    context.program_test_context.banks_client.process_transaction(transaction).await
+    context.banks_client.process_transaction(transaction).await
 }
