@@ -52,7 +52,10 @@ pub fn initialize_integrator_chain_transceivers(
     ctx: Context<InitializeIntegratorChainTransceivers>,
     chain_id: u16,
 ) -> Result<()> {
-    msg!("Initializing IntegratorChainTransceivers for chain_id: {}", chain_id);
+    msg!(
+        "Initializing IntegratorChainTransceivers for chain_id: {}",
+        chain_id
+    );
 
     ctx.accounts
         .integrator_chain_transceivers
