@@ -1,4 +1,2 @@
-pub mod init_integrator_chain_transceivers;
+pub mod initialize_integrator_chain_transceivers;
 pub mod initialize_integrator_config;
-pub mod register_transceiver;
-pub mod transfer_integrator_chain_transceivers_ownership;

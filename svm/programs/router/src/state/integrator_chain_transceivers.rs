@@ -1,18 +1,11 @@
 use anchor_lang::prelude::*;
 
-use crate::{error::RouterError, utils::bitmap::Bitmap};
+use crate::utils::bitmap::Bitmap;
 
 /// Manages the transceivers for a specific integrator on a particular chain.
 ///
 /// This struct keeps track of both incoming and outgoing transceivers
-/// using bitmaps and counters for efficient storage and lookup.
-///
-/// Note: While separating incoming and outgoing transceiver data into
-/// different accounts could improve parallelism, we've chosen to keep
-/// them together to save on account creation and storage costs. This
-/// is based on the expectation that transceiver registration is a
-/// low-frequency operation, making the potential parallelism benefits
-/// less significant than the account efficiency gains.
+/// using bitmaps for efficient storage and lookup.
 #[account]
 #[derive(InitSpace)]
 pub struct IntegratorChainTransceivers {
@@ -22,14 +15,8 @@ pub struct IntegratorChainTransceivers {
     /// Identifier for the blockchain
     pub chain_id: u16,
 
-    /// Owner of the IntegratorChainTransceivers account
-    pub owner: Pubkey,
-
-    /// Counter for assigning IDs to incoming transceivers
-    pub next_in_transceiver_id: u8,
-
-    /// Counter for assigning IDs to outgoing transceivers
-    pub next_out_transceiver_id: u8,
+    /// The program ID of the integrator
+    pub integrator_program_id: Pubkey,
 
     /// Bitmap tracking the status of incoming transceivers
     pub in_transceiver_bitmap: Bitmap,
@@ -44,6 +31,16 @@ impl IntegratorChainTransceivers {
 
     /// Maximum number of transceivers allowed per direction (in/out)
     pub const MAX_TRANSCEIVERS: u8 = 128;
+
+    pub fn new(bump: u8, chain_id: u16, integrator_program_id: Pubkey) -> Self {
+        Self {
+            bump,
+            chain_id,
+            integrator_program_id,
+            in_transceiver_bitmap: Bitmap::new(),
+            out_transceiver_bitmap: Bitmap::new(),
+        }
+    }
 
     pub fn set_in_transceiver(&mut self, index: u8, value: bool) -> Result<()> {
         self.in_transceiver_bitmap
@@ -65,14 +62,5 @@ impl IntegratorChainTransceivers {
         self.out_transceiver_bitmap
             .get(index)
             .map_err(|e| error!(e))
-    }
-
-    pub fn transfer_ownership(&mut self, current_owner: &Signer, new_owner: Pubkey) -> Result<()> {
-        require!(
-            self.owner == current_owner.key(),
-            RouterError::InvalidIntegratorAuthority
-        );
-        self.owner = new_owner;
-        Ok(())
     }
 }

@@ -12,7 +12,6 @@ use crate::common::setup::TestContext;
 
 pub async fn initialize_integrator_config(
     context: &mut TestContext,
-    config_pda: Pubkey,
     authority: &Keypair,
     payer: &Keypair,
     integrator_config: Pubkey,
