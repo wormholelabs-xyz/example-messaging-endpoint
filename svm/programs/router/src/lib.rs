@@ -14,15 +14,6 @@ declare_id!("7qtLhNMdb9dNAWwFvNBMok64EJrS1toY9TQoedVhU1xp");
 pub mod router {
     use super::*;
 
-    /// Initializes the GMP Router
-    ///
-    /// # Arguments
-    ///
-    /// * `ctx` - The context of the instruction
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        instructions::initialize::initialize(ctx)
-    }
-
     /// Initializes the integrator config
     ///
     /// # Arguments
