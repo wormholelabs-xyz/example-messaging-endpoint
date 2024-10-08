@@ -47,46 +47,49 @@ async fn test_initialize_integrator_config_success() {
 }
 
 // TODO (@bingyuyap): this somehow fails, spent too much time on this. Will revisit
-// #[tokio::test]
-// async fn test_initialize_integrator_config_already_initialized() {
-//     // Set up the test environment
-//     let (mut context, config_pda) = setup().await;
-//     let payer = context.payer.insecure_clone();
-//     let authority = Keypair::new();
-//     let integrator_program_id = Keypair::new().pubkey();
+#[tokio::test]
+async fn test_initialize_integrator_config_already_initialized() {
+    // Set up the test environment
+    let mut context = setup().await;
+    let payer = context.payer.insecure_clone();
+    let authority = Keypair::new();
+    let integrator_program_id = Keypair::new().pubkey();
 
-//     let (integrator_config_pda, _) = Pubkey::find_program_address(
-//         &[
-//             IntegratorConfig::SEED_PREFIX,
-//             integrator_program_id.as_ref(),
-//         ],
-//         &router::id(),
-//     );
+    let (integrator_config_pda, _) = Pubkey::find_program_address(
+        &[
+            IntegratorConfig::SEED_PREFIX,
+            integrator_program_id.as_ref(),
+        ],
+        &router::id(),
+    );
 
-//     // Initialize the integrator config
-//     initialize_integrator_config(
-//         &mut context,
-//         &authority,
-//         &payer,
-//         integrator_config_pda,
-//         integrator_program_id,
-//     )
-//     .await
-//     .unwrap();
+    // Initialize the integrator config
+    initialize_integrator_config(
+        &mut context,
+        &authority,
+        &payer,
+        integrator_config_pda,
+        integrator_program_id,
+    )
+    .await
+    .unwrap();
 
-//     // Try to initialize again
-//     let result = initialize_integrator_config(
-//         &mut context,
-//         &authority,
-//         &payer,
-//         integrator_config_pda,
-//         integrator_program_id,
-//     )
-//     .await;
+    // Try to initialize again
+    let result = initialize_integrator_config(
+        &mut context,
+        &authority,
+        &payer,
+        integrator_config_pda,
+        integrator_program_id,
+    )
+    .await;
 
-//     // Assert that the second initialization fails
-//     assert!(result.is_err());
-// }
+    // Print debug information
+    println!("Result of second initialization: {:?}", result);
+
+    // Assert that the second initialization fails
+    assert!(result.is_err(), "Expected an error, but got: {:?}", result);
+}
 
 #[tokio::test]
 async fn test_initialize_integrator_config_different_programs() {
