@@ -46,6 +46,11 @@ pub struct InitIntegratorConfig<'info> {
 ///
 /// Returns `Ok(())` if the initialization is successful
 pub fn init_integrator_config(ctx: Context<InitIntegratorConfig>) -> Result<()> {
+    msg!(
+        "Initializing IntegratorConfig for program: {}",
+        ctx.accounts.integrator_program.key()
+    );
+
     ctx.accounts.integrator_config.set_inner(IntegratorConfig {
         bump: ctx.bumps.integrator_config,
         authority: ctx.accounts.authority.key(),
@@ -53,5 +58,6 @@ pub fn init_integrator_config(ctx: Context<InitIntegratorConfig>) -> Result<()> 
         next_transceiver_id: 0,
     });
 
+    msg!("IntegratorConfig initialized successfully");
     Ok(())
 }
