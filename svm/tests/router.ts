@@ -7,9 +7,4 @@ describe("router", () => {
   anchor.setProvider(anchor.AnchorProvider.env());
 
   const program = anchor.workspace.Router as Program<Router>;
-
-  it("Is initialized!", async () => {
-    const tx = await program.methods.initialize().rpc();
-    console.log("Your transaction signature", tx);
-  });
 });
