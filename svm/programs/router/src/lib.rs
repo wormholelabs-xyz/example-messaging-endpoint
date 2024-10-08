@@ -23,6 +23,16 @@ pub mod router {
         instructions::initialize::initialize(ctx)
     }
 
+    /// Initializes the integrator config
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    pub fn init_integrator_config(ctx: Context<InitIntegratorConfig>) -> Result<()> {
+        // TODO: fix spelling
+        instructions::initialize_integrator_config::init_integrator_config(ctx)
+    }
+
     /// Registers a new transceiver for an integrator
     ///
     /// # Arguments

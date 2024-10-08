@@ -8,4 +8,7 @@ pub enum RouterError {
 
     #[msg("Bitmap index is out of bounds")]
     BitmapIndexOutOfBounds,
+
+    #[msg("Maximum number of transceivers reached")]
+    MaxTransceiversReached,
 }
