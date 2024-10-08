@@ -25,7 +25,7 @@ pub struct InitializeIntegratorChainTransceivers<'info> {
         bump
     )]
     pub integrator_chain_transceivers: Account<'info, IntegratorChainTransceivers>,
-    
+
     /// The integrator program
     /// CHECK: This account is not read or written in this instruction
     pub integrator_program: UncheckedAccount<'info>,
@@ -52,6 +52,8 @@ pub fn initialize_integrator_chain_transceivers(
     ctx: Context<InitializeIntegratorChainTransceivers>,
     chain_id: u16,
 ) -> Result<()> {
+    msg!("Initializing IntegratorChainTransceivers for chain_id: {}", chain_id);
+
     ctx.accounts
         .integrator_chain_transceivers
         .set_inner(IntegratorChainTransceivers::new(
@@ -59,6 +61,8 @@ pub fn initialize_integrator_chain_transceivers(
             chain_id,
             ctx.accounts.integrator_program.key(),
         ));
+
+    msg!("IntegratorChainTransceivers initialized successfully");
 
     Ok(())
 }
