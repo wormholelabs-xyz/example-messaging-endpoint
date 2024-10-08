@@ -47,4 +47,17 @@ pub mod router {
             ctx, chain_id,
         )
     }
+
+    /// Registers a new transceiver for an integrator
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `transceiver_address` - The address of the transceiver to be registered
+    pub fn register_transceiver(
+        ctx: Context<RegisterTransceiver>,
+        transceiver_address: Pubkey,
+    ) -> Result<()> {
+        instructions::register_transceiver::register_transceiver(ctx, transceiver_address)
+    }
 }
