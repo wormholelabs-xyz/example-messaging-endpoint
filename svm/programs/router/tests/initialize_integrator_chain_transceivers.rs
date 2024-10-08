@@ -14,7 +14,7 @@ use solana_sdk::{signature::Keypair, signer::Signer};
 async fn test_initialize_integrator_chain_transceivers_success() {
     // Set up the test environment
     let mut context = setup().await;
-    let payer = context.program_test_context.payer.insecure_clone();
+    let payer = context.payer.insecure_clone();
     let authority = Keypair::new();
     let integrator_program_id = Keypair::new().pubkey();
     let chain_id: u16 = 1; // Example chain ID
@@ -42,7 +42,7 @@ async fn test_initialize_integrator_chain_transceivers_success() {
 
     // Fetch and verify the initialized account
     let integrator_chain_transceivers: IntegratorChainTransceivers =
-        get_account(&mut context.program_test_context.banks_client, integrator_chain_transceivers_pda).await;
+        get_account(&mut context.banks_client, integrator_chain_transceivers_pda).await;
 
     assert_eq!(integrator_chain_transceivers.chain_id, chain_id);
     assert_eq!(
@@ -114,7 +114,7 @@ async fn test_initialize_integrator_chain_transceivers_success() {
 async fn test_initialize_integrator_chain_transceivers_different_chains() {
     // Set up the test environment
     let mut context = setup().await;
-    let payer = context.program_test_context.payer.insecure_clone();
+    let payer = context.payer.insecure_clone();
     let authority = Keypair::new();
     let integrator_program_id = Keypair::new().pubkey();
     let chain_id_1: u16 = 1; // Example chain ID
@@ -164,12 +164,12 @@ async fn test_initialize_integrator_chain_transceivers_different_chains() {
 
     // Fetch and verify both accounts
     let integrator_chain_transceivers_1: IntegratorChainTransceivers = get_account(
-        &mut context.program_test_context.banks_client,
+        &mut context.banks_client,
         integrator_chain_transceivers_pda_1,
     )
     .await;
     let integrator_chain_transceivers_2: IntegratorChainTransceivers = get_account(
-        &mut context.program_test_context.banks_client,
+        &mut context.banks_client,
         integrator_chain_transceivers_pda_2,
     )
     .await;

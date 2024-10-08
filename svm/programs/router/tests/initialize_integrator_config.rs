@@ -14,7 +14,7 @@ use solana_sdk::{signature::Keypair, signer::Signer};
 async fn test_initialize_integrator_config_success() {
     // Set up the test environment
     let mut context = setup().await;
-    let payer = context.program_test_context.payer.insecure_clone();
+    let payer = context.payer.insecure_clone();
     let authority = Keypair::new();
     let integrator_program_id = Keypair::new().pubkey();
 
@@ -39,7 +39,7 @@ async fn test_initialize_integrator_config_success() {
 
     // Fetch and verify the initialized account
     let integrator_config: IntegratorConfig =
-        get_account(&mut context.program_test_context.banks_client, integrator_config_pda).await;
+        get_account(&mut context.banks_client, integrator_config_pda).await;
 
     assert_eq!(integrator_config.authority, authority.pubkey());
     assert_eq!(integrator_config.program_id, integrator_program_id);
@@ -51,7 +51,7 @@ async fn test_initialize_integrator_config_success() {
 async fn test_initialize_integrator_config_already_initialized() {
     // Set up the test environment
     let mut context = setup().await;
-    let payer = context.program_test_context.payer.insecure_clone();
+    let payer = context.payer.insecure_clone();
     let authority = Keypair::new();
     let integrator_program_id = Keypair::new().pubkey();
 
@@ -95,7 +95,7 @@ async fn test_initialize_integrator_config_already_initialized() {
 async fn test_initialize_integrator_config_different_programs() {
     // Set up the test environment
     let mut context = setup().await;
-    let payer = context.program_test_context.payer.insecure_clone();
+    let payer = context.payer.insecure_clone();
     let authority = Keypair::new();
     let integrator_program_id_1 = Keypair::new().pubkey();
     let integrator_program_id_2 = Keypair::new().pubkey();
@@ -140,9 +140,9 @@ async fn test_initialize_integrator_config_different_programs() {
 
     // Fetch and verify both accounts
     let integrator_config_1: IntegratorConfig =
-        get_account(&mut context.program_test_context.banks_client, integrator_config_pda_1).await;
+        get_account(&mut context.banks_client, integrator_config_pda_1).await;
     let integrator_config_2: IntegratorConfig =
-        get_account(&mut context.program_test_context.banks_client, integrator_config_pda_2).await;
+        get_account(&mut context.banks_client, integrator_config_pda_2).await;
 
     assert_eq!(integrator_config_1.program_id, integrator_program_id_1);
     assert_eq!(integrator_config_2.program_id, integrator_program_id_2);
