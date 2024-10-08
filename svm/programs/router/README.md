@@ -12,6 +12,7 @@ classDiagram
 
     class IntegratorChainTransceivers {
         chain_id: u16
+        integrator_program_id: Pubkey
         in_transceiver_bitmap: Bitmap
         out_transceiver_bitmap: Bitmap
     }
@@ -19,7 +20,7 @@ classDiagram
     class RegisteredTransceiver {
         bump: u8
         id: u8
-        chain_id: u16
+        integrator_program_id: u16
         address: Pubkey
     }
 
@@ -27,9 +28,9 @@ classDiagram
         map: u128
     }
 
-    IntegratorConfig "1" -- "1" IntegratorChainTransceivers : manages
-    IntegratorChainTransceivers "1" -- "2" Bitmap : uses
-    IntegratorChainTransceivers "1" -- "*" RegisteredTransceiver : manages
+   IntegratorConfig "1" -- "" IntegratorChainTransceivers : manages
+   IntegratorChainTransceivers "1" -- "2" Bitmap : uses
+   IntegratorConfig "1" -- "" RegisteredTransceiver : manages
 ```
 
 ### Key Components
@@ -43,6 +44,7 @@ classDiagram
 2. **IntegratorChainTransceivers**: Manages transceivers for a specific integrator on a particular chain.
 
    - **chain_id**: Identifier for the blockchain network.
+   - **integrator_program_id**: The program ID of the Integrator.
    - **in_transceiver_bitmap**: Bitmap tracking enabled incoming transceivers by their IDs, corresponding to the transceiver IDs managed by `IntegratorConfig`.
    - **out_transceiver_bitmap**: Bitmap tracking enabled outgoing transceivers by their IDs, corresponding to the transceiver IDs managed by `IntegratorConfig`.
 
@@ -50,7 +52,7 @@ classDiagram
 
    - **bump**: Bump seed for PDA derivation.
    - **id**: Unique ID of the transceiver.
-   - **chain_id**: Associated chain ID.
+   - **integrator_program_id**: The program ID of the Integrator.
    - **address**: Address of the transceiver.
 
 4. **Bitmap**: Utility struct for efficient storage and manipulation of boolean flags.
@@ -61,13 +63,13 @@ classDiagram
 
 1. **IntegratorConfig**
 
-   - **Seeds**: `[SEED_PREFIX, integrator_pubkey]`
-   - **Unique** for each integrator.
+   - **Seeds**: `[SEED_PREFIX, integrator_program_id]`
+   - **Unique** for each integrator program.
 
 2. **IntegratorChainTransceivers**
 
-   - **Seeds**: `[SEED_PREFIX, integrator_config_pubkey, chain_id]`
-   - **Unique** for each integrator and chain combination.
+   - **Seeds**: `[SEED_PREFIX, integrator_program_id, chain_id]`
+   - **Unique** for each integrator program and chain combination.
 
 3. **RegisteredTransceiver**
 
@@ -76,12 +78,15 @@ classDiagram
 
 ### Relationships
 
-- Each **IntegratorConfig** manages multiple **IntegratorChainTransceivers**.
-- Each **IntegratorChainTransceivers** uses two **Bitmap** instances to track incoming and outgoing transceiver statuses based on their IDs.
-- Each **IntegratorChainTransceivers** manages multiple **RegisteredTransceivers**.
-- **RegisteredTransceivers** are associated with a specific integrator and chain, tracked by their unique IDs.
+- Each **IntegratorConfig** manages multiple **IntegratorChainTransceivers** (one for each chain).
+- Each **IntegratorChainTransceivers** uses two **Bitmap** instances to track incoming and outgoing transceiver statuses.
+- Each **IntegratorConfig** manages multiple **RegisteredTransceivers**.
 
-For detailed documentation on each component and its methods, please refer to the source files.
+### Instructions
+
+1. **InitIntegratorConfig**: Initializes the integrator configuration.
+2. **InitializeIntegratorChainTransceivers**: Sets up the chain transceivers for an integrator on a specific chain.
+3. **RegisterTransceiver**: Registers a new transceiver for an integrator.
 
 ### Tests
 

@@ -61,54 +61,53 @@ async fn test_initialize_integrator_chain_transceivers_success() {
     }
 }
 
-// TODO (@bingyuyap): this somehow fails, spent too much time on this. Will revisit
-// #[tokio::test]
-// async fn test_initialize_integrator_chain_transceivers_already_initialized() {
-//     // Set up the test environment
-//     let (mut context, config_pda) = setup().await;
-//     let payer = context.payer.insecure_clone();
-//     let authority = Keypair::new();
-//     let integrator_program_id = Keypair::new().pubkey();
-//     let chain_id: u16 = 1; // Example chain ID
+#[tokio::test]
+async fn test_initialize_integrator_chain_transceivers_already_initialized() {
+    // Set up the test environment
+    let mut context = setup().await;
+    let payer = context.payer.insecure_clone();
+    let authority = Keypair::new();
+    let integrator_program_id = Keypair::new().pubkey();
+    let chain_id: u16 = 1; // Example chain ID
 
-//     let (integrator_chain_transceivers_pda, _) = Pubkey::find_program_address(
-//         &[
-//             IntegratorChainTransceivers::SEED_PREFIX,
-//             integrator_program_id.as_ref(),
-//             chain_id.to_le_bytes().as_ref(),
-//         ],
-//         &router::id(),
-//     );
+    let (integrator_chain_transceivers_pda, _) = Pubkey::find_program_address(
+        &[
+            IntegratorChainTransceivers::SEED_PREFIX,
+            integrator_program_id.as_ref(),
+            chain_id.to_le_bytes().as_ref(),
+        ],
+        &router::id(),
+    );
 
-//     // Initialize the integrator chain transceivers
-//     initialize_integrator_chain_transceivers(
-//         &mut context,
-//         &authority,
-//         &payer,
-//         integrator_chain_transceivers_pda,
-//         chain_id,
-//         integrator_program_id,
-//     )
-//     .await
-//     .unwrap();
+    // Initialize the integrator chain transceivers
+    initialize_integrator_chain_transceivers(
+        &mut context,
+        &authority,
+        &payer,
+        integrator_chain_transceivers_pda,
+        chain_id,
+        integrator_program_id,
+    )
+    .await
+    .unwrap();
 
-//     // Try to initialize again
-//     let result = initialize_integrator_chain_transceivers(
-//         &mut context,
-//         &authority,
-//         &payer,
-//         integrator_chain_transceivers_pda,
-//         chain_id,
-//         integrator_program_id,
-//     )
-//     .await;
+    // Try to initialize again
+    let result = initialize_integrator_chain_transceivers(
+        &mut context,
+        &authority,
+        &payer,
+        integrator_chain_transceivers_pda,
+        chain_id,
+        integrator_program_id,
+    )
+    .await;
 
-//     // Print out more information about the result
-//     println!("Second initialization result: {:?}", result);
+    // Print out more information about the result
+    println!("Second initialization result: {:?}", result);
 
-//     // Assert that the second initialization fails
-//     assert!(result.is_err(), "Expected an error, but got: {:?}", result);
-// }
+    // Assert that the second initialization fails
+    assert!(result.is_err(), "Expected an error, but got: {:?}", result);
+}
 
 #[tokio::test]
 async fn test_initialize_integrator_chain_transceivers_different_chains() {
