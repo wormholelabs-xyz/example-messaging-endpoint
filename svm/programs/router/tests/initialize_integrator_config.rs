@@ -46,7 +46,6 @@ async fn test_initialize_integrator_config_success() {
     assert_eq!(integrator_config.next_transceiver_id, 0);
 }
 
-// TODO (@bingyuyap): this somehow fails, spent too much time on this. Will revisit
 #[tokio::test]
 async fn test_initialize_integrator_config_already_initialized() {
     // Set up the test environment
