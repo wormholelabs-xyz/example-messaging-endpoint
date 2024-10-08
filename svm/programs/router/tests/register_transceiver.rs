@@ -15,7 +15,7 @@ use solana_sdk::{signature::Keypair, signer::Signer};
 async fn test_register_transceiver_success() {
     // Set up the test environment
     let mut context = setup().await;
-    let payer = context.payer.insecure_clone();
+    let payer = context.program_test_context.payer.insecure_clone();
     let authority = Keypair::new();
     let integrator_program_id = Keypair::new().pubkey();
 
@@ -63,7 +63,7 @@ async fn test_register_transceiver_success() {
 
     // Fetch and verify the registered transceiver
     let registered_transceiver: RegisteredTransceiver =
-        get_account(&mut context.banks_client, registered_transceiver_pda).await;
+        get_account(&mut context.program_test_context.banks_client, registered_transceiver_pda).await;
 
     assert_eq!(registered_transceiver.id, 0);
     assert_eq!(
@@ -74,7 +74,7 @@ async fn test_register_transceiver_success() {
 
     // Verify that the integrator config's next_transceiver_id has been incremented
     let integrator_config: IntegratorConfig =
-        get_account(&mut context.banks_client, integrator_config_pda).await;
+        get_account(&mut context.program_test_context.banks_client, integrator_config_pda).await;
     assert_eq!(integrator_config.next_transceiver_id, 1);
 }
 
@@ -82,7 +82,7 @@ async fn test_register_transceiver_success() {
 async fn test_register_multiple_transceivers() {
     // Set up the test environment
     let mut context = setup().await;
-    let payer = context.payer.insecure_clone();
+    let payer = context.program_test_context.payer.insecure_clone();
     let authority = Keypair::new();
     let integrator_program_id = Keypair::new().pubkey();
 
@@ -131,7 +131,7 @@ async fn test_register_multiple_transceivers() {
 
         // Verify the registered transceiver
         let registered_transceiver: RegisteredTransceiver =
-            get_account(&mut context.banks_client, registered_transceiver_pda).await;
+            get_account(&mut context.program_test_context.banks_client, registered_transceiver_pda).await;
         assert_eq!(registered_transceiver.id, i);
         assert_eq!(
             registered_transceiver.integrator_program_id,
@@ -142,6 +142,6 @@ async fn test_register_multiple_transceivers() {
 
     // Verify that the integrator config's next_transceiver_id has been incremented twice
     let integrator_config: IntegratorConfig =
-        get_account(&mut context.banks_client, integrator_config_pda).await;
+        get_account(&mut context.program_test_context.banks_client, integrator_config_pda).await;
     assert_eq!(integrator_config.next_transceiver_id, 2);
 }
