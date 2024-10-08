@@ -4,17 +4,14 @@
 
 ```mermaid
 classDiagram
-    class Config {
-        bump: u8
-        next_integrator_id: u64
+    class IntegratorConfig {
+        authority: Pubkey
+        program_id: Pubkey
+        next_transceiver_id: u8
     }
 
     class IntegratorChainTransceivers {
-        bump: u8
         chain_id: u16
-        owner: Pubkey
-        next_in_transceiver_id: u8
-        next_out_transceiver_id: u8
         in_transceiver_bitmap: Bitmap
         out_transceiver_bitmap: Bitmap
     }
@@ -30,53 +27,61 @@ classDiagram
         map: u128
     }
 
-    Config "1" -- "*" IntegratorChainTransceivers : tracks
+    IntegratorConfig "1" -- "1" IntegratorChainTransceivers : manages
     IntegratorChainTransceivers "1" -- "2" Bitmap : uses
     IntegratorChainTransceivers "1" -- "*" RegisteredTransceiver : manages
 ```
 
 ### Key Components
 
-1. **Config**: Stores global configuration for the GMP Router.
+1. **IntegratorConfig**: Stores configuration specific to an Integrator.
 
-   - Tracks the integrator ID counter.
-   - Singleton account created during program initialization.
+   - **authority**: The authority of the Integrator config.
+   - **program_id**: The program ID of the Integrator.
+   - **next_transceiver_id**: Counter to track the next transceiver ID.
 
 2. **IntegratorChainTransceivers**: Manages transceivers for a specific integrator on a particular chain.
 
-   - Uses bitmaps for efficient storage and lookup of transceiver statuses.
-   - Maintains separate counters for incoming and outgoing transceivers.
-   - Stores the owner of the account.
+   - **chain_id**: Identifier for the blockchain network.
+   - **in_transceiver_bitmap**: Bitmap tracking enabled incoming transceivers by their IDs, corresponding to the transceiver IDs managed by `IntegratorConfig`.
+   - **out_transceiver_bitmap**: Bitmap tracking enabled outgoing transceivers by their IDs, corresponding to the transceiver IDs managed by `IntegratorConfig`.
 
 3. **RegisteredTransceiver**: Represents a registered transceiver in the GMP Router.
 
-   - Associated with a specific integrator and chain.
-   - Has a unique ID within its integrator and chain context.
+   - **bump**: Bump seed for PDA derivation.
+   - **id**: Unique ID of the transceiver.
+   - **chain_id**: Associated chain ID.
+   - **address**: Address of the transceiver.
 
 4. **Bitmap**: Utility struct for efficient storage and manipulation of boolean flags.
-   - Used to track the status of transceivers (active/inactive).
+
+   - **map**: Stores the bitmap as a `u128`.
 
 ### PDA Derivation
 
-1. **IntegratorChainTransceivers**
+1. **IntegratorConfig**
 
-   - Seeds: [SEED_PREFIX, integrator_program_id, chain_id]
-   - Unique for each integrator and chain combination
+   - **Seeds**: `[SEED_PREFIX, integrator_pubkey]`
+   - **Unique** for each integrator.
 
-2. **RegisteredTransceiver**
-   - Seeds: [SEED_PREFIX, integrator_program_id, chain_id, transceiver_id]
-   - Derived using information from IntegratorChainTransceivers
-   - Unique for each transceiver within an integrator and chain context
+2. **IntegratorChainTransceivers**
+
+   - **Seeds**: `[SEED_PREFIX, integrator_config_pubkey, chain_id]`
+   - **Unique** for each integrator and chain combination.
+
+3. **RegisteredTransceiver**
+
+   - **Seeds**: `[SEED_PREFIX, integrator_program_id, transceiver_id]`
+   - **Unique** for each transceiver within an integrator context.
 
 ### Relationships
 
-- The Config account tracks multiple IntegratorChainTransceivers.
-- Each IntegratorChainTransceivers account is associated with a specific integrator (identified by their public key) and chain.
-- IntegratorChainTransceivers use two Bitmaps to efficiently track incoming and outgoing transceiver statuses.
-- Each Bitmap tracks multiple RegisteredTransceivers.
-- RegisteredTransceivers are associated with a specific integrator (via public key) and chain.
+- Each **IntegratorConfig** manages multiple **IntegratorChainTransceivers**.
+- Each **IntegratorChainTransceivers** uses two **Bitmap** instances to track incoming and outgoing transceiver statuses based on their IDs.
+- Each **IntegratorChainTransceivers** manages multiple **RegisteredTransceivers**.
+- **RegisteredTransceivers** are associated with a specific integrator and chain, tracked by their unique IDs.
 
-For detailed documentation on each component and its methods, please refer to the source files and generated API documentation.
+For detailed documentation on each component and its methods, please refer to the source files.
 
 ### Tests
 
