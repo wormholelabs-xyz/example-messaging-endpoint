@@ -1,4 +1,4 @@
-use crate::state::{Config, IntegratorConfig};
+use crate::state::IntegratorConfig;
 use anchor_lang::prelude::*;
 
 /// Accounts struct for initializing an IntegratorConfig account
