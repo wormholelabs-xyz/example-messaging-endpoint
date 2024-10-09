@@ -5,8 +5,9 @@ use solana_sdk::{
     instruction::Instruction,
     pubkey::Pubkey,
     signer::{keypair::Keypair, Signer},
-    transaction::Transaction,
 };
+
+use crate::common::execute_transaction::execute_transaction;
 
 pub async fn register_transceiver(
     context: &mut ProgramTestContext,
@@ -35,14 +36,5 @@ pub async fn register_transceiver(
         .data(),
     };
 
-    let recent_blockhash = context.banks_client.get_latest_blockhash().await?;
-
-    let transaction = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[payer, owner],
-        recent_blockhash,
-    );
-
-    context.banks_client.process_transaction(transaction).await
+    execute_transaction(context, ix, &[owner, payer], payer).await
 }

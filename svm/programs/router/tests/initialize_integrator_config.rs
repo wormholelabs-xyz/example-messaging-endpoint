@@ -8,7 +8,11 @@ use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
 use router::state::IntegratorConfig;
 use solana_program_test::*;
-use solana_sdk::{signature::Keypair, signer::Signer};
+
+use solana_sdk::{
+    instruction::InstructionError, signature::Keypair, signer::Signer,
+    system_instruction::SystemError, transaction::TransactionError,
+};
 
 #[tokio::test]
 async fn test_initialize_integrator_config_success() {
@@ -86,11 +90,16 @@ async fn test_initialize_integrator_config_reinitialization() {
     )
     .await;
 
-    // Print debug information
-    println!("Result of second initialization: {:?}", result);
-
-    // Assert that the second initialization fails
-    assert!(result.is_err(), "Expected an error, but got: {:?}", result);
+    let err = result.unwrap_err();
+    assert_eq!(
+        err.unwrap(),
+        TransactionError::InstructionError(
+            0,
+            InstructionError::Custom(SystemError::AccountAlreadyInUse as u32)
+        ),
+        "Expected AccountAlreadyInUse error, but got: {:?}",
+        err
+    );
 }
 
 #[tokio::test]

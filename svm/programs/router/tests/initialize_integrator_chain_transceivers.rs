@@ -13,7 +13,7 @@ use router::state::{IntegratorChainTransceivers, IntegratorConfig};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::InstructionError, signature::Keypair, signer::Signer,
-    transaction::TransactionError,
+    system_instruction::SystemError, transaction::TransactionError,
 };
 
 async fn initialize_test_environment(
@@ -76,7 +76,7 @@ async fn initialize_test_environment(
 #[tokio::test]
 async fn test_initialize_integrator_chain_transceivers_success() {
     let mut context = setup().await;
-    let (_, _, integrator_program_id, _, integrator_chain_transceivers_pda, _) =
+    let (_, _, integrator_program_id, _, integrator_chain_transceivers_pda, chain_id) =
         initialize_test_environment(&mut context).await;
 
     // Fetch and verify the initialized account
@@ -124,11 +124,17 @@ async fn test_initialize_integrator_chain_transceivers_reinitialization() {
     )
     .await;
 
-    if let Err(ref e) = result {
-        eprintln!("Error during reinitialization: {:?}", e);
-    }
+    let err = result.unwrap_err();
 
-    assert!(result.is_err(), "Expected an error, but got: {:?}", result);
+    assert_eq!(
+        err.unwrap(),
+        TransactionError::InstructionError(
+            0,
+            InstructionError::Custom(SystemError::AccountAlreadyInUse as u32)
+        ),
+        "Expected AccountAlreadyInUse error, but got: {:?}",
+        err
+    );
 }
 
 #[tokio::test]
