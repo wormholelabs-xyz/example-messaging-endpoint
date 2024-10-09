@@ -12,6 +12,7 @@ pub async fn initialize_integrator_chain_transceivers(
     context: &mut ProgramTestContext,
     authority: &Keypair,
     payer: &Keypair,
+    integrator_config: Pubkey,
     integrator_chain_transceivers: Pubkey,
     chain_id: u16,
     integrator_program: Pubkey,
@@ -19,6 +20,7 @@ pub async fn initialize_integrator_chain_transceivers(
     let accounts = InitializeIntegratorChainTransceivers {
         authority: authority.pubkey(),
         payer: payer.pubkey(),
+        integrator_config,
         integrator_chain_transceivers,
         integrator_program,
         system_program: solana_sdk::system_program::id(),
@@ -30,7 +32,10 @@ pub async fn initialize_integrator_chain_transceivers(
         data: router::instruction::InitializeIntegratorChainTransceivers { chain_id }.data(),
     };
 
-    let recent_blockhash = context.banks_client.get_latest_blockhash().await?;
+    let recent_blockhash = context
+        .banks_client
+        .get_new_latest_blockhash(&context.last_blockhash)
+        .await?;
 
     let transaction = Transaction::new_signed_with_payer(
         &[ix],

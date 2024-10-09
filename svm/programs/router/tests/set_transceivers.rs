@@ -62,6 +62,7 @@ async fn initialize_test_environment(
         context,
         &authority,
         &payer,
+        integrator_config_pda,
         integrator_chain_transceivers_pda,
         chain_id,
         integrator_program_id,
