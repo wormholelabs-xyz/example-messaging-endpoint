@@ -24,7 +24,7 @@ impl IntegratorConfig {
     pub const SEED_PREFIX: &'static [u8] = b"integrator_config";
 
     /// Maximum number of transceivers allowed
-    pub const MAX_TRANSCEIVERS: u8 = 255;
+    pub const MAX_TRANSCEIVERS: u8 = 128;
 
     pub fn transfer_owner(&mut self, current_owner: &Signer, new_owner: Pubkey) -> Result<()> {
         require!(
