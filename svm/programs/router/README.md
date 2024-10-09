@@ -30,10 +30,10 @@ classDiagram
         map: u128
     }
 
-   Config "1" -- "" IntegratorConfig : manages
    IntegratorConfig "1" -- "" IntegratorChainTransceivers : manages
    IntegratorChainTransceivers "1" -- "2" Bitmap : uses
-   IntegratorConfig "1" -- "" RegisteredTransceiver : manag
+   IntegratorConfig "1" -- "*" RegisteredTransceiver : tracks
+   IntegratorChainTransceivers "1" -- "*" RegisteredTransceiver : corresponds to
 ```
 
 ### Key Components
@@ -92,6 +92,7 @@ classDiagram
 ### Error Handling
 
 The program uses a custom `RouterError` enum to handle various error cases, including:
+
 - Invalid integrator authority
 - Bitmap index out of bounds
 - Maximum number of transceivers reached
@@ -100,25 +101,28 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 ### Tests
 
 1. **InitIntegratorConfig**
+
    - [x] Test successful initialization
    - [x] Test double initialization (should fail)
    - [x] Test initialization for different programs
    - [ ] Test initialization with non-program-owner authority (not implemented yet)
 
 2. **InitializeIntegratorChainTransceivers**
+
    - [x] Test successful initialization
    - [x] Test initialization for already initialized chain (should fail)
    - [x] Test initialization for different chains
    - [x] Test initialization with invalid authority
 
 3. **RegisterTransceiver**
+
    - [x] Test successful registration
    - [x] Test registration causing bitmap overflow
    - [x] Test registration with non-authority signer
    - [ ] Test registration of duplicate transceiver (not implemented yet)
    - [ ] Test registration with invalid transceiver address
-   > **Note on Reinitialization:**
-   > There is no need to test for reinitialization of the `IntegratorConfig` because the `next_transceiver_id` in `integrator_config` is auto-incremented. This ensures that each transceiver is uniquely identified and prevents accidental overwriting or duplication during initialization.
+     > **Note on Reinitialization:**
+     > There is no need to test for reinitialization of the `IntegratorConfig` because the `next_transceiver_id` in `integrator_config` is auto-incremented. This ensures that each transceiver is uniquely identified and prevents accidental overwriting or duplication during initialization.
 
 4. **SetTransceivers**
    - [x] Test successful setting of incoming transceivers
