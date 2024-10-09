@@ -1,4 +1,7 @@
-use crate::state::IntegratorChainTransceivers;
+use crate::{
+    error::RouterError,
+    state::{IntegratorChainTransceivers, IntegratorConfig},
+};
 use anchor_lang::prelude::*;
 
 /// Accounts struct for initializing an IntegratorChainTransceivers account
@@ -30,24 +33,21 @@ pub struct InitializeIntegratorChainTransceivers<'info> {
     /// CHECK: This account is not read or written in this instruction
     pub integrator_program: UncheckedAccount<'info>,
 
+    /// The IntegratorConfig account
+    #[account(
+        seeds = [
+            IntegratorConfig::SEED_PREFIX,
+            integrator_program.key().as_ref(),
+        ],
+        bump,
+        has_one = authority @ RouterError::InvalidIntegratorAuthority
+    )]
+    pub integrator_config: Account<'info, IntegratorConfig>,
+
     /// The System Program
     pub system_program: Program<'info, System>,
 }
 
-/// Initializes an IntegratorChainTransceivers account for a specific integrator_program and chain_id
-///
-/// This function sets up the initial state for managing the transceivers
-/// of a given integrator_program on a specific chain. It initializes the
-/// chain ID, program ID, and empty bitmaps for incoming and outgoing transceivers.
-///
-/// # Arguments
-///
-/// * `ctx` - The context of the instruction, containing the accounts
-/// * `chain_id` - The identifier of the blockchain for which this account is being initialized
-///
-/// # Returns
-///
-/// Returns `Ok(())` if the initialization is successful
 pub fn initialize_integrator_chain_transceivers(
     ctx: Context<InitializeIntegratorChainTransceivers>,
     chain_id: u16,

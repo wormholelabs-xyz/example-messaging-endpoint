@@ -4,20 +4,44 @@ mod common;
 mod instructions;
 
 use crate::instructions::initialize_integrator_chain_transceivers::initialize_integrator_chain_transceivers;
+use crate::instructions::initialize_integrator_config::initialize_integrator_config;
+
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
-use router::state::IntegratorChainTransceivers;
+use router::error::RouterError;
+use router::state::{IntegratorChainTransceivers, IntegratorConfig};
 use solana_program_test::*;
-use solana_sdk::{signature::Keypair, signer::Signer};
+use solana_sdk::{
+    instruction::InstructionError, signature::Keypair, signer::Signer,
+    transaction::TransactionError,
+};
 
-#[tokio::test]
-async fn test_initialize_integrator_chain_transceivers_success() {
-    // Set up the test environment
-    let mut context = setup().await;
+async fn initialize_test_environment(
+    context: &mut ProgramTestContext,
+) -> (Keypair, Keypair, Pubkey, Pubkey, Pubkey, u16) {
     let payer = context.payer.insecure_clone();
     let authority = Keypair::new();
     let integrator_program_id = Keypair::new().pubkey();
-    let chain_id: u16 = 1; // Example chain ID
+    let chain_id: u16 = 1;
+
+    let (integrator_config_pda, _) = Pubkey::find_program_address(
+        &[
+            IntegratorConfig::SEED_PREFIX,
+            integrator_program_id.as_ref(),
+        ],
+        &router::id(),
+    );
+
+    // Initialize the integrator config
+    initialize_integrator_config(
+        context,
+        &authority,
+        &payer,
+        integrator_config_pda,
+        integrator_program_id,
+    )
+    .await
+    .unwrap();
 
     let (integrator_chain_transceivers_pda, _) = Pubkey::find_program_address(
         &[
@@ -28,17 +52,33 @@ async fn test_initialize_integrator_chain_transceivers_success() {
         &router::id(),
     );
 
-    // Initialize the integrator chain transceivers
     initialize_integrator_chain_transceivers(
-        &mut context,
+        context,
         &authority,
         &payer,
+        integrator_config_pda,
         integrator_chain_transceivers_pda,
         chain_id,
         integrator_program_id,
     )
     .await
     .unwrap();
+
+    (
+        authority,
+        payer,
+        integrator_program_id,
+        integrator_config_pda,
+        integrator_chain_transceivers_pda,
+        chain_id,
+    )
+}
+
+#[tokio::test]
+async fn test_initialize_integrator_chain_transceivers_success() {
+    let mut context = setup().await;
+    let (authority, payer, integrator_program_id, _, integrator_chain_transceivers_pda, chain_id) =
+        initialize_test_environment(&mut context).await;
 
     // Fetch and verify the initialized account
     let integrator_chain_transceivers: IntegratorChainTransceivers =
@@ -63,71 +103,42 @@ async fn test_initialize_integrator_chain_transceivers_success() {
 
 #[tokio::test]
 async fn test_initialize_integrator_chain_transceivers_reinitialization() {
-    // Set up the test environment
     let mut context = setup().await;
-    let payer = context.payer.insecure_clone();
-    let authority = Keypair::new();
-    let integrator_program_id = Keypair::new().pubkey();
-    let chain_id: u16 = 1; // Example chain ID
-
-    let (integrator_chain_transceivers_pda, _) = Pubkey::find_program_address(
-        &[
-            IntegratorChainTransceivers::SEED_PREFIX,
-            integrator_program_id.as_ref(),
-            chain_id.to_le_bytes().as_ref(),
-        ],
-        &router::id(),
-    );
-
-    // Initialize the integrator chain transceivers
-    initialize_integrator_chain_transceivers(
-        &mut context,
-        &authority,
-        &payer,
+    let (
+        authority,
+        payer,
+        integrator_program_id,
+        integrator_config_pda,
         integrator_chain_transceivers_pda,
         chain_id,
-        integrator_program_id,
-    )
-    .await
-    .unwrap();
+    ) = initialize_test_environment(&mut context).await;
 
     // Try to initialize again
     let result = initialize_integrator_chain_transceivers(
         &mut context,
         &authority,
         &payer,
+        integrator_config_pda,
         integrator_chain_transceivers_pda,
         chain_id,
         integrator_program_id,
     )
     .await;
 
-    // Print out more information about the result
-    println!("Second initialization result: {:?}", result);
+    if let Err(ref e) = result {
+        eprintln!("Error during reinitialization: {:?}", e);
+    }
 
-    // Assert that the second initialization fails
     assert!(result.is_err(), "Expected an error, but got: {:?}", result);
 }
 
 #[tokio::test]
 async fn test_initialize_integrator_chain_transceivers_different_chains() {
-    // Set up the test environment
     let mut context = setup().await;
-    let payer = context.payer.insecure_clone();
-    let authority = Keypair::new();
-    let integrator_program_id = Keypair::new().pubkey();
-    let chain_id_1: u16 = 1; // Example chain ID
-    let chain_id_2: u16 = 2; // Example chain ID
+    let (authority, payer, integrator_program_id, integrator_config_pda, _, _) =
+        initialize_test_environment(&mut context).await;
 
-    let (integrator_chain_transceivers_pda_1, _) = Pubkey::find_program_address(
-        &[
-            IntegratorChainTransceivers::SEED_PREFIX,
-            integrator_program_id.as_ref(),
-            chain_id_1.to_le_bytes().as_ref(),
-        ],
-        &router::id(),
-    );
-
+    let chain_id_2: u16 = 2;
     let (integrator_chain_transceivers_pda_2, _) = Pubkey::find_program_address(
         &[
             IntegratorChainTransceivers::SEED_PREFIX,
@@ -137,23 +148,12 @@ async fn test_initialize_integrator_chain_transceivers_different_chains() {
         &router::id(),
     );
 
-    // Initialize for chain 1
-    initialize_integrator_chain_transceivers(
-        &mut context,
-        &authority,
-        &payer,
-        integrator_chain_transceivers_pda_1,
-        chain_id_1,
-        integrator_program_id,
-    )
-    .await
-    .unwrap();
-
     // Initialize for chain 2
     initialize_integrator_chain_transceivers(
         &mut context,
         &authority,
         &payer,
+        integrator_config_pda,
         integrator_chain_transceivers_pda_2,
         chain_id_2,
         integrator_program_id,
@@ -164,23 +164,57 @@ async fn test_initialize_integrator_chain_transceivers_different_chains() {
     // Fetch and verify both accounts
     let integrator_chain_transceivers_1: IntegratorChainTransceivers = get_account(
         &mut context.banks_client,
-        integrator_chain_transceivers_pda_1,
-    )
-    .await;
-    let integrator_chain_transceivers_2: IntegratorChainTransceivers = get_account(
-        &mut context.banks_client,
         integrator_chain_transceivers_pda_2,
     )
     .await;
 
-    assert_eq!(integrator_chain_transceivers_1.chain_id, chain_id_1);
-    assert_eq!(integrator_chain_transceivers_2.chain_id, chain_id_2);
+    assert_eq!(integrator_chain_transceivers_1.chain_id, chain_id_2);
     assert_eq!(
         integrator_chain_transceivers_1.integrator_program_id,
         integrator_program_id
     );
+}
+
+#[tokio::test]
+async fn test_initialize_integrator_chain_transceivers_invalid_authority() {
+    let mut context = setup().await;
+    let (_, payer, integrator_program_id, integrator_config_pda, _, chain_id) =
+        initialize_test_environment(&mut context).await;
+
+    // Create a different authority that wasn't used in the setup
+    let different_authority = Keypair::new();
+
+    let chain_id_2: u16 = 2;
+
+    let (integrator_chain_transceivers_pda_2, _) = Pubkey::find_program_address(
+        &[
+            IntegratorChainTransceivers::SEED_PREFIX,
+            integrator_program_id.as_ref(),
+            chain_id_2.to_le_bytes().as_ref(),
+        ],
+        &router::id(),
+    );
+
+    // Attempt to initialize with the different (invalid) authority
+    let result = initialize_integrator_chain_transceivers(
+        &mut context,
+        &different_authority,
+        &payer,
+        integrator_config_pda,
+        integrator_chain_transceivers_pda_2,
+        chain_id_2,
+        integrator_program_id,
+    )
+    .await;
+
+    // The transaction should fail due to invalid transceiver id
+    let err = result.unwrap_err();
+
     assert_eq!(
-        integrator_chain_transceivers_2.integrator_program_id,
-        integrator_program_id
+        err.unwrap(),
+        TransactionError::InstructionError(
+            0,
+            InstructionError::Custom(RouterError::InvalidIntegratorAuthority.into())
+        )
     );
 }

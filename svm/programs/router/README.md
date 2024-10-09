@@ -109,14 +109,13 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
    - [x] Test successful initialization
    - [x] Test initialization for already initialized chain (should fail)
    - [x] Test initialization for different chains
-   - [ ] Test initialization with invalid chain ID
-   - [ ] Test initialization with invalid authority
+   - [x] Test initialization with invalid authority
 
 3. **RegisterTransceiver**
    - [x] Test successful registration
    - [x] Test registration causing bitmap overflow
    - [x] Test registration with non-authority signer
-   - [ ] Test registration of duplicate transceiver (?)
+   - [ ] Test registration of duplicate transceiver (not implemented yet)
    - [ ] Test registration with invalid transceiver address
    > **Note on Reinitialization:**
    > There is no need to test for reinitialization of the `IntegratorConfig` because the `next_transceiver_id` in `integrator_config` is auto-incremented. This ensures that each transceiver is uniquely identified and prevents accidental overwriting or duplication during initialization.
