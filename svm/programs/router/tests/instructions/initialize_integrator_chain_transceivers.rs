@@ -5,8 +5,9 @@ use solana_sdk::{
     instruction::Instruction,
     pubkey::Pubkey,
     signer::{keypair::Keypair, Signer},
-    transaction::Transaction,
 };
+
+use crate::common::execute_transaction::execute_transaction;
 
 pub async fn initialize_integrator_chain_transceivers(
     context: &mut ProgramTestContext,
@@ -32,17 +33,5 @@ pub async fn initialize_integrator_chain_transceivers(
         data: router::instruction::InitializeIntegratorChainTransceivers { chain_id }.data(),
     };
 
-    let recent_blockhash = context
-        .banks_client
-        .get_new_latest_blockhash(&context.last_blockhash)
-        .await?;
-
-    let transaction = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[payer, owner],
-        recent_blockhash,
-    );
-
-    context.banks_client.process_transaction(transaction).await
+    execute_transaction(context, ix, &[owner, payer], payer).await
 }
