@@ -8,9 +8,9 @@ pub struct InitIntegratorConfig<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
-    /// The authority (owner) of the IntegratorConfig account
-    /// CHECK: The integrator program is responsible for passing the correct authority
-    pub authority: UncheckedAccount<'info>,
+    /// The owner of the IntegratorConfig account
+    /// CHECK: The integrator program is responsible for passing the correct owner
+    pub owner: UncheckedAccount<'info>,
 
     /// The IntegratorConfig account being initialized
     #[account(
@@ -25,26 +25,13 @@ pub struct InitIntegratorConfig<'info> {
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 
-    /// The integrator program
+    /// The integrator program (must be a signer)
     pub integrator_program: Signer<'info>,
 
     /// The System Program
     pub system_program: Program<'info, System>,
 }
 
-/// Initializes an IntegratorConfig account for a specific integrator_program
-///
-/// This function sets up the initial state for managing the configuration
-/// of a given integrator_program. It initializes the authority, program ID,
-/// and the transceiver ID counter.
-///
-/// # Arguments
-///
-/// * `ctx` - The context of the instruction, containing the accounts
-///
-/// # Returns
-///
-/// Returns `Ok(())` if the initialization is successful
 pub fn init_integrator_config(ctx: Context<InitIntegratorConfig>) -> Result<()> {
     msg!(
         "Initializing IntegratorConfig for program: {}",
@@ -53,7 +40,7 @@ pub fn init_integrator_config(ctx: Context<InitIntegratorConfig>) -> Result<()> 
 
     ctx.accounts.integrator_config.set_inner(IntegratorConfig {
         bump: ctx.bumps.integrator_config,
-        authority: ctx.accounts.authority.key(),
+        owner: ctx.accounts.owner.key(),
         program_id: ctx.accounts.integrator_program.key(),
         next_transceiver_id: 0,
     });

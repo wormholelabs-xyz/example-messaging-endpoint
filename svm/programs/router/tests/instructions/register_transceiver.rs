@@ -10,7 +10,7 @@ use solana_sdk::{
 
 pub async fn register_transceiver(
     context: &mut ProgramTestContext,
-    authority: &Keypair,
+    owner: &Keypair,
     payer: &Keypair,
     integrator_config: Pubkey,
     registered_transceiver: Pubkey,
@@ -19,7 +19,7 @@ pub async fn register_transceiver(
 ) -> Result<(), BanksClientError> {
     let accounts = RegisterTransceiver {
         payer: payer.pubkey(),
-        authority: authority.pubkey(),
+        owner: owner.pubkey(),
         integrator_config,
         registered_transceiver,
         integrator_program,
@@ -40,7 +40,7 @@ pub async fn register_transceiver(
     let transaction = Transaction::new_signed_with_payer(
         &[ix],
         Some(&payer.pubkey()),
-        &[payer, authority],
+        &[payer, owner],
         recent_blockhash,
     );
 

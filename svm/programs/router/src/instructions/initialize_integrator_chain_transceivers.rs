@@ -8,8 +8,8 @@ use anchor_lang::prelude::*;
 #[derive(Accounts)]
 #[instruction(chain_id: u16)]
 pub struct InitializeIntegratorChainTransceivers<'info> {
-    /// The authority (owner) of the IntegratorChainTransceivers account
-    pub authority: Signer<'info>,
+    /// The owner of the IntegratorConfig account
+    pub owner: Signer<'info>,
 
     /// The account paying for the initialization
     #[account(mut)]
@@ -40,7 +40,7 @@ pub struct InitializeIntegratorChainTransceivers<'info> {
             integrator_program.key().as_ref(),
         ],
         bump,
-        has_one = authority @ RouterError::InvalidIntegratorAuthority
+        has_one = owner @ RouterError::InvalidIntegratorAuthority
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 
