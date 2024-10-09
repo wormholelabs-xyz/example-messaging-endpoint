@@ -47,7 +47,7 @@ async fn test_initialize_integrator_config_success() {
 }
 
 #[tokio::test]
-async fn test_initialize_integrator_config_already_initialized() {
+async fn test_initialize_integrator_config_reinitialization() {
     // Set up the test environment
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
