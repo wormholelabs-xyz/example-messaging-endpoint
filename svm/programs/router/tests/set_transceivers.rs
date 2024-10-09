@@ -49,7 +49,6 @@ async fn initialize_test_environment(
     .unwrap();
 
     // Initialize integrator chain transceivers
-    let chain_id: u16 = 1;
     let (integrator_chain_transceivers_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorChainTransceivers::SEED_PREFIX,
