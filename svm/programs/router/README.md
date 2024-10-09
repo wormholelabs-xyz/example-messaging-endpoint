@@ -111,7 +111,6 @@ classDiagram
 3. **SetTransceivers**
    - [x] Test successful setting of incoming transceivers
    - [x] Test successful setting of outgoing transceivers
-   - [ ] Test setting transceivers with an invalid authority (should fail)
-   - [ ] Test setting transceivers for a non-existent chain ID (should fail)
-   - [ ] Test setting transceivers with an invalid bitmap (e.g., with bits set beyond the maximum allowed transceiver ID)
-   - [ ] Test setting transceivers multiple times and verify that the bitmap is correctly updated each time
+   - [x] Test setting transceivers with an invalid authority (should fail)
+   - [x] Test setting transceivers with an invalid bitmap (e.g., with bits set beyond the next transceiver id)
+   - [x] Test setting transceivers multiple times and verify that the bitmap is correctly updated each time

@@ -33,12 +33,21 @@ pub struct SetTransceivers<'info> {
     pub integrator_program: UncheckedAccount<'info>,
 }
 
+fn validate_bitmap(bitmap: u128, next_transceiver_id: u8) -> Result<()> {
+    if bitmap >= (1u128 << next_transceiver_id) {
+        return Err(RouterError::InvalidTransceiverId.into());
+    }
+    Ok(())
+}
+
 pub fn set_in_transceivers(
     ctx: Context<SetTransceivers>,
     chain_id: u16,
     bitmap: u128,
 ) -> Result<()> {
+    validate_bitmap(bitmap, ctx.accounts.integrator_config.next_transceiver_id)?;
     let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
+
     integrator_chain_transceivers.in_transceiver_bitmap = Bitmap::from_value(bitmap);
 
     msg!(
@@ -53,7 +62,9 @@ pub fn set_out_transceivers(
     chain_id: u16,
     bitmap: u128,
 ) -> Result<()> {
+    validate_bitmap(bitmap, ctx.accounts.integrator_config.next_transceiver_id)?;
     let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
+
     integrator_chain_transceivers.out_transceiver_bitmap = Bitmap::from_value(bitmap);
 
     msg!(
