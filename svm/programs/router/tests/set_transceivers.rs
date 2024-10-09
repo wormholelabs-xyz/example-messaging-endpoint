@@ -25,24 +25,25 @@ async fn initialize_test_environment(
     context: &mut ProgramTestContext,
 ) -> (Keypair, Pubkey, Pubkey, Pubkey, u16) {
     let payer = context.payer.insecure_clone();
-    let authority = Keypair::new();
-    let integrator_program_id = Keypair::new().pubkey();
+    let owner = Keypair::new();
+    let integrator_program = Keypair::new();
+    let chain_id: u16 = 1;
 
-    // Initialize integrator config
     let (integrator_config_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorConfig::SEED_PREFIX,
-            integrator_program_id.as_ref(),
+            integrator_program.pubkey().as_ref(),
         ],
         &router::id(),
     );
 
+    // Initialize the integrator config
     initialize_integrator_config(
         context,
-        &authority,
         &payer,
+        owner.pubkey(),
         integrator_config_pda,
-        integrator_program_id,
+        &integrator_program,
     )
     .await
     .unwrap();
@@ -52,7 +53,7 @@ async fn initialize_test_environment(
     let (integrator_chain_transceivers_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorChainTransceivers::SEED_PREFIX,
-            integrator_program_id.as_ref(),
+            integrator_program.pubkey().as_ref(),
             &chain_id.to_le_bytes(),
         ],
         &router::id(),
@@ -60,12 +61,12 @@ async fn initialize_test_environment(
 
     initialize_integrator_chain_transceivers(
         context,
-        &authority,
+        &owner,
         &payer,
         integrator_config_pda,
         integrator_chain_transceivers_pda,
         chain_id,
-        integrator_program_id,
+        integrator_program.pubkey(),
     )
     .await
     .unwrap();
@@ -75,26 +76,26 @@ async fn initialize_test_environment(
     let (registered_transceiver_pda, _) = Pubkey::find_program_address(
         &[
             RegisteredTransceiver::SEED_PREFIX,
-            integrator_program_id.as_ref(),
+            integrator_program.pubkey().as_ref(),
             &[0], // First transceiver ID
         ],
         &router::id(),
     );
     register_transceiver(
         context,
-        &authority,
+        &owner,
         &payer,
         integrator_config_pda,
         registered_transceiver_pda,
-        integrator_program_id,
+        integrator_program.pubkey(),
         transceiver_address,
     )
     .await
     .unwrap();
 
     (
-        authority,
-        integrator_program_id,
+        owner,
+        integrator_program.pubkey(),
         integrator_config_pda,
         integrator_chain_transceivers_pda,
         chain_id,

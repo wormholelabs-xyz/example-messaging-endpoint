@@ -16,24 +16,24 @@ async fn test_register_transceiver_success() {
     // Set up the test environment
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
-    let authority = Keypair::new();
-    let integrator_program_id = Keypair::new().pubkey();
+    let owner = Keypair::new();
+    let integrator_program = Keypair::new();
 
     // Initialize integrator config first
     let (integrator_config_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorConfig::SEED_PREFIX,
-            integrator_program_id.as_ref(),
+            integrator_program.pubkey().as_ref(),
         ],
         &router::id(),
     );
 
     initialize_integrator_config(
         &mut context,
-        &authority,
         &payer,
+        owner.pubkey(),
         integrator_config_pda,
-        integrator_program_id,
+        &integrator_program,
     )
     .await
     .unwrap();
@@ -43,7 +43,7 @@ async fn test_register_transceiver_success() {
     let (registered_transceiver_pda, _) = Pubkey::find_program_address(
         &[
             RegisteredTransceiver::SEED_PREFIX,
-            integrator_program_id.as_ref(),
+            integrator_program.pubkey().as_ref(),
             &[0], // First transceiver ID
         ],
         &router::id(),
@@ -51,11 +51,11 @@ async fn test_register_transceiver_success() {
 
     register_transceiver(
         &mut context,
-        &authority,
+        &owner,
         &payer,
         integrator_config_pda,
         registered_transceiver_pda,
-        integrator_program_id,
+        integrator_program.pubkey(),
         transceiver_address,
     )
     .await
@@ -68,7 +68,7 @@ async fn test_register_transceiver_success() {
     assert_eq!(registered_transceiver.id, 0);
     assert_eq!(
         registered_transceiver.integrator_program_id,
-        integrator_program_id
+        integrator_program.pubkey()
     );
     assert_eq!(registered_transceiver.address, transceiver_address);
 
@@ -83,24 +83,24 @@ async fn test_register_multiple_transceivers() {
     // Set up the test environment
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
-    let authority = Keypair::new();
-    let integrator_program_id = Keypair::new().pubkey();
+    let owner = Keypair::new();
+    let integrator_program = Keypair::new();
 
     // Initialize integrator config
     let (integrator_config_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorConfig::SEED_PREFIX,
-            integrator_program_id.as_ref(),
+            integrator_program.pubkey().as_ref(),
         ],
         &router::id(),
     );
 
     initialize_integrator_config(
         &mut context,
-        &authority,
         &payer,
+        owner.pubkey(),
         integrator_config_pda,
-        integrator_program_id,
+        &integrator_program,
     )
     .await
     .unwrap();
@@ -111,7 +111,7 @@ async fn test_register_multiple_transceivers() {
         let (registered_transceiver_pda, _) = Pubkey::find_program_address(
             &[
                 RegisteredTransceiver::SEED_PREFIX,
-                integrator_program_id.as_ref(),
+                integrator_program.pubkey().as_ref(),
                 &[i],
             ],
             &router::id(),
@@ -119,11 +119,11 @@ async fn test_register_multiple_transceivers() {
 
         register_transceiver(
             &mut context,
-            &authority,
+            &owner,
             &payer,
             integrator_config_pda,
             registered_transceiver_pda,
-            integrator_program_id,
+            integrator_program.pubkey(),
             transceiver_address,
         )
         .await
@@ -135,7 +135,7 @@ async fn test_register_multiple_transceivers() {
         assert_eq!(registered_transceiver.id, i);
         assert_eq!(
             registered_transceiver.integrator_program_id,
-            integrator_program_id
+            integrator_program.pubkey()
         );
         assert_eq!(registered_transceiver.address, transceiver_address);
     }
