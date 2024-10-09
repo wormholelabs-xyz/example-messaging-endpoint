@@ -13,7 +13,7 @@ pub struct IntegratorConfig {
     pub owner: Pubkey,
 
     /// Program ID associated with this integrator
-    pub program_id: Pubkey,
+    pub integrator_program_id: Pubkey,
 
     /// Counter for assigning IDs to transceivers
     pub next_transceiver_id: u8,

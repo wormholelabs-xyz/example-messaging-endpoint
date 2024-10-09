@@ -76,7 +76,7 @@ async fn initialize_test_environment(
 #[tokio::test]
 async fn test_initialize_integrator_chain_transceivers_success() {
     let mut context = setup().await;
-    let (authority, payer, integrator_program_id, _, integrator_chain_transceivers_pda, chain_id) =
+    let (_, _, integrator_program_id, _, integrator_chain_transceivers_pda, _) =
         initialize_test_environment(&mut context).await;
 
     // Fetch and verify the initialized account

@@ -42,7 +42,10 @@ async fn test_initialize_integrator_config_success() {
         get_account(&mut context.banks_client, integrator_config_pda).await;
 
     assert_eq!(integrator_config.owner, authority);
-    assert_eq!(integrator_config.program_id, integrator_program.pubkey());
+    assert_eq!(
+        integrator_config.integrator_program_id,
+        integrator_program.pubkey()
+    );
     assert_eq!(integrator_config.next_transceiver_id, 0);
 }
 
@@ -144,11 +147,11 @@ async fn test_initialize_integrator_config_different_programs() {
         get_account(&mut context.banks_client, integrator_config_pda_2).await;
 
     assert_eq!(
-        integrator_config_1.program_id,
+        integrator_config_1.integrator_program_id,
         integrator_program_1.pubkey()
     );
     assert_eq!(
-        integrator_config_2.program_id,
+        integrator_config_2.integrator_program_id,
         integrator_program_2.pubkey()
     );
 }
