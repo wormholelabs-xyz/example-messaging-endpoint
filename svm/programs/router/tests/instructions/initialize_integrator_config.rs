@@ -10,16 +10,16 @@ use solana_sdk::{
 
 pub async fn initialize_integrator_config(
     context: &mut ProgramTestContext,
-    authority: &Keypair,
     payer: &Keypair,
+    authority: Pubkey,
     integrator_config: Pubkey,
-    integrator_program: Pubkey,
+    integrator_program: &Keypair,
 ) -> Result<(), BanksClientError> {
     let accounts = InitIntegratorConfig {
-        authority: authority.pubkey(),
         payer: payer.pubkey(),
+        authority,
         integrator_config,
-        integrator_program,
+        integrator_program: integrator_program.pubkey(),
         system_program: solana_sdk::system_program::id(),
     };
 
@@ -34,7 +34,7 @@ pub async fn initialize_integrator_config(
     let transaction = Transaction::new_signed_with_payer(
         &[ix],
         Some(&payer.pubkey()),
-        &[payer, authority],
+        &[payer, integrator_program],
         recent_blockhash,
     );
 

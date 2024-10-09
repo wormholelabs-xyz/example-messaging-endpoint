@@ -15,13 +15,13 @@ async fn test_initialize_integrator_config_success() {
     // Set up the test environment
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
-    let authority = Keypair::new();
-    let integrator_program_id = Keypair::new().pubkey();
+    let authority = Keypair::new().pubkey();
+    let integrator_program = Keypair::new();
 
     let (integrator_config_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorConfig::SEED_PREFIX,
-            integrator_program_id.as_ref(),
+            integrator_program.pubkey().as_ref(),
         ],
         &router::id(),
     );
@@ -29,10 +29,10 @@ async fn test_initialize_integrator_config_success() {
     // Initialize the integrator config
     initialize_integrator_config(
         &mut context,
-        &authority,
         &payer,
+        authority,
         integrator_config_pda,
-        integrator_program_id,
+        &integrator_program,
     )
     .await
     .unwrap();
@@ -41,8 +41,8 @@ async fn test_initialize_integrator_config_success() {
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
 
-    assert_eq!(integrator_config.authority, authority.pubkey());
-    assert_eq!(integrator_config.program_id, integrator_program_id);
+    assert_eq!(integrator_config.authority, authority);
+    assert_eq!(integrator_config.program_id, integrator_program.pubkey());
     assert_eq!(integrator_config.next_transceiver_id, 0);
 }
 
@@ -51,13 +51,13 @@ async fn test_initialize_integrator_config_reinitialization() {
     // Set up the test environment
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
-    let authority = Keypair::new();
-    let integrator_program_id = Keypair::new().pubkey();
+    let authority = Keypair::new().pubkey();
+    let integrator_program = Keypair::new();
 
     let (integrator_config_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorConfig::SEED_PREFIX,
-            integrator_program_id.as_ref(),
+            integrator_program.pubkey().as_ref(),
         ],
         &router::id(),
     );
@@ -65,10 +65,10 @@ async fn test_initialize_integrator_config_reinitialization() {
     // Initialize the integrator config
     initialize_integrator_config(
         &mut context,
-        &authority,
         &payer,
+        authority,
         integrator_config_pda,
-        integrator_program_id,
+        &integrator_program,
     )
     .await
     .unwrap();
@@ -76,10 +76,10 @@ async fn test_initialize_integrator_config_reinitialization() {
     // Try to initialize again
     let result = initialize_integrator_config(
         &mut context,
-        &authority,
         &payer,
+        authority,
         integrator_config_pda,
-        integrator_program_id,
+        &integrator_program,
     )
     .await;
 
@@ -95,14 +95,14 @@ async fn test_initialize_integrator_config_different_programs() {
     // Set up the test environment
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
-    let authority = Keypair::new();
-    let integrator_program_id_1 = Keypair::new().pubkey();
-    let integrator_program_id_2 = Keypair::new().pubkey();
+    let authority = Keypair::new().pubkey();
+    let integrator_program_1 = Keypair::new();
+    let integrator_program_2 = Keypair::new();
 
     let (integrator_config_pda_1, _) = Pubkey::find_program_address(
         &[
             IntegratorConfig::SEED_PREFIX,
-            integrator_program_id_1.as_ref(),
+            integrator_program_1.pubkey().as_ref(),
         ],
         &router::id(),
     );
@@ -110,7 +110,7 @@ async fn test_initialize_integrator_config_different_programs() {
     let (integrator_config_pda_2, _) = Pubkey::find_program_address(
         &[
             IntegratorConfig::SEED_PREFIX,
-            integrator_program_id_2.as_ref(),
+            integrator_program_2.pubkey().as_ref(),
         ],
         &router::id(),
     );
@@ -118,10 +118,10 @@ async fn test_initialize_integrator_config_different_programs() {
     // Initialize for program 1
     initialize_integrator_config(
         &mut context,
-        &authority,
         &payer,
+        authority,
         integrator_config_pda_1,
-        integrator_program_id_1,
+        &integrator_program_1,
     )
     .await
     .unwrap();
@@ -129,10 +129,10 @@ async fn test_initialize_integrator_config_different_programs() {
     // Initialize for program 2
     initialize_integrator_config(
         &mut context,
-        &authority,
         &payer,
+        authority,
         integrator_config_pda_2,
-        integrator_program_id_2,
+        &integrator_program_2,
     )
     .await
     .unwrap();
@@ -143,6 +143,12 @@ async fn test_initialize_integrator_config_different_programs() {
     let integrator_config_2: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda_2).await;
 
-    assert_eq!(integrator_config_1.program_id, integrator_program_id_1);
-    assert_eq!(integrator_config_2.program_id, integrator_program_id_2);
+    assert_eq!(
+        integrator_config_1.program_id,
+        integrator_program_1.pubkey()
+    );
+    assert_eq!(
+        integrator_config_2.program_id,
+        integrator_program_2.pubkey()
+    );
 }
