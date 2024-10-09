@@ -41,7 +41,7 @@ pub fn init_integrator_config(ctx: Context<InitIntegratorConfig>) -> Result<()> 
     ctx.accounts.integrator_config.set_inner(IntegratorConfig {
         bump: ctx.bumps.integrator_config,
         owner: ctx.accounts.owner.key(),
-        program_id: ctx.accounts.integrator_program.key(),
+        integrator_program_id: ctx.accounts.integrator_program.key(),
         next_transceiver_id: 0,
     });
 

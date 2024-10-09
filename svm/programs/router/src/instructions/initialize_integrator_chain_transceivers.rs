@@ -8,12 +8,12 @@ use anchor_lang::prelude::*;
 #[derive(Accounts)]
 #[instruction(chain_id: u16)]
 pub struct InitializeIntegratorChainTransceivers<'info> {
-    /// The owner of the IntegratorConfig account
-    pub owner: Signer<'info>,
-
     /// The account paying for the initialization
     #[account(mut)]
     pub payer: Signer<'info>,
+
+    /// The owner of the IntegratorConfig account
+    pub owner: Signer<'info>,
 
     /// The IntegratorChainTransceivers account being initialized
     #[account(
