@@ -108,9 +108,10 @@ classDiagram
    - [ ] Test registration with invalid chain ID
    - [ ] Test registration with invalid transceiver address
 
-3. **TransferIntegratorChainTransceiversOwnership**
-   - [x] Test successful ownership transfer
-   - [x] Test attempt to transfer ownership with non-owner account
-   - [ ] Test attempt to transfer ownership to the same owner
-   - [ ] Test attempt to transfer ownership to a zero address
-   - [ ] Test registration of transceivers after ownership transfer
+3. **SetTransceivers**
+   - [x] Test successful setting of incoming transceivers
+   - [x] Test successful setting of outgoing transceivers
+   - [ ] Test setting transceivers with an invalid authority (should fail)
+   - [ ] Test setting transceivers for a non-existent chain ID (should fail)
+   - [ ] Test setting transceivers with an invalid bitmap (e.g., with bits set beyond the maximum allowed transceiver ID)
+   - [ ] Test setting transceivers multiple times and verify that the bitmap is correctly updated each time
