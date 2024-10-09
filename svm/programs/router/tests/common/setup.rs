@@ -10,3 +10,16 @@ pub async fn setup() -> ProgramTestContext {
     // Start the test context
     program_test.start_with_context().await
 }
+
+pub async fn get_account<T: AccountDeserialize>(
+    banks_client: &mut solana_program_test::BanksClient,
+    address: Pubkey,
+) -> T {
+    let account = banks_client
+        .get_account(address)
+        .await
+        .unwrap()
+        .expect("account not found");
+
+    T::try_deserialize(&mut account.data.as_ref()).unwrap()
+}
