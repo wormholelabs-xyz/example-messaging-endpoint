@@ -9,7 +9,8 @@ pub struct InitIntegratorConfig<'info> {
     pub payer: Signer<'info>,
 
     /// The authority (owner) of the IntegratorConfig account
-    pub authority: Signer<'info>,
+    /// CHECK: The integrator program is responsible for passing the correct authority
+    pub authority: UncheckedAccount<'info>,
 
     /// The IntegratorConfig account being initialized
     #[account(
@@ -25,8 +26,7 @@ pub struct InitIntegratorConfig<'info> {
     pub integrator_config: Account<'info, IntegratorConfig>,
 
     /// The integrator program
-    /// CHECK: This account is not read or written in this instruction
-    pub integrator_program: UncheckedAccount<'info>,
+    pub integrator_program: Signer<'info>,
 
     /// The System Program
     pub system_program: Program<'info, System>,
