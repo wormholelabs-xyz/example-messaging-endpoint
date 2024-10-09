@@ -49,6 +49,8 @@ pub fn register_transceiver(
     }
 
     // Increment next_transceiver_id
+    // Note: We don't need to test for reinitialization of the registered_transceiver account
+    // because the seed `next_transceiver_id` is auto-incremented, ensuring a unique PDA for each call.
     ctx.accounts.integrator_config.next_transceiver_id = transceiver_id.checked_add(1).unwrap();
 
     // Initialize RegisteredTransceiver
