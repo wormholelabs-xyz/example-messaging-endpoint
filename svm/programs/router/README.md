@@ -100,9 +100,10 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 ### Tests
 
 1. **InitIntegratorConfig**
-   - [ ] Test successful initialization
-   - [ ] Test initialization with invalid authority
-   - [ ] Test double initialization (should fail)
+   - [x] Test successful initialization
+   - [x] Test double initialization (should fail)
+   - [x] Test initialization for different programs
+   - [ ] Test initialization with non-program-owner authority (not implemented yet)
 
 2. **InitializeIntegratorChainTransceivers**
    - [x] Test successful initialization

@@ -4,12 +4,12 @@ use anchor_lang::prelude::*;
 /// Accounts struct for initializing an IntegratorConfig account
 #[derive(Accounts)]
 pub struct InitIntegratorConfig<'info> {
-    /// The authority (owner) of the IntegratorConfig account
-    pub authority: Signer<'info>,
-
     /// The account paying for the initialization
     #[account(mut)]
     pub payer: Signer<'info>,
+
+    /// The authority (owner) of the IntegratorConfig account
+    pub authority: Signer<'info>,
 
     /// The IntegratorConfig account being initialized
     #[account(
