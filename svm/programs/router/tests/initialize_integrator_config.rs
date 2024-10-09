@@ -41,7 +41,7 @@ async fn test_initialize_integrator_config_success() {
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
 
-    assert_eq!(integrator_config.authority, authority);
+    assert_eq!(integrator_config.owner, authority);
     assert_eq!(integrator_config.program_id, integrator_program.pubkey());
     assert_eq!(integrator_config.next_transceiver_id, 0);
 }

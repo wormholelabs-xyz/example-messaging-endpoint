@@ -10,7 +10,7 @@ use solana_sdk::{
 
 pub async fn set_transceivers(
     context: &mut ProgramTestContext,
-    authority: &Keypair,
+    owner: &Keypair,
     payer: &Keypair,
     integrator_config: Pubkey,
     integrator_chain_transceivers: Pubkey,
@@ -21,7 +21,7 @@ pub async fn set_transceivers(
 ) -> Result<(), BanksClientError> {
     let accounts = SetTransceivers {
         payer: payer.pubkey(),
-        authority: authority.pubkey(),
+        owner: owner.pubkey(),
         integrator_config,
         integrator_chain_transceivers,
         integrator_program,
@@ -42,7 +42,7 @@ pub async fn set_transceivers(
     let transaction = Transaction::new_signed_with_payer(
         &[ix],
         Some(&payer.pubkey()),
-        &[payer, authority],
+        &[payer, owner],
         recent_blockhash,
     );
 

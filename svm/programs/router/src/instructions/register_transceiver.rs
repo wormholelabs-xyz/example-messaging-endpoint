@@ -8,13 +8,13 @@ pub struct RegisterTransceiver<'info> {
     pub payer: Signer<'info>,
 
     #[account(mut)]
-    pub authority: Signer<'info>,
+    pub owner: Signer<'info>,
 
     #[account(
         mut,
         seeds = [IntegratorConfig::SEED_PREFIX, integrator_program.key().as_ref()],
         bump = integrator_config.bump,
-        has_one = authority @ RouterError::InvalidIntegratorAuthority,
+        has_one = owner @ RouterError::InvalidIntegratorAuthority,
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 

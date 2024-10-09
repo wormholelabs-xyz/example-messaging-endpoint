@@ -11,13 +11,13 @@ use solana_sdk::{
 pub async fn initialize_integrator_config(
     context: &mut ProgramTestContext,
     payer: &Keypair,
-    authority: Pubkey,
+    owner: Pubkey,
     integrator_config: Pubkey,
     integrator_program: &Keypair,
 ) -> Result<(), BanksClientError> {
     let accounts = InitIntegratorConfig {
         payer: payer.pubkey(),
-        authority,
+        owner,
         integrator_config,
         integrator_program: integrator_program.pubkey(),
         system_program: solana_sdk::system_program::id(),
