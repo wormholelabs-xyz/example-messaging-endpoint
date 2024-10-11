@@ -15,8 +15,9 @@ pub struct IntegratorConfig {
     /// Program ID associated with this integrator
     pub integrator_program_id: Pubkey,
 
-    /// Counter for assigning IDs to transceivers
-    pub next_transceiver_id: u8,
+    /// Vector of registered transceiver addresses
+    #[max_len(32)]
+    pub transceivers: Vec<Pubkey>,
 }
 
 impl IntegratorConfig {
@@ -24,7 +25,7 @@ impl IntegratorConfig {
     pub const SEED_PREFIX: &'static [u8] = b"integrator_config";
 
     /// Maximum number of transceivers allowed
-    pub const MAX_TRANSCEIVERS: u8 = 128;
+    pub const MAX_TRANSCEIVERS: usize = 128;
 
     pub fn transfer_owner(&mut self, current_owner: &Signer, new_owner: Pubkey) -> Result<()> {
         require!(
@@ -35,13 +36,12 @@ impl IntegratorConfig {
         Ok(())
     }
 
-    pub fn increment_transceiver_id(&mut self) -> Result<u8> {
+    pub fn add_transceiver(&mut self, transceiver: Pubkey) -> Result<()> {
         require!(
-            self.next_transceiver_id < Self::MAX_TRANSCEIVERS,
+            self.transceivers.len() < Self::MAX_TRANSCEIVERS,
             RouterError::MaxTransceiversReached
         );
-        let current_id = self.next_transceiver_id;
-        self.next_transceiver_id += 1;
-        Ok(current_id)
+        self.transceivers.push(transceiver);
+        Ok(())
     }
 }

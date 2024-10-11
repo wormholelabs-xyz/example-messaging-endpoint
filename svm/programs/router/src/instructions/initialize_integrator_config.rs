@@ -42,7 +42,7 @@ pub fn init_integrator_config(ctx: Context<InitIntegratorConfig>) -> Result<()> 
         bump: ctx.bumps.integrator_config,
         owner: ctx.accounts.owner.key(),
         integrator_program_id: ctx.accounts.integrator_program.key(),
-        next_transceiver_id: 0,
+        transceivers: Vec::new(),
     });
 
     msg!("IntegratorConfig initialized successfully");
