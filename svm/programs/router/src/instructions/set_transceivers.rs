@@ -3,13 +3,13 @@ use crate::state::{IntegratorChainTransceivers, IntegratorConfig, RegisteredTran
 use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct SetInTransceiverArgs {
+pub struct SetTransceiverArgs {
     pub chain_id: u16,
 }
 
 #[derive(Accounts)]
-#[instruction(args: SetInTransceiverArgs)]
-pub struct SetInTransceiver<'info> {
+#[instruction(args: SetTransceiverArgs)]
+pub struct SetTransceiver<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
@@ -50,20 +50,38 @@ pub struct SetInTransceiver<'info> {
     pub transceiver: AccountInfo<'info>,
 }
 
-pub fn set_in_transceiver(
-    ctx: Context<SetInTransceiver>,
-    args: SetInTransceiverArgs,
-) -> Result<()> {
+pub fn set_in_transceiver(ctx: Context<SetTransceiver>, args: SetTransceiverArgs) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
 
     // Convert usize to u8, panicking if the value doesn't fit
     let transceiver_id = registered_transceiver.id.try_into().unwrap();
 
-    // Set the bit corresponding to the registered_transceiver id
+    // Toggle the bit corresponding to the registered_transceiver id
+    let current_state = integrator_chain_transceivers
+        .in_transceiver_bitmap
+        .get(transceiver_id)?;
     integrator_chain_transceivers
         .in_transceiver_bitmap
-        .set(transceiver_id, true)?;
+        .set(transceiver_id, !current_state)?;
+
+    Ok(())
+}
+
+pub fn set_out_transceiver(ctx: Context<SetTransceiver>, args: SetTransceiverArgs) -> Result<()> {
+    let registered_transceiver = &ctx.accounts.registered_transceiver;
+    let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
+
+    // Convert usize to u8, panicking if the value doesn't fit
+    let transceiver_id = registered_transceiver.id.try_into().unwrap();
+
+    // Toggle the bit corresponding to the registered_transceiver id
+    let current_state = integrator_chain_transceivers
+        .out_transceiver_bitmap
+        .get(transceiver_id)?;
+    integrator_chain_transceivers
+        .out_transceiver_bitmap
+        .set(transceiver_id, !current_state)?;
 
     Ok(())
 }

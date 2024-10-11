@@ -54,12 +54,26 @@ pub mod router {
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
-    /// * `args` - A `SetInTransceiverArgs` struct containing:
+    /// * `args` - A `SetTransceiverArgs` struct containing:
     ///     * `chain_id` - The ID of the chain for which the transceiver is being set
     pub fn set_in_transceiver(
-        ctx: Context<SetInTransceiver>,
-        args: SetInTransceiverArgs,
+        ctx: Context<SetTransceiver>,
+        args: SetTransceiverArgs,
     ) -> Result<()> {
         instructions::set_transceivers::set_in_transceiver(ctx, args)
+    }
+
+    /// Sets a transceiver as an outgoing transceiver for a specific chain
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `args` - A `SetTransceiverArgs` struct containing:
+    ///     * `chain_id` - The ID of the chain for which the transceiver is being set
+    pub fn set_out_transceiver(
+        ctx: Context<SetTransceiver>,
+        args: SetTransceiverArgs,
+    ) -> Result<()> {
+        instructions::set_transceivers::set_out_transceiver(ctx, args)
     }
 }
