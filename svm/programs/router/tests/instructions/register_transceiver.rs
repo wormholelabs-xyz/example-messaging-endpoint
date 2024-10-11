@@ -24,16 +24,14 @@ pub async fn register_transceiver(
         integrator_config,
         registered_transceiver,
         integrator_program,
+        transceiver_address,
         system_program: solana_sdk::system_program::id(),
     };
 
     let ix = Instruction {
         program_id: router::id(),
         accounts: accounts.to_account_metas(None),
-        data: router::instruction::RegisterTransceiver {
-            transceiver_address,
-        }
-        .data(),
+        data: router::instruction::RegisterTransceiver {}.data(),
     };
 
     execute_transaction(context, ix, &[owner, payer], payer).await

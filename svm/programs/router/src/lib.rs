@@ -45,26 +45,7 @@ pub mod router {
     ///
     /// * `ctx` - The context of the instruction
     /// * `transceiver_address` - The address of the transceiver to be registered
-    pub fn register_transceiver(
-        ctx: Context<RegisterTransceiver>,
-        transceiver_address: Pubkey,
-    ) -> Result<()> {
-        instructions::register_transceiver::register_transceiver(ctx, transceiver_address)
-    }
-
-    pub fn set_in_transceivers(
-        ctx: Context<SetTransceivers>,
-        chain_id: u16,
-        bitmap: u128,
-    ) -> Result<()> {
-        instructions::set_transceivers::set_in_transceivers(ctx, chain_id, bitmap)
-    }
-
-    pub fn set_out_transceivers(
-        ctx: Context<SetTransceivers>,
-        chain_id: u16,
-        bitmap: u128,
-    ) -> Result<()> {
-        instructions::set_transceivers::set_out_transceivers(ctx, chain_id, bitmap)
+    pub fn register_transceiver(ctx: Context<RegisterTransceiver>) -> Result<()> {
+        instructions::register_transceiver::register_transceiver(ctx)
     }
 }

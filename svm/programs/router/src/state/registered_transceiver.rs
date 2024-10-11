@@ -24,9 +24,13 @@ impl RegisteredTransceiver {
     /// Seed prefix for deriving RegisteredTransceiver PDAs
     pub const SEED_PREFIX: &'static [u8] = b"registered_transceiver";
 
-    pub fn pda(integrator_program_id: &Pubkey, id: u8) -> (Pubkey, u8) {
+    pub fn pda(integrator_program_id: &Pubkey, transceiver_address: &Pubkey) -> (Pubkey, u8) {
         Pubkey::find_program_address(
-            &[Self::SEED_PREFIX, integrator_program_id.as_ref(), &[id]],
+            &[
+                Self::SEED_PREFIX,
+                integrator_program_id.as_ref(),
+                transceiver_address.as_ref(),
+            ],
             &crate::ID,
         )
     }

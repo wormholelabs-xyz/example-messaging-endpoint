@@ -25,7 +25,7 @@ pub struct RegisterTransceiver<'info> {
         seeds = [
             RegisteredTransceiver::SEED_PREFIX,
             integrator_program.key().as_ref(),
-            &[integrator_config.next_transceiver_id],
+            transceiver_address.key().as_ref(),
         ],
         bump
     )]
@@ -34,24 +34,25 @@ pub struct RegisterTransceiver<'info> {
     /// CHECK: This account is not read or written in this instruction
     pub integrator_program: UncheckedAccount<'info>,
 
+    /// CHECK: This is the address of the transceiver being registered
+    pub transceiver_address: UncheckedAccount<'info>,
+
     pub system_program: Program<'info, System>,
 }
 
-pub fn register_transceiver(
-    ctx: Context<RegisterTransceiver>,
-    transceiver_address: Pubkey,
-) -> Result<()> {
-    let transceiver_id = ctx.accounts.integrator_config.next_transceiver_id;
+pub fn register_transceiver(ctx: Context<RegisterTransceiver>) -> Result<()> {
+    let transceiver_id = ctx.accounts.integrator_config.transceivers.len() as u8;
 
     // Check if we've reached the maximum number of transceivers
-    if transceiver_id >= IntegratorConfig::MAX_TRANSCEIVERS {
+    if transceiver_id >= IntegratorConfig::MAX_TRANSCEIVERS as u8 {
         return Err(RouterError::MaxTransceiversReached.into());
     }
 
-    // Increment next_transceiver_id
-    // Note: We don't need to test for reinitialization of the registered_transceiver account
-    // because the seed `next_transceiver_id` is auto-incremented, ensuring a unique PDA for each call.
-    ctx.accounts.integrator_config.next_transceiver_id = transceiver_id.checked_add(1).unwrap();
+    // Add the new transceiver to the list
+    ctx.accounts
+        .integrator_config
+        .transceivers
+        .push(ctx.accounts.transceiver_address.key());
 
     // Initialize RegisteredTransceiver
     ctx.accounts
@@ -60,7 +61,7 @@ pub fn register_transceiver(
             bump: ctx.bumps.registered_transceiver,
             id: transceiver_id,
             integrator_program_id: ctx.accounts.integrator_program.key(),
-            address: transceiver_address,
+            address: ctx.accounts.transceiver_address.key(),
         });
 
     Ok(())
