@@ -3,6 +3,8 @@
 mod common;
 mod instructions;
 
+use core::panic;
+
 use crate::instructions::initialize_integrator_config::initialize_integrator_config;
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
@@ -50,7 +52,7 @@ async fn test_initialize_integrator_config_success() {
         integrator_config.integrator_program_id,
         integrator_program.pubkey()
     );
-    assert_eq!(integrator_config.next_transceiver_id, 0);
+    assert_eq!(integrator_config.transceivers.len(), 0);
 }
 
 #[tokio::test]

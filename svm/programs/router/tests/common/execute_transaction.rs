@@ -11,10 +11,7 @@ pub async fn execute_transaction(
     signers: &[&Keypair],
     payer: &Keypair,
 ) -> Result<(), BanksClientError> {
-    let recent_blockhash = context
-        .banks_client
-        .get_new_latest_blockhash(&context.last_blockhash)
-        .await?;
+    let recent_blockhash = context.get_new_latest_blockhash().await?;
 
     // Update the context's last_blockhash
     context.last_blockhash = recent_blockhash;
