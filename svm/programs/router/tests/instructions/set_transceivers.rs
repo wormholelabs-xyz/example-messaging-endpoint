@@ -1,6 +1,6 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use router::accounts::SetInTransceiver;
-use router::instructions::SetInTransceiverArgs;
+use router::accounts::SetTransceiver;
+use router::instructions::SetTransceiverArgs;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -22,7 +22,7 @@ pub async fn set_transceivers(
     chain_id: u16,
     is_incoming: bool,
 ) -> Result<(), BanksClientError> {
-    let accounts = SetInTransceiver {
+    let accounts = SetTransceiver {
         payer: payer.pubkey(),
         owner: owner.pubkey(),
         integrator_config,
@@ -32,7 +32,7 @@ pub async fn set_transceivers(
         transceiver,
     };
 
-    let args = SetInTransceiverArgs { chain_id };
+    let args = SetTransceiverArgs { chain_id };
 
     let ix = Instruction {
         program_id: router::id(),
@@ -40,7 +40,7 @@ pub async fn set_transceivers(
         data: if is_incoming {
             router::instruction::SetInTransceiver { args }.data()
         } else {
-            router::instruction::SetInTransceiver { args }.data()
+            router::instruction::SetOutTransceiver { args }.data()
         },
     };
     execute_transaction(context, ix, &[owner, payer], payer).await
