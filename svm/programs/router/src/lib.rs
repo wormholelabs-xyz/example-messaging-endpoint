@@ -48,4 +48,18 @@ pub mod router {
     pub fn register_transceiver(ctx: Context<RegisterTransceiver>) -> Result<()> {
         instructions::register_transceiver::register_transceiver(ctx)
     }
+
+    /// Sets a transceiver as an incoming transceiver for a specific chain
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `args` - A `SetInTransceiverArgs` struct containing:
+    ///     * `chain_id` - The ID of the chain for which the transceiver is being set
+    pub fn set_in_transceiver(
+        ctx: Context<SetInTransceiver>,
+        args: SetInTransceiverArgs,
+    ) -> Result<()> {
+        instructions::set_transceivers::set_in_transceiver(ctx, args)
+    }
 }

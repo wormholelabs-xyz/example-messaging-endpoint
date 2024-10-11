@@ -23,7 +23,7 @@ use solana_sdk::{
 
 async fn initialize_test_environment(
     context: &mut ProgramTestContext,
-) -> (Keypair, Pubkey, Pubkey, Pubkey, u16) {
+) -> (Keypair, Pubkey, Pubkey, Pubkey, Pubkey, Pubkey, u16) {
     let payer = context.payer.insecure_clone();
     let owner = Keypair::new();
     let integrator_program = Keypair::new();
@@ -71,15 +71,16 @@ async fn initialize_test_environment(
     .unwrap();
 
     // Register a transceiver
-    let transceiver_address = Keypair::new().pubkey();
+    let transceiver_address = Pubkey::new_unique(); // Generate a unique pubkey for the transceiver
     let (registered_transceiver_pda, _) = Pubkey::find_program_address(
         &[
             RegisteredTransceiver::SEED_PREFIX,
             integrator_program.pubkey().as_ref(),
-            &[0], // First transceiver ID
+            transceiver_address.as_ref(),
         ],
         &router::id(),
     );
+
     register_transceiver(
         context,
         &owner,
@@ -97,6 +98,8 @@ async fn initialize_test_environment(
         integrator_program.pubkey(),
         integrator_config_pda,
         integrator_chain_transceivers_pda,
+        registered_transceiver_pda,
+        transceiver_address,
         chain_id,
     )
 }
@@ -135,11 +138,12 @@ async fn test_set_in_transceivers_success() {
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_transceivers_pda,
+        registered_transceiver_pda,
+        transceiver,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
 
     let is_incoming = true;
-    let bitmap: u128 = 0b1;
     let payer = context.payer.insecure_clone();
 
     let result = set_transceivers(
@@ -149,14 +153,15 @@ async fn test_set_in_transceivers_success() {
         integrator_config_pda,
         integrator_chain_transceivers_pda,
         integrator_program_id,
+        registered_transceiver_pda,
+        transceiver,
         chain_id,
         is_incoming,
-        bitmap,
     )
     .await;
     assert!(result.is_ok());
 
-    verify_transceiver_state(&mut context, integrator_chain_transceivers_pda, bitmap, 0).await;
+    verify_transceiver_state(&mut context, integrator_chain_transceivers_pda, 1, 0).await;
 }
 
 #[tokio::test]
@@ -167,13 +172,15 @@ async fn test_set_in_transceivers_multiple_sets_success() {
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_transceivers_pda,
+        registered_transceiver_pda,
+        transceiver,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
 
     let is_incoming = true;
-    let bitmap: u128 = 0b1;
     let payer = context.payer.insecure_clone();
 
+    // Set the first transceiver
     let result = set_transceivers(
         &mut context,
         &authority,
@@ -181,13 +188,38 @@ async fn test_set_in_transceivers_multiple_sets_success() {
         integrator_config_pda,
         integrator_chain_transceivers_pda,
         integrator_program_id,
+        registered_transceiver_pda,
+        transceiver,
         chain_id,
         is_incoming,
-        bitmap,
     )
     .await;
     assert!(result.is_ok());
 
+    // Register a second transceiver
+    let transceiver2_address = Pubkey::new_unique();
+    let (registered_transceiver2_pda, _) = Pubkey::find_program_address(
+        &[
+            RegisteredTransceiver::SEED_PREFIX,
+            integrator_program_id.as_ref(),
+            transceiver2_address.as_ref(),
+        ],
+        &router::id(),
+    );
+
+    register_transceiver(
+        &mut context,
+        &authority,
+        &payer,
+        integrator_config_pda,
+        registered_transceiver2_pda,
+        integrator_program_id,
+        transceiver2_address,
+    )
+    .await
+    .unwrap();
+
+    // Set the second transceiver
     let result = set_transceivers(
         &mut context,
         &authority,
@@ -195,14 +227,16 @@ async fn test_set_in_transceivers_multiple_sets_success() {
         integrator_config_pda,
         integrator_chain_transceivers_pda,
         integrator_program_id,
+        registered_transceiver2_pda,
+        transceiver2_address,
         chain_id,
         is_incoming,
-        0,
     )
     .await;
     assert!(result.is_ok());
 
-    verify_transceiver_state(&mut context, integrator_chain_transceivers_pda, 0, 0).await;
+    // Verify that both transceivers are set
+    verify_transceiver_state(&mut context, integrator_chain_transceivers_pda, 0b11, 0).await;
 }
 
 #[tokio::test]
@@ -213,11 +247,12 @@ async fn test_set_out_transceivers_success() {
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_transceivers_pda,
+        registered_transceiver_pda,
+        transceiver,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
 
     let is_incoming = false;
-    let bitmap: u128 = 0b1;
     let payer = context.payer.insecure_clone();
 
     let result = set_transceivers(
@@ -227,15 +262,16 @@ async fn test_set_out_transceivers_success() {
         integrator_config_pda,
         integrator_chain_transceivers_pda,
         integrator_program_id,
+        registered_transceiver_pda,
+        transceiver,
         chain_id,
         is_incoming,
-        bitmap,
     )
     .await;
 
     assert!(result.is_ok());
 
-    verify_transceiver_state(&mut context, integrator_chain_transceivers_pda, 0, bitmap).await;
+    verify_transceiver_state(&mut context, integrator_chain_transceivers_pda, 0, 1).await;
 }
 
 #[tokio::test]
@@ -246,13 +282,14 @@ async fn test_set_transceivers_invalid_authority() {
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_transceivers_pda,
+        registered_transceiver_pda,
+        transceiver,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
 
     // Create a new keypair to act as an invalid authority
     let invalid_authority = Keypair::new();
     let is_incoming = true;
-    let bitmap: u128 = 0b1010101010101010;
     let payer = context.payer.insecure_clone();
 
     let result = set_transceivers(
@@ -262,9 +299,10 @@ async fn test_set_transceivers_invalid_authority() {
         integrator_config_pda,
         integrator_chain_transceivers_pda,
         integrator_program_id,
+        registered_transceiver_pda,
+        transceiver,
         chain_id,
         is_incoming,
-        bitmap,
     )
     .await;
 
@@ -290,12 +328,14 @@ async fn test_set_transceivers_invalid_transceiver_id() {
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_transceivers_pda,
+        registered_transceiver_pda,
+        _transceiver,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
 
     let is_incoming = true;
-    // Set a bitmap with a bit beyond the initial next_transceiver_id (which is 0)
-    let bitmap: u128 = 0b10;
+    // Use an invalid transceiver pubkey
+    let invalid_transceiver = Keypair::new().pubkey();
     let payer = context.payer.insecure_clone();
 
     let result = set_transceivers(
@@ -305,9 +345,10 @@ async fn test_set_transceivers_invalid_transceiver_id() {
         integrator_config_pda,
         integrator_chain_transceivers_pda,
         integrator_program_id,
+        registered_transceiver_pda,
+        invalid_transceiver,
         chain_id,
         is_incoming,
-        bitmap,
     )
     .await;
 
@@ -318,7 +359,7 @@ async fn test_set_transceivers_invalid_transceiver_id() {
         err.unwrap(),
         TransactionError::InstructionError(
             0,
-            InstructionError::Custom(RouterError::InvalidTransceiverId.into())
+            InstructionError::Custom(2006)
         )
     );
 
