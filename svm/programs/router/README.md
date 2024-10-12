@@ -1,6 +1,7 @@
 # GMP Router
 
 ## Table of Contents
+
 1. [Project Overview](#project-overview)
 2. [Architecture](#architecture)
 3. [Key Components](#key-components)
@@ -9,6 +10,7 @@
 6. [Testing](#testing)
 
 ## Architecture
+
 ```mermaid
 classDiagram
     class IntegratorConfig {
@@ -43,16 +45,88 @@ classDiagram
    IntegratorChainTransceivers "1" -- "*" RegisteredTransceiver : corresponds to
 ```
 
+### Program Structure
+
+```mermaid
+graph LR
+    GMP[GMP Router Program]
+    I1[Integrator 1]
+    I2[Integrator 2]
+    I3[Integrator 3]
+    T1[Transceivers Vec]
+    T2[Transceivers Vec]
+    T3[Transceivers Vec]
+    C1[Chain 1]
+    C2[Chain 2]
+    C3[Chain 3]
+    SB1[Send Bitmap]
+    RB1[Receive Bitmap]
+    SB2[Send Bitmap]
+    RB2[Receive Bitmap]
+    SB3[Send Bitmap]
+    RB3[Receive Bitmap]
+
+    GMP --> I1
+    GMP --> I2
+    GMP --> I3
+    I1 --> T1
+    I2 --> T2
+    I3 --> T3
+    I1 --> C1
+    I1 --> C2
+    I1 --> C3
+    C1 --> SB1
+    C1 --> RB1
+    C2 --> SB2
+    C2 --> RB2
+    C3 --> SB3
+    C3 --> RB3
+
+    subgraph "Transceiver Vector"
+    T1 --- TV1[T1]
+    T1 --- TV2[T2]
+    T1 --- TV3[T3]
+    T1 --- TV4[...]
+    T1 --- TV128[T128]
+    end
+
+    subgraph "Bitmap (128 bits)"
+    SB1 --- B1[1]
+    SB1 --- B2[0]
+    SB1 --- B3[1]
+    SB1 --- B4[...]
+    SB1 --- B128[0]
+    end
+
+    SB1 -.-> T1
+    RB1 -.-> T1
+    SB2 -.-> T1
+    RB2 -.-> T1
+    SB3 -.-> T1
+    RB3 -.-> T1
+```
+
+This diagram illustrates the overall structure of the GMP Router program:
+
+- The program manages multiple integrators.
+- Each integrator has a vector of up to 128 transceivers.
+- For each integrator, there are multiple chains.
+- Each chain has a send bitmap and a receive bitmap.
+- The bitmaps correspond to the transceiver vector, indicating which transceivers are enabled for sending or receiving on that specific chain.
+
 ## Key Components
 
 ### IntegratorConfig
+
 Stores configuration specific to an Integrator.
+
 - **bump**: Bump seed for PDA derivation
 - **owner**: The owner of the IntegratorConfig account
 - **integrator_program_id**: The program ID of the Integrator
 - **transceivers**: Vector of registered transceiver addresses (max 32)
 
 **PDA Derivation**:
+
 - Seeds: `[SEED_PREFIX, integrator_program_id]`
 - Unique for each integrator program
 - Initialization:
@@ -60,7 +134,9 @@ Stores configuration specific to an Integrator.
   - Owner is set during initialization (not required to sign)
 
 ### IntegratorChainTransceivers
+
 Manages transceivers for a specific integrator on a particular chain.
+
 - **bump**: Bump seed for PDA derivation
 - **chain_id**: Identifier for the blockchain network
 - **integrator_program_id**: The program ID of the Integrator
@@ -68,27 +144,34 @@ Manages transceivers for a specific integrator on a particular chain.
 - **send_transceiver_bitmap**: Bitmap tracking enabled send transceivers
 
 **PDA Derivation**:
+
 - Seeds: `[SEED_PREFIX, integrator_program_id, chain_id]`
 - Unique for each integrator program and chain combination
 - Initialization: Requires owner's signature and existing IntegratorConfig account
 
 ### RegisteredTransceiver
+
 Represents a registered transceiver in the GMP Router.
+
 - **bump**: Bump seed for PDA derivation
 - **id**: Unique ID of the transceiver within the integrator's context
 - **integrator_program_id**: The program ID of the Integrator
 - **address**: Public key of the transceiver's address
 
 **PDA Derivation**:
+
 - Seeds: `[SEED_PREFIX, integrator_program_id, transceiver_address]`
 - Unique for each transceiver within an integrator context
 
 **Constraints**:
+
 - Maximum of 128 transceivers per integrator
 - Will return an error (MaxTransceiversReached) if this limit is exceeded
 
 ### Bitmap
+
 Utility struct for efficient storage and manipulation of boolean flags.
+
 - **map**: Stores the bitmap as a `u128`
 
 ## Instructions
@@ -105,6 +188,7 @@ Utility struct for efficient storage and manipulation of boolean flags.
 ## Error Handling
 
 The program uses a custom `RouterError` enum to handle various error cases, including:
+
 - Invalid integrator authority
 - Bitmap index out of bounds
 - Maximum number of transceivers reached
@@ -113,17 +197,20 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 ## Testing
 
 ### InitIntegratorConfig
+
 - [x] Successful initialization
 - [x] Reinitialization (should fail with AccountAlreadyInUse error)
 - [x] Initialization for different integrator programs
 
 ### InitializeIntegratorChainTransceivers
+
 - [x] Successful initialization
 - [x] Initialization for already initialized chain (should fail)
 - [x] Initialization for different chains
 - [x] Initialization with invalid authority
 
 ### RegisterTransceiver
+
 - [x] Successful registration
 - [x] Registration of multiple transceivers
 - [x] Registration causing maximum transceivers reached error
@@ -132,6 +219,7 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 - [ ] Registration with invalid transceiver address (TBD: determine validation criteria)
 
 ### SetTransceivers
+
 - [x] Successful setting of incoming transceivers
 - [x] Successful setting of outgoing transceivers
 - [x] Setting transceivers with invalid authority
@@ -139,6 +227,7 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 - [x] Multiple updates of transceiver settings
 
 ### TransferIntegratorConfigOwnership
+
 - [x] Successful ownership transfer
 - [x] Transfer with invalid current owner
 - [x] Transfer to the same owner
