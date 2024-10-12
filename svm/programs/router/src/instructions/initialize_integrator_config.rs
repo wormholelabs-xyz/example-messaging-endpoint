@@ -9,6 +9,7 @@ pub struct InitIntegratorConfig<'info> {
     pub payer: Signer<'info>,
 
     /// The owner of the IntegratorConfig account
+    /// TODO: check if this should be a signer
     /// CHECK: The integrator program is responsible for passing the correct owner
     pub owner: UncheckedAccount<'info>,
 

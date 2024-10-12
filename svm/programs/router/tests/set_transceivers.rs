@@ -143,7 +143,6 @@ async fn test_set_in_transceivers_success() {
         chain_id,
     ) = initialize_test_environment(&mut context).await;
 
-    let is_incoming = true;
     let payer = context.payer.insecure_clone();
 
     let result = set_recv_transceiver(
@@ -176,7 +175,6 @@ async fn test_set_in_transceivers_multiple_sets_success() {
         chain_id,
     ) = initialize_test_environment(&mut context).await;
 
-    let is_incoming = true;
     let payer = context.payer.insecure_clone();
 
     // Set the first transceiver
@@ -249,7 +247,6 @@ async fn test_set_out_transceivers_success() {
         chain_id,
     ) = initialize_test_environment(&mut context).await;
 
-    let is_incoming = false;
     let payer = context.payer.insecure_clone();
 
     let result = set_send_transceiver(
@@ -285,7 +282,6 @@ async fn test_set_transceivers_invalid_authority() {
 
     // Create a new keypair to act as an invalid authority
     let invalid_authority = Keypair::new();
-    let is_incoming = true;
     let payer = context.payer.insecure_clone();
 
     let result = set_recv_transceiver(
@@ -328,7 +324,6 @@ async fn test_set_transceivers_invalid_transceiver_id() {
         chain_id,
     ) = initialize_test_environment(&mut context).await;
 
-    let is_incoming = true;
     // Use an invalid transceiver pubkey
     let invalid_transceiver = Keypair::new().pubkey();
     let payer = context.payer.insecure_clone();

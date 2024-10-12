@@ -88,14 +88,12 @@ async fn test_initialize_integrator_chain_transceivers_success() {
         integrator_chain_transceivers.integrator_program_id,
         integrator_program_id
     );
-    for i in 0..128 {
-        assert!(integrator_chain_transceivers
-            .send_transceiver_bitmap
-            .is_empty());
-        assert!(integrator_chain_transceivers
-            .recv_transceiver_bitmap
-            .is_empty());
-    }
+    assert!(integrator_chain_transceivers
+        .send_transceiver_bitmap
+        .is_empty());
+    assert!(integrator_chain_transceivers
+        .recv_transceiver_bitmap
+        .is_empty());
 }
 
 #[tokio::test]
@@ -181,7 +179,7 @@ async fn test_initialize_integrator_chain_transceivers_different_chains() {
 #[tokio::test]
 async fn test_initialize_integrator_chain_transceivers_invalid_authority() {
     let mut context = setup().await;
-    let (_, payer, integrator_program_id, integrator_config_pda, _, chain_id) =
+    let (_, payer, integrator_program_id, integrator_config_pda, _, _) =
         initialize_test_environment(&mut context).await;
 
     // Create a different authority that wasn't used in the setup
