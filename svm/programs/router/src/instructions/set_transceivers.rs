@@ -50,38 +50,68 @@ pub struct SetTransceiver<'info> {
     pub transceiver: AccountInfo<'info>,
 }
 
-pub fn set_in_transceiver(ctx: Context<SetTransceiver>, args: SetTransceiverArgs) -> Result<()> {
+pub fn set_recv_transceiver(ctx: Context<SetTransceiver>, args: SetTransceiverArgs) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
 
     // Convert usize to u8, panicking if the value doesn't fit
     let transceiver_id = registered_transceiver.id.try_into().unwrap();
 
-    // Toggle the bit corresponding to the registered_transceiver id
-    let current_state = integrator_chain_transceivers
-        .in_transceiver_bitmap
-        .get(transceiver_id)?;
+    // Set the bit corresponding to the registered_transceiver id
     integrator_chain_transceivers
-        .in_transceiver_bitmap
-        .set(transceiver_id, !current_state)?;
+        .recv_transceiver_bitmap
+        .set(transceiver_id, true)?;
 
     Ok(())
 }
 
-pub fn set_out_transceiver(ctx: Context<SetTransceiver>, args: SetTransceiverArgs) -> Result<()> {
+pub fn disable_recv_transceiver(
+    ctx: Context<SetTransceiver>,
+    args: SetTransceiverArgs,
+) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
 
     // Convert usize to u8, panicking if the value doesn't fit
     let transceiver_id = registered_transceiver.id.try_into().unwrap();
 
-    // Toggle the bit corresponding to the registered_transceiver id
-    let current_state = integrator_chain_transceivers
-        .out_transceiver_bitmap
-        .get(transceiver_id)?;
+    // Clear the bit corresponding to the registered_transceiver id
     integrator_chain_transceivers
-        .out_transceiver_bitmap
-        .set(transceiver_id, !current_state)?;
+        .recv_transceiver_bitmap
+        .set(transceiver_id, false)?;
+
+    Ok(())
+}
+
+pub fn set_send_transceiver(ctx: Context<SetTransceiver>, args: SetTransceiverArgs) -> Result<()> {
+    let registered_transceiver = &ctx.accounts.registered_transceiver;
+    let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
+
+    // Convert usize to u8, panicking if the value doesn't fit
+    let transceiver_id = registered_transceiver.id.try_into().unwrap();
+
+    // Set the bit corresponding to the registered_transceiver id
+    integrator_chain_transceivers
+        .send_transceiver_bitmap
+        .set(transceiver_id, true)?;
+
+    Ok(())
+}
+
+pub fn disable_send_transceiver(
+    ctx: Context<SetTransceiver>,
+    args: SetTransceiverArgs,
+) -> Result<()> {
+    let registered_transceiver = &ctx.accounts.registered_transceiver;
+    let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
+
+    // Convert usize to u8, panicking if the value doesn't fit
+    let transceiver_id = registered_transceiver.id.try_into().unwrap();
+
+    // Clear the bit corresponding to the registered_transceiver id
+    integrator_chain_transceivers
+        .send_transceiver_bitmap
+        .set(transceiver_id, false)?;
 
     Ok(())
 }
