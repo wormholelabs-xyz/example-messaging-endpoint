@@ -89,14 +89,12 @@ async fn test_initialize_integrator_chain_transceivers_success() {
         integrator_program_id
     );
     for i in 0..128 {
-        assert!(!integrator_chain_transceivers
-            .in_transceiver_bitmap
-            .get(i)
-            .unwrap());
-        assert!(!integrator_chain_transceivers
-            .out_transceiver_bitmap
-            .get(i)
-            .unwrap());
+        assert!(integrator_chain_transceivers
+            .send_transceiver_bitmap
+            .is_empty());
+        assert!(integrator_chain_transceivers
+            .recv_transceiver_bitmap
+            .is_empty());
     }
 }
 

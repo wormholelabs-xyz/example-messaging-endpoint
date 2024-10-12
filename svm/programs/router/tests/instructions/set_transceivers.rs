@@ -19,7 +19,6 @@ async fn execute_set_transceiver(
     integrator_program: Pubkey,
     registered_transceiver: Pubkey,
     transceiver: Pubkey,
-    chain_id: u16,
     instruction_data: Vec<u8>,
 ) -> Result<(), BanksClientError> {
     let accounts = SetTransceiver {
@@ -62,7 +61,6 @@ pub async fn set_recv_transceiver(
         integrator_program,
         registered_transceiver,
         transceiver,
-        chain_id,
         instruction_data,
     )
     .await
@@ -90,7 +88,6 @@ pub async fn disable_recv_transceiver(
         integrator_program,
         registered_transceiver,
         transceiver,
-        chain_id,
         instruction_data,
     )
     .await
@@ -118,7 +115,6 @@ pub async fn set_send_transceiver(
         integrator_program,
         registered_transceiver,
         transceiver,
-        chain_id,
         instruction_data,
     )
     .await
@@ -146,7 +142,6 @@ pub async fn disable_send_transceiver(
         integrator_program,
         registered_transceiver,
         transceiver,
-        chain_id,
         instruction_data,
     )
     .await
