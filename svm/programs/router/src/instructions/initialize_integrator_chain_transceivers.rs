@@ -4,9 +4,14 @@ use crate::{
 };
 use anchor_lang::prelude::*;
 
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct InitializeIntegratorChainTransceiversArgs {
+    pub chain_id: u16,
+}
+
 /// Accounts struct for initializing an IntegratorChainTransceivers account
 #[derive(Accounts)]
-#[instruction(chain_id: u16)]
+#[instruction(args: InitializeIntegratorChainTransceiversArgs)]
 pub struct InitializeIntegratorChainTransceivers<'info> {
     /// The account paying for the initialization
     #[account(mut)]
@@ -23,7 +28,7 @@ pub struct InitializeIntegratorChainTransceivers<'info> {
         seeds = [
             IntegratorChainTransceivers::SEED_PREFIX,
             integrator_program.key().as_ref(),
-            chain_id.to_le_bytes().as_ref(),
+            args.chain_id.to_le_bytes().as_ref(),
         ],
         bump
     )]
@@ -50,18 +55,18 @@ pub struct InitializeIntegratorChainTransceivers<'info> {
 
 pub fn initialize_integrator_chain_transceivers(
     ctx: Context<InitializeIntegratorChainTransceivers>,
-    chain_id: u16,
+    args: InitializeIntegratorChainTransceiversArgs,
 ) -> Result<()> {
     msg!(
         "Initializing IntegratorChainTransceivers for chain_id: {}",
-        chain_id
+        args.chain_id
     );
 
     ctx.accounts
         .integrator_chain_transceivers
         .set_inner(IntegratorChainTransceivers::new(
             ctx.bumps.integrator_chain_transceivers,
-            chain_id,
+            args.chain_id,
             ctx.accounts.integrator_program.key(),
         ));
 

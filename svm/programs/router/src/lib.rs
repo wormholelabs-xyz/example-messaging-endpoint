@@ -28,13 +28,13 @@ pub mod router {
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
-    /// * `chain_id` - The ID of the chain for which the transceivers are being initialized
+    /// * `args` - The arguments for initializing integrator chain transceivers
     pub fn initialize_integrator_chain_transceivers(
         ctx: Context<InitializeIntegratorChainTransceivers>,
-        chain_id: u16,
+        args: InitializeIntegratorChainTransceiversArgs,
     ) -> Result<()> {
         instructions::initialize_integrator_chain_transceivers::initialize_integrator_chain_transceivers(
-            ctx, chain_id,
+            ctx, args,
         )
     }
 

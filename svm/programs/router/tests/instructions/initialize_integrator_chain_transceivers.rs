@@ -1,5 +1,8 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use router::accounts::InitializeIntegratorChainTransceivers;
+use router::{
+    accounts::InitializeIntegratorChainTransceivers,
+    instructions::InitializeIntegratorChainTransceiversArgs,
+};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -30,7 +33,10 @@ pub async fn initialize_integrator_chain_transceivers(
     let ix = Instruction {
         program_id: router::id(),
         accounts: accounts.to_account_metas(None),
-        data: router::instruction::InitializeIntegratorChainTransceivers { chain_id }.data(),
+        data: router::instruction::InitializeIntegratorChainTransceivers {
+            args: InitializeIntegratorChainTransceiversArgs { chain_id },
+        }
+        .data(),
     };
 
     execute_transaction(context, ix, &[owner, payer], payer).await

@@ -108,10 +108,10 @@ graph LR
 
 This diagram illustrates the overall structure of the GMP Router program:
 
-- The program manages multiple integrators.
-- Each integrator has a vector of up to 128 transceivers.
-- For each integrator, there are multiple chains.
-- Each chain has a send bitmap and a receive bitmap.
+- The program can track multiple integrators.
+- Each integrator has a vector to store up to 128 transceivers.
+- Every integrator can track their config for each chain id as long as it is within the u16 data type.
+- Each chain config has a send bitmap and a receive bitmap.
 - The bitmaps correspond to the transceiver vector, indicating which transceivers are enabled for sending or receiving on that specific chain.
 
 ## Key Components
@@ -131,6 +131,7 @@ Stores configuration specific to an Integrator.
 - Unique for each integrator program
 - Initialization:
   - The integrator program must sign the transaction
+  // TODO: should we make owner sign?
   - Owner is set during initialization (not required to sign)
 
 ### IntegratorChainTransceivers
@@ -177,7 +178,7 @@ Utility struct for efficient storage and manipulation of boolean flags.
 ## Instructions
 
 1. `init_integrator_config`: Initialize integrator configuration
-2. `initialize_integrator_chain_transceivers`: Set up chain transceivers for an integrator on a specific chain
+2. `initialize_integrator_chain_transceivers`: Initialize per chain config for an integrator on a specific chain
 3. `register_transceiver`: Register a new transceiver for an integrator
 4. `set_recv_transceiver`: Enable a receive transceiver for a specific chain
 5. `disable_recv_transceiver`: Disable a receive transceiver for a specific chain
@@ -189,10 +190,9 @@ Utility struct for efficient storage and manipulation of boolean flags.
 
 The program uses a custom `RouterError` enum to handle various error cases, including:
 
-- Invalid integrator authority
-- Bitmap index out of bounds
-- Maximum number of transceivers reached
-- Invalid transceiver ID
+- InvalidIntegratorAuthority - Invalid integrator authority
+- BitmapIndexOutOfBounds - Bitmap index out of bounds
+- MaximumTransceiversReached - Maximum number of transceivers reached
 
 ## Testing
 
