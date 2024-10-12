@@ -55,7 +55,10 @@ pub fn set_recv_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverA
     ctx.accounts
         .integrator_chain_transceivers
         .recv_transceiver_bitmap
-        .set(ctx.accounts.registered_transceiver.id.try_into().unwrap(), true)?;
+        .set(
+            ctx.accounts.registered_transceiver.id.try_into().unwrap(),
+            true,
+        )?;
 
     Ok(())
 }

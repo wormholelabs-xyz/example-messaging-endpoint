@@ -131,7 +131,7 @@ Stores configuration specific to an Integrator.
 - Unique for each integrator program
 - Initialization:
   - The integrator program must sign the transaction
-  // TODO: should we make owner sign?
+    // TODO: should we make owner sign?
   - Owner is set during initialization (not required to sign)
 
 ### IntegratorChainTransceivers
