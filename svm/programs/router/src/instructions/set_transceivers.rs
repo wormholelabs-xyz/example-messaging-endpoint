@@ -47,6 +47,7 @@ pub struct SetTransceiver<'info> {
     pub integrator_program: UncheckedAccount<'info>,
 
     /// The transceiver account being set
+    /// CHECK: This account is only used as a reference for PDA derivation and is not accessed directly
     pub transceiver: AccountInfo<'info>,
 }
 
