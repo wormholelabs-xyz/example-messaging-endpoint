@@ -230,7 +230,7 @@ async fn test_register_transceiver_reinitialization() {
 
 #[tokio::test]
 async fn test_register_transceiver_non_authority() {
-    let (mut context, payer, owner, integrator_program, integrator_config_pda) =
+    let (mut context, payer, _, integrator_program, integrator_config_pda) =
         setup_test_environment().await;
 
     // Create a non-authority signer
