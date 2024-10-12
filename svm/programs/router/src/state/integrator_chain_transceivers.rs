@@ -4,7 +4,7 @@ use crate::utils::bitmap::Bitmap;
 
 /// Manages the transceivers for a specific integrator on a particular chain.
 ///
-/// This struct keeps track of both incoming and outgoing transceivers
+/// This struct keeps track of both receive and send transceivers
 /// using bitmaps for efficient storage and lookup.
 #[account]
 #[derive(InitSpace)]
@@ -18,18 +18,18 @@ pub struct IntegratorChainTransceivers {
     /// The program ID of the integrator
     pub integrator_program_id: Pubkey,
 
-    /// Bitmap tracking the status of incoming transceivers
-    pub in_transceiver_bitmap: Bitmap,
+    /// Bitmap tracking the status of receive transceivers
+    pub recv_transceiver_bitmap: Bitmap,
 
-    /// Bitmap tracking the status of outgoing transceivers
-    pub out_transceiver_bitmap: Bitmap,
+    /// Bitmap tracking the status of send transceivers
+    pub send_transceiver_bitmap: Bitmap,
 }
 
 impl IntegratorChainTransceivers {
     /// Seed prefix for deriving IntegratorChainTransceivers PDAs
     pub const SEED_PREFIX: &'static [u8] = b"integrator_chain_transceivers";
 
-    /// Maximum number of transceivers allowed per direction (in/out)
+    /// Maximum number of transceivers allowed per direction (recv/send)
     pub const MAX_TRANSCEIVERS: u8 = 128;
 
     pub fn new(bump: u8, chain_id: u16, integrator_program_id: Pubkey) -> Self {
@@ -37,29 +37,31 @@ impl IntegratorChainTransceivers {
             bump,
             chain_id,
             integrator_program_id,
-            in_transceiver_bitmap: Bitmap::new(),
-            out_transceiver_bitmap: Bitmap::new(),
+            recv_transceiver_bitmap: Bitmap::new(),
+            send_transceiver_bitmap: Bitmap::new(),
         }
     }
 
-    pub fn set_in_transceiver(&mut self, index: u8, value: bool) -> Result<()> {
-        self.in_transceiver_bitmap
+    pub fn set_recv_transceiver(&mut self, index: u8, value: bool) -> Result<()> {
+        self.recv_transceiver_bitmap
             .set(index, value)
             .map_err(|e| error!(e))
     }
 
-    pub fn set_out_transceiver(&mut self, index: u8, value: bool) -> Result<()> {
-        self.out_transceiver_bitmap
+    pub fn set_send_transceiver(&mut self, index: u8, value: bool) -> Result<()> {
+        self.send_transceiver_bitmap
             .set(index, value)
             .map_err(|e| error!(e))
     }
 
-    pub fn get_in_transceiver(&self, index: u8) -> Result<bool> {
-        self.in_transceiver_bitmap.get(index).map_err(|e| error!(e))
+    pub fn get_recv_transceiver(&self, index: u8) -> Result<bool> {
+        self.recv_transceiver_bitmap
+            .get(index)
+            .map_err(|e| error!(e))
     }
 
-    pub fn get_out_transceiver(&self, index: u8) -> Result<bool> {
-        self.out_transceiver_bitmap
+    pub fn get_send_transceiver(&self, index: u8) -> Result<bool> {
+        self.send_transceiver_bitmap
             .get(index)
             .map_err(|e| error!(e))
     }
