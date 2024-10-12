@@ -1,16 +1,14 @@
-# GMP Router - Solana
+# GMP Router
 
 ## Table of Contents
-
-1. [Architecture](#architecture)
-2. [Key Components](#key-components)
-3. [PDA Derivation](#pda-derivation)
+1. [Project Overview](#project-overview)
+2. [Architecture](#architecture)
+3. [Key Components](#key-components)
 4. [Instructions](#instructions)
 5. [Error Handling](#error-handling)
 6. [Testing](#testing)
 
 ## Architecture
-
 ```mermaid
 classDiagram
     class IntegratorConfig {
@@ -48,63 +46,50 @@ classDiagram
 ## Key Components
 
 ### IntegratorConfig
-
 Stores configuration specific to an Integrator.
-
 - **bump**: Bump seed for PDA derivation
 - **owner**: The owner of the IntegratorConfig account
 - **integrator_program_id**: The program ID of the Integrator
 - **transceivers**: Vector of registered transceiver addresses (max 32)
 
+**PDA Derivation**:
+- Seeds: `[SEED_PREFIX, integrator_program_id]`
+- Unique for each integrator program
+- Initialization:
+  - The integrator program must sign the transaction
+  - Owner is set during initialization (not required to sign)
+
 ### IntegratorChainTransceivers
-
 Manages transceivers for a specific integrator on a particular chain.
-
 - **bump**: Bump seed for PDA derivation
 - **chain_id**: Identifier for the blockchain network
 - **integrator_program_id**: The program ID of the Integrator
 - **recv_transceiver_bitmap**: Bitmap tracking enabled receive transceivers
 - **send_transceiver_bitmap**: Bitmap tracking enabled send transceivers
 
+**PDA Derivation**:
+- Seeds: `[SEED_PREFIX, integrator_program_id, chain_id]`
+- Unique for each integrator program and chain combination
+- Initialization: Requires owner's signature and existing IntegratorConfig account
+
 ### RegisteredTransceiver
-
 Represents a registered transceiver in the GMP Router.
-
 - **bump**: Bump seed for PDA derivation
 - **id**: Unique ID of the transceiver within the integrator's context
 - **integrator_program_id**: The program ID of the Integrator
 - **address**: Public key of the transceiver's address
 
-**Constraints**:
+**PDA Derivation**:
+- Seeds: `[SEED_PREFIX, integrator_program_id, transceiver_address]`
+- Unique for each transceiver within an integrator context
 
+**Constraints**:
 - Maximum of 128 transceivers per integrator
 - Will return an error (MaxTransceiversReached) if this limit is exceeded
 
 ### Bitmap
-
 Utility struct for efficient storage and manipulation of boolean flags.
-
 - **map**: Stores the bitmap as a `u128`
-
-## PDA Derivation
-
-1. **IntegratorConfig**
-
-   - Seeds: `[SEED_PREFIX, integrator_program_id]`
-   - Unique for each integrator program
-   - Initialization:
-     - The integrator program must sign the transaction
-     - Owner is set during initialization (not required to sign)
-
-2. **IntegratorChainTransceivers**
-
-   - Seeds: `[SEED_PREFIX, integrator_program_id, chain_id]`
-   - Unique for each integrator program and chain combination
-   - Initialization: Requires owner's signature and existing IntegratorConfig account
-
-3. **RegisteredTransceiver**
-   - Seeds: `[SEED_PREFIX, integrator_program_id, transceiver_address]`
-   - Unique for each transceiver within an integrator context
 
 ## Instructions
 
@@ -120,7 +105,6 @@ Utility struct for efficient storage and manipulation of boolean flags.
 ## Error Handling
 
 The program uses a custom `RouterError` enum to handle various error cases, including:
-
 - Invalid integrator authority
 - Bitmap index out of bounds
 - Maximum number of transceivers reached
@@ -129,20 +113,17 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 ## Testing
 
 ### InitIntegratorConfig
-
 - [x] Successful initialization
 - [x] Reinitialization (should fail with AccountAlreadyInUse error)
 - [x] Initialization for different integrator programs
 
 ### InitializeIntegratorChainTransceivers
-
 - [x] Successful initialization
 - [x] Initialization for already initialized chain (should fail)
 - [x] Initialization for different chains
 - [x] Initialization with invalid authority
 
 ### RegisterTransceiver
-
 - [x] Successful registration
 - [x] Registration of multiple transceivers
 - [x] Registration causing maximum transceivers reached error
@@ -151,7 +132,6 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 - [ ] Registration with invalid transceiver address (TBD: determine validation criteria)
 
 ### SetTransceivers
-
 - [x] Successful setting of incoming transceivers
 - [x] Successful setting of outgoing transceivers
 - [x] Setting transceivers with invalid authority
@@ -159,7 +139,6 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 - [x] Multiple updates of transceiver settings
 
 ### TransferIntegratorConfigOwnership
-
 - [x] Successful ownership transfer
 - [x] Transfer with invalid current owner
 - [x] Transfer to the same owner
