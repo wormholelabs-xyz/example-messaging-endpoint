@@ -6,23 +6,23 @@
 classDiagram
     class IntegratorConfig {
         bump: u8
-        authority: Pubkey
-        program_id: Pubkey
-        next_transceiver_id: u8
+        owner: Pubkey
+        integrator_program_id: Pubkey
+        transceivers: Vec<Pubkey>
     }
 
     class IntegratorChainTransceivers {
         bump: u8
         chain_id: u16
         integrator_program_id: Pubkey
-        in_transceiver_bitmap: Bitmap
-        out_transceiver_bitmap: Bitmap
+        recv_transceiver_bitmap: Bitmap
+        send_transceiver_bitmap: Bitmap
     }
 
     class RegisteredTransceiver {
         bump: u8
         id: u8
-        integrator_program_id: u16
+        integrator_program_id: Pubkey
         address: Pubkey
     }
 
@@ -41,24 +41,28 @@ classDiagram
 1. **IntegratorConfig**: Stores configuration specific to an Integrator.
 
    - **bump**: Bump seed for PDA derivation.
-   - **authority**: The authority of the Integrator config.
-   - **program_id**: The program ID of the Integrator.
-   - **next_transceiver_id**: Counter to track the next transceiver ID.
+   - **owner**: The owner of the IntegratorConfig account.
+   - **integrator_program_id**: The program ID of the Integrator.
+   - **transceivers**: Vector of registered transceiver addresses (max 32).
 
 2. **IntegratorChainTransceivers**: Manages transceivers for a specific integrator on a particular chain.
 
    - **bump**: Bump seed for PDA derivation.
    - **chain_id**: Identifier for the blockchain network.
    - **integrator_program_id**: The program ID of the Integrator.
-   - **in_transceiver_bitmap**: Bitmap tracking enabled incoming transceivers.
-   - **out_transceiver_bitmap**: Bitmap tracking enabled outgoing transceivers.
+   - **recv_transceiver_bitmap**: Bitmap tracking enabled receive transceivers.
+   - **send_transceiver_bitmap**: Bitmap tracking enabled send transceivers.
 
 3. **RegisteredTransceiver**: Represents a registered transceiver in the GMP Router.
 
    - **bump**: Bump seed for PDA derivation.
-   - **id**: Unique ID of the transceiver.
+   - **id**: Unique ID of the transceiver within the integrator's context.
    - **integrator_program_id**: The program ID of the Integrator.
-   - **address**: Address of the transceiver.
+   - **address**: Public key of the transceiver's address.
+
+   **Constraints**:
+      - Maximum of 128 transceivers per integrator (as defined in IntegratorConfig).
+      - Will return an error (MaxTransceiversReached) if this limit is exceeded.
 
 4. **Bitmap**: Utility struct for efficient storage and manipulation of boolean flags.
 
@@ -70,15 +74,19 @@ classDiagram
 
    - **Seeds**: `[SEED_PREFIX, integrator_program_id]`
    - **Unique** for each integrator program.
+   - **Initialization**:
+     - The integrator program must sign the transaction to initialize its config.
+     - The owner is set during initialization but is not required to sign.
 
 2. **IntegratorChainTransceivers**
 
    - **Seeds**: `[SEED_PREFIX, integrator_program_id, chain_id]`
    - **Unique** for each integrator program and chain combination.
+   - **Initialization**: Requires the owner's signature and an existing IntegratorConfig account.
 
 3. **RegisteredTransceiver**
 
-   - **Seeds**: `[SEED_PREFIX, integrator_program_id, transceiver_id]`
+   - **Seeds**: `[SEED_PREFIX, integrator_program_id, transceiver_address]`
    - **Unique** for each transceiver within an integrator context.
 
 ### Instructions
@@ -86,8 +94,11 @@ classDiagram
 1. **init_integrator_config**: Initializes the integrator configuration.
 2. **initialize_integrator_chain_transceivers**: Sets up the chain transceivers for an integrator on a specific chain.
 3. **register_transceiver**: Registers a new transceiver for an integrator.
-4. **set_in_transceivers**: Sets the incoming transceivers for a specific chain.
-5. **set_out_transceivers**: Sets the outgoing transceivers for a specific chain.
+4. **set_recv_transceiver**: Enables a receive transceiver for a specific chain.
+5. **disable_recv_transceiver**: Disables a receive transceiver for a specific chain.
+6. **set_send_transceiver**: Enables a send transceiver for a specific chain.
+7. **disable_send_transceiver**: Disables a send transceiver for a specific chain.
+8. **transfer_integrator_config_ownership**: Transfers ownership of the IntegratorConfig to a new owner.
 
 ### Error Handling
 
@@ -103,8 +114,8 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 1. **InitIntegratorConfig**
 
    - [x] Test successful initialization
-   - [x] Test double initialization (should fail)
-   - [x] Test initialization for different programs
+   - [x] Test reinitialization (should fail with AccountAlreadyInUse error)
+   - [x] Test initialization for different integrator programs
 
 2. **InitializeIntegratorChainTransceivers**
 

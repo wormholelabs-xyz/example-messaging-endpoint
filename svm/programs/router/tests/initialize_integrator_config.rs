@@ -3,8 +3,6 @@
 mod common;
 mod instructions;
 
-use core::panic;
-
 use crate::instructions::initialize_integrator_config::initialize_integrator_config;
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
