@@ -10,7 +10,7 @@ use solana_sdk::{
 
 use crate::common::execute_transaction::execute_transaction;
 
-pub async fn set_transceivers(
+async fn execute_set_transceiver(
     context: &mut ProgramTestContext,
     owner: &Keypair,
     payer: &Keypair,
@@ -20,7 +20,7 @@ pub async fn set_transceivers(
     registered_transceiver: Pubkey,
     transceiver: Pubkey,
     chain_id: u16,
-    is_incoming: bool,
+    instruction_data: Vec<u8>,
 ) -> Result<(), BanksClientError> {
     let accounts = SetTransceiver {
         payer: payer.pubkey(),
@@ -32,16 +32,122 @@ pub async fn set_transceivers(
         transceiver,
     };
 
-    let args = SetTransceiverArgs { chain_id };
-
     let ix = Instruction {
         program_id: router::id(),
         accounts: accounts.to_account_metas(None),
-        data: if is_incoming {
-            router::instruction::SetInTransceiver { args }.data()
-        } else {
-            router::instruction::SetOutTransceiver { args }.data()
-        },
+        data: instruction_data,
     };
     execute_transaction(context, ix, &[owner, payer], payer).await
+}
+
+pub async fn set_recv_transceiver(
+    context: &mut ProgramTestContext,
+    owner: &Keypair,
+    payer: &Keypair,
+    integrator_config: Pubkey,
+    integrator_chain_transceivers: Pubkey,
+    integrator_program: Pubkey,
+    registered_transceiver: Pubkey,
+    transceiver: Pubkey,
+    chain_id: u16,
+) -> Result<(), BanksClientError> {
+    let args = SetTransceiverArgs { chain_id };
+    let instruction_data = router::instruction::SetRecvTransceiver { args }.data();
+    execute_set_transceiver(
+        context,
+        owner,
+        payer,
+        integrator_config,
+        integrator_chain_transceivers,
+        integrator_program,
+        registered_transceiver,
+        transceiver,
+        chain_id,
+        instruction_data,
+    )
+    .await
+}
+
+pub async fn disable_recv_transceiver(
+    context: &mut ProgramTestContext,
+    owner: &Keypair,
+    payer: &Keypair,
+    integrator_config: Pubkey,
+    integrator_chain_transceivers: Pubkey,
+    integrator_program: Pubkey,
+    registered_transceiver: Pubkey,
+    transceiver: Pubkey,
+    chain_id: u16,
+) -> Result<(), BanksClientError> {
+    let args = SetTransceiverArgs { chain_id };
+    let instruction_data = router::instruction::DisableRecvTransceiver { args }.data();
+    execute_set_transceiver(
+        context,
+        owner,
+        payer,
+        integrator_config,
+        integrator_chain_transceivers,
+        integrator_program,
+        registered_transceiver,
+        transceiver,
+        chain_id,
+        instruction_data,
+    )
+    .await
+}
+
+pub async fn set_send_transceiver(
+    context: &mut ProgramTestContext,
+    owner: &Keypair,
+    payer: &Keypair,
+    integrator_config: Pubkey,
+    integrator_chain_transceivers: Pubkey,
+    integrator_program: Pubkey,
+    registered_transceiver: Pubkey,
+    transceiver: Pubkey,
+    chain_id: u16,
+) -> Result<(), BanksClientError> {
+    let args = SetTransceiverArgs { chain_id };
+    let instruction_data = router::instruction::SetSendTransceiver { args }.data();
+    execute_set_transceiver(
+        context,
+        owner,
+        payer,
+        integrator_config,
+        integrator_chain_transceivers,
+        integrator_program,
+        registered_transceiver,
+        transceiver,
+        chain_id,
+        instruction_data,
+    )
+    .await
+}
+
+pub async fn disable_send_transceiver(
+    context: &mut ProgramTestContext,
+    owner: &Keypair,
+    payer: &Keypair,
+    integrator_config: Pubkey,
+    integrator_chain_transceivers: Pubkey,
+    integrator_program: Pubkey,
+    registered_transceiver: Pubkey,
+    transceiver: Pubkey,
+    chain_id: u16,
+) -> Result<(), BanksClientError> {
+    let args = SetTransceiverArgs { chain_id };
+    let instruction_data = router::instruction::DisableSendTransceiver { args }.data();
+    execute_set_transceiver(
+        context,
+        owner,
+        payer,
+        integrator_config,
+        integrator_chain_transceivers,
+        integrator_program,
+        registered_transceiver,
+        transceiver,
+        chain_id,
+        instruction_data,
+    )
+    .await
 }

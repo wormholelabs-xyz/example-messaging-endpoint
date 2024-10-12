@@ -20,7 +20,6 @@ pub mod router {
     ///
     /// * `ctx` - The context of the instruction
     pub fn init_integrator_config(ctx: Context<InitIntegratorConfig>) -> Result<()> {
-        // TODO: fix spelling
         instructions::initialize_integrator_config::init_integrator_config(ctx)
     }
 
@@ -49,31 +48,59 @@ pub mod router {
         instructions::register_transceiver::register_transceiver(ctx)
     }
 
-    /// Sets a transceiver as an incoming transceiver for a specific chain
+    /// Sets a transceiver as a receive transceiver for a specific chain
     ///
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
     /// * `args` - A `SetTransceiverArgs` struct containing:
     ///     * `chain_id` - The ID of the chain for which the transceiver is being set
-    pub fn set_in_transceiver(
+    pub fn set_recv_transceiver(
         ctx: Context<SetTransceiver>,
         args: SetTransceiverArgs,
     ) -> Result<()> {
-        instructions::set_transceivers::set_in_transceiver(ctx, args)
+        instructions::set_transceivers::set_recv_transceiver(ctx, args)
     }
 
-    /// Sets a transceiver as an outgoing transceiver for a specific chain
+    /// Disables a receive transceiver for a specific chain
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `args` - A `SetTransceiverArgs` struct containing:
+    ///     * `chain_id` - The ID of the chain for which the transceiver is being disabled
+    pub fn disable_recv_transceiver(
+        ctx: Context<SetTransceiver>,
+        args: SetTransceiverArgs,
+    ) -> Result<()> {
+        instructions::set_transceivers::disable_recv_transceiver(ctx, args)
+    }
+
+    /// Sets a transceiver as a send transceiver for a specific chain
     ///
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
     /// * `args` - A `SetTransceiverArgs` struct containing:
     ///     * `chain_id` - The ID of the chain for which the transceiver is being set
-    pub fn set_out_transceiver(
+    pub fn set_send_transceiver(
         ctx: Context<SetTransceiver>,
         args: SetTransceiverArgs,
     ) -> Result<()> {
-        instructions::set_transceivers::set_out_transceiver(ctx, args)
+        instructions::set_transceivers::set_send_transceiver(ctx, args)
+    }
+
+    /// Disables a send transceiver for a specific chain
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `args` - A `SetTransceiverArgs` struct containing:
+    ///     * `chain_id` - The ID of the chain for which the transceiver is being disabled
+    pub fn disable_send_transceiver(
+        ctx: Context<SetTransceiver>,
+        args: SetTransceiverArgs,
+    ) -> Result<()> {
+        instructions::set_transceivers::disable_send_transceiver(ctx, args)
     }
 }
