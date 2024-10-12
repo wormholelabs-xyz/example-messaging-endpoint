@@ -50,7 +50,7 @@ pub struct SetTransceiver<'info> {
     pub transceiver: AccountInfo<'info>,
 }
 
-pub fn set_recv_transceiver(ctx: Context<SetTransceiver>, args: SetTransceiverArgs) -> Result<()> {
+pub fn set_recv_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverArgs) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
 
@@ -67,7 +67,7 @@ pub fn set_recv_transceiver(ctx: Context<SetTransceiver>, args: SetTransceiverAr
 
 pub fn disable_recv_transceiver(
     ctx: Context<SetTransceiver>,
-    args: SetTransceiverArgs,
+    _args: SetTransceiverArgs,
 ) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
@@ -83,7 +83,7 @@ pub fn disable_recv_transceiver(
     Ok(())
 }
 
-pub fn set_send_transceiver(ctx: Context<SetTransceiver>, args: SetTransceiverArgs) -> Result<()> {
+pub fn set_send_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverArgs) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
 
@@ -100,7 +100,7 @@ pub fn set_send_transceiver(ctx: Context<SetTransceiver>, args: SetTransceiverAr
 
 pub fn disable_send_transceiver(
     ctx: Context<SetTransceiver>,
-    args: SetTransceiverArgs,
+    _args: SetTransceiverArgs,
 ) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
