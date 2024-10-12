@@ -103,4 +103,17 @@ pub mod router {
     ) -> Result<()> {
         instructions::set_transceivers::disable_send_transceiver(ctx, args)
     }
+
+    /// Transfers ownership of the IntegratorConfig to a new owner
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    pub fn transfer_integrator_config_ownership(
+        ctx: Context<TransferIntegratorConfigOwnership>,
+    ) -> Result<()> {
+        instructions::transfer_integrator_config_ownership::transfer_integrator_config_ownership(
+            ctx,
+        )
+    }
 }

@@ -6,7 +6,7 @@ mod instructions;
 use crate::instructions::initialize_integrator_chain_transceivers::initialize_integrator_chain_transceivers;
 use crate::instructions::initialize_integrator_config::initialize_integrator_config;
 use crate::instructions::register_transceiver::register_transceiver;
-use crate::instructions::set_transceivers::set_transceivers;
+use crate::instructions::set_transceivers::{set_recv_transceiver, set_send_transceiver};
 
 use anchor_lang::prelude::*;
 use common::setup::setup;
@@ -107,8 +107,8 @@ async fn initialize_test_environment(
 async fn verify_transceiver_state(
     context: &mut ProgramTestContext,
     integrator_chain_transceivers_pda: Pubkey,
-    expected_in_bitmap: u128,
-    expected_out_bitmap: u128,
+    expected_recv_bitmap: u128,
+    expected_send_bitmap: u128,
 ) {
     let account = context
         .banks_client
@@ -121,12 +121,12 @@ async fn verify_transceiver_state(
         IntegratorChainTransceivers::try_deserialize(&mut account.data.as_ref()).unwrap();
 
     assert_eq!(
-        integrator_chain_transceivers.in_transceiver_bitmap,
-        Bitmap::from_value(expected_in_bitmap)
+        integrator_chain_transceivers.recv_transceiver_bitmap,
+        Bitmap::from_value(expected_recv_bitmap)
     );
     assert_eq!(
-        integrator_chain_transceivers.out_transceiver_bitmap,
-        Bitmap::from_value(expected_out_bitmap)
+        integrator_chain_transceivers.send_transceiver_bitmap,
+        Bitmap::from_value(expected_send_bitmap)
     );
 }
 
@@ -146,7 +146,7 @@ async fn test_set_in_transceivers_success() {
     let is_incoming = true;
     let payer = context.payer.insecure_clone();
 
-    let result = set_transceivers(
+    let result = set_recv_transceiver(
         &mut context,
         &authority,
         &payer,
@@ -156,7 +156,6 @@ async fn test_set_in_transceivers_success() {
         registered_transceiver_pda,
         transceiver,
         chain_id,
-        is_incoming,
     )
     .await;
     assert!(result.is_ok());
@@ -181,7 +180,7 @@ async fn test_set_in_transceivers_multiple_sets_success() {
     let payer = context.payer.insecure_clone();
 
     // Set the first transceiver
-    let result = set_transceivers(
+    let result = set_recv_transceiver(
         &mut context,
         &authority,
         &payer,
@@ -191,7 +190,6 @@ async fn test_set_in_transceivers_multiple_sets_success() {
         registered_transceiver_pda,
         transceiver,
         chain_id,
-        is_incoming,
     )
     .await;
     assert!(result.is_ok());
@@ -220,7 +218,7 @@ async fn test_set_in_transceivers_multiple_sets_success() {
     .unwrap();
 
     // Set the second transceiver
-    let result = set_transceivers(
+    let result = set_recv_transceiver(
         &mut context,
         &authority,
         &payer,
@@ -230,7 +228,6 @@ async fn test_set_in_transceivers_multiple_sets_success() {
         registered_transceiver2_pda,
         transceiver2_address,
         chain_id,
-        is_incoming,
     )
     .await;
     assert!(result.is_ok());
@@ -255,7 +252,7 @@ async fn test_set_out_transceivers_success() {
     let is_incoming = false;
     let payer = context.payer.insecure_clone();
 
-    let result = set_transceivers(
+    let result = set_send_transceiver(
         &mut context,
         &authority,
         &payer,
@@ -265,7 +262,6 @@ async fn test_set_out_transceivers_success() {
         registered_transceiver_pda,
         transceiver,
         chain_id,
-        is_incoming,
     )
     .await;
 
@@ -292,7 +288,7 @@ async fn test_set_transceivers_invalid_authority() {
     let is_incoming = true;
     let payer = context.payer.insecure_clone();
 
-    let result = set_transceivers(
+    let result = set_recv_transceiver(
         &mut context,
         &invalid_authority,
         &payer,
@@ -302,7 +298,6 @@ async fn test_set_transceivers_invalid_authority() {
         registered_transceiver_pda,
         transceiver,
         chain_id,
-        is_incoming,
     )
     .await;
 
@@ -338,7 +333,7 @@ async fn test_set_transceivers_invalid_transceiver_id() {
     let invalid_transceiver = Keypair::new().pubkey();
     let payer = context.payer.insecure_clone();
 
-    let result = set_transceivers(
+    let result = set_recv_transceiver(
         &mut context,
         &authority,
         &payer,
@@ -348,7 +343,6 @@ async fn test_set_transceivers_invalid_transceiver_id() {
         registered_transceiver_pda,
         invalid_transceiver,
         chain_id,
-        is_incoming,
     )
     .await;
 
@@ -357,10 +351,7 @@ async fn test_set_transceivers_invalid_transceiver_id() {
 
     assert_eq!(
         err.unwrap(),
-        TransactionError::InstructionError(
-            0,
-            InstructionError::Custom(2006)
-        )
+        TransactionError::InstructionError(0, InstructionError::Custom(2006))
     );
 
     // Verify that the state hasn't changed
