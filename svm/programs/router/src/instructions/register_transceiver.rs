@@ -61,7 +61,7 @@ pub fn register_transceiver(ctx: Context<RegisterTransceiver>) -> Result<()> {
             bump: ctx.bumps.registered_transceiver,
             id: transceiver_id,
             integrator_program_id: ctx.accounts.integrator_program.key(),
-            address: ctx.accounts.transceiver_address.key(),
+            transceiver_address: ctx.accounts.transceiver_address.key(),
         });
 
     Ok(())

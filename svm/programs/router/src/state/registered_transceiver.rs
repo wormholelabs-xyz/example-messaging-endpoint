@@ -17,7 +17,7 @@ pub struct RegisteredTransceiver {
     pub integrator_program_id: Pubkey,
 
     /// Public key of the transceiver's address
-    pub address: Pubkey,
+    pub transceiver_address: Pubkey,
 }
 
 impl RegisteredTransceiver {

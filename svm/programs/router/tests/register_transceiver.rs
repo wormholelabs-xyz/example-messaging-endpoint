@@ -97,7 +97,7 @@ async fn test_register_transceiver_success() {
         registered_transceiver.integrator_program_id,
         integrator_program.pubkey()
     );
-    assert_eq!(registered_transceiver.address, transceiver_address);
+    assert_eq!(registered_transceiver.transceiver_address, transceiver_address);
 
     // Verify that the integrator config's transceivers list has been updated
     let integrator_config: IntegratorConfig =
