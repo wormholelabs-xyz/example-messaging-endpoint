@@ -1,6 +1,15 @@
-# GMP Router
+# GMP Router - Solana
 
-## Project Structure
+## Table of Contents
+
+1. [Architecture](#architecture)
+2. [Key Components](#key-components)
+3. [PDA Derivation](#pda-derivation)
+4. [Instructions](#instructions)
+5. [Error Handling](#error-handling)
+6. [Testing](#testing)
+
+## Architecture
 
 ```mermaid
 classDiagram
@@ -36,71 +45,79 @@ classDiagram
    IntegratorChainTransceivers "1" -- "*" RegisteredTransceiver : corresponds to
 ```
 
-### Key Components
+## Key Components
 
-1. **IntegratorConfig**: Stores configuration specific to an Integrator.
+### IntegratorConfig
 
-   - **bump**: Bump seed for PDA derivation.
-   - **owner**: The owner of the IntegratorConfig account.
-   - **integrator_program_id**: The program ID of the Integrator.
-   - **transceivers**: Vector of registered transceiver addresses (max 32).
+Stores configuration specific to an Integrator.
 
-2. **IntegratorChainTransceivers**: Manages transceivers for a specific integrator on a particular chain.
+- **bump**: Bump seed for PDA derivation
+- **owner**: The owner of the IntegratorConfig account
+- **integrator_program_id**: The program ID of the Integrator
+- **transceivers**: Vector of registered transceiver addresses (max 32)
 
-   - **bump**: Bump seed for PDA derivation.
-   - **chain_id**: Identifier for the blockchain network.
-   - **integrator_program_id**: The program ID of the Integrator.
-   - **recv_transceiver_bitmap**: Bitmap tracking enabled receive transceivers.
-   - **send_transceiver_bitmap**: Bitmap tracking enabled send transceivers.
+### IntegratorChainTransceivers
 
-3. **RegisteredTransceiver**: Represents a registered transceiver in the GMP Router.
+Manages transceivers for a specific integrator on a particular chain.
 
-   - **bump**: Bump seed for PDA derivation.
-   - **id**: Unique ID of the transceiver within the integrator's context.
-   - **integrator_program_id**: The program ID of the Integrator.
-   - **address**: Public key of the transceiver's address.
+- **bump**: Bump seed for PDA derivation
+- **chain_id**: Identifier for the blockchain network
+- **integrator_program_id**: The program ID of the Integrator
+- **recv_transceiver_bitmap**: Bitmap tracking enabled receive transceivers
+- **send_transceiver_bitmap**: Bitmap tracking enabled send transceivers
 
-   **Constraints**:
-      - Maximum of 128 transceivers per integrator (as defined in IntegratorConfig).
-      - Will return an error (MaxTransceiversReached) if this limit is exceeded.
+### RegisteredTransceiver
 
-4. **Bitmap**: Utility struct for efficient storage and manipulation of boolean flags.
+Represents a registered transceiver in the GMP Router.
 
-   - **map**: Stores the bitmap as a `u128`.
+- **bump**: Bump seed for PDA derivation
+- **id**: Unique ID of the transceiver within the integrator's context
+- **integrator_program_id**: The program ID of the Integrator
+- **address**: Public key of the transceiver's address
 
-### PDA Derivation
+**Constraints**:
+
+- Maximum of 128 transceivers per integrator
+- Will return an error (MaxTransceiversReached) if this limit is exceeded
+
+### Bitmap
+
+Utility struct for efficient storage and manipulation of boolean flags.
+
+- **map**: Stores the bitmap as a `u128`
+
+## PDA Derivation
 
 1. **IntegratorConfig**
 
-   - **Seeds**: `[SEED_PREFIX, integrator_program_id]`
-   - **Unique** for each integrator program.
-   - **Initialization**:
-     - The integrator program must sign the transaction to initialize its config.
-     - The owner is set during initialization but is not required to sign.
+   - Seeds: `[SEED_PREFIX, integrator_program_id]`
+   - Unique for each integrator program
+   - Initialization:
+     - The integrator program must sign the transaction
+     - Owner is set during initialization (not required to sign)
 
 2. **IntegratorChainTransceivers**
 
-   - **Seeds**: `[SEED_PREFIX, integrator_program_id, chain_id]`
-   - **Unique** for each integrator program and chain combination.
-   - **Initialization**: Requires the owner's signature and an existing IntegratorConfig account.
+   - Seeds: `[SEED_PREFIX, integrator_program_id, chain_id]`
+   - Unique for each integrator program and chain combination
+   - Initialization: Requires owner's signature and existing IntegratorConfig account
 
 3. **RegisteredTransceiver**
+   - Seeds: `[SEED_PREFIX, integrator_program_id, transceiver_address]`
+   - Unique for each transceiver within an integrator context
 
-   - **Seeds**: `[SEED_PREFIX, integrator_program_id, transceiver_address]`
-   - **Unique** for each transceiver within an integrator context.
+## Instructions
 
-### Instructions
+1. `init_integrator_config`: Initialize integrator configuration
+2. `initialize_integrator_chain_transceivers`: Set up chain transceivers for an integrator on a specific chain
+3. `register_transceiver`: Register a new transceiver for an integrator
+4. `set_recv_transceiver`: Enable a receive transceiver for a specific chain
+5. `disable_recv_transceiver`: Disable a receive transceiver for a specific chain
+6. `set_send_transceiver`: Enable a send transceiver for a specific chain
+7. `disable_send_transceiver`: Disable a send transceiver for a specific chain
+8. `transfer_integrator_config_ownership`: Transfer ownership of the IntegratorConfig
 
-1. **init_integrator_config**: Initializes the integrator configuration.
-2. **initialize_integrator_chain_transceivers**: Sets up the chain transceivers for an integrator on a specific chain.
-3. **register_transceiver**: Registers a new transceiver for an integrator.
-4. **set_recv_transceiver**: Enables a receive transceiver for a specific chain.
-5. **disable_recv_transceiver**: Disables a receive transceiver for a specific chain.
-6. **set_send_transceiver**: Enables a send transceiver for a specific chain.
-7. **disable_send_transceiver**: Disables a send transceiver for a specific chain.
-8. **transfer_integrator_config_ownership**: Transfers ownership of the IntegratorConfig to a new owner.
-
-### Error Handling
+## Error Handling
 
 The program uses a custom `RouterError` enum to handle various error cases, including:
 
@@ -109,34 +126,40 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 - Maximum number of transceivers reached
 - Invalid transceiver ID
 
-### Tests
+## Testing
 
-1. **InitIntegratorConfig**
+### InitIntegratorConfig
 
-   - [x] Test successful initialization
-   - [x] Test reinitialization (should fail with AccountAlreadyInUse error)
-   - [x] Test initialization for different integrator programs
+- [x] Successful initialization
+- [x] Reinitialization (should fail with AccountAlreadyInUse error)
+- [x] Initialization for different integrator programs
 
-2. **InitializeIntegratorChainTransceivers**
+### InitializeIntegratorChainTransceivers
 
-   - [x] Test successful initialization
-   - [x] Test initialization for already initialized chain (should fail)
-   - [x] Test initialization for different chains
-   - [x] Test initialization with invalid authority
+- [x] Successful initialization
+- [x] Initialization for already initialized chain (should fail)
+- [x] Initialization for different chains
+- [x] Initialization with invalid authority
 
-3. **RegisterTransceiver**
+### RegisterTransceiver
 
-   - [x] Test successful registration
-   - [x] Test registration causing bitmap overflow
-   - [x] Test registration with non-authority signer
-   - [ ] Test registration of duplicate transceiver (not implemented yet)
-   - [ ] Test registration with invalid transceiver address
-     > **Note on Reinitialization:**
-     > There is no need to test for reinitialization of the `IntegratorConfig` because the `next_transceiver_id` in `integrator_config` is auto-incremented. This ensures that each transceiver is uniquely identified and prevents accidental overwriting or duplication during initialization.
+- [x] Successful registration
+- [x] Registration of multiple transceivers
+- [x] Registration causing maximum transceivers reached error
+- [x] Registration of duplicate transceiver (reinitialization)
+- [x] Registration with non-authority signer
+- [ ] Registration with invalid transceiver address (TBD: determine validation criteria)
 
-4. **SetTransceivers**
-   - [x] Test successful setting of incoming transceivers
-   - [x] Test successful setting of outgoing transceivers
-   - [x] Test setting transceivers with invalid authority
-   - [x] Test setting transceivers with invalid bitmap
-   - [x] Test multiple updates of transceiver settings
+### SetTransceivers
+
+- [x] Successful setting of incoming transceivers
+- [x] Successful setting of outgoing transceivers
+- [x] Setting transceivers with invalid authority
+- [x] Setting transceivers with invalid transceiver ID
+- [x] Multiple updates of transceiver settings
+
+### TransferIntegratorConfigOwnership
+
+- [x] Successful ownership transfer
+- [x] Transfer with invalid current owner
+- [x] Transfer to the same owner

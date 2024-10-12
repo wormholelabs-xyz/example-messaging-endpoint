@@ -227,3 +227,43 @@ async fn test_register_transceiver_reinitialization() {
     assert_eq!(integrator_config.transceivers.len(), 1);
     assert_eq!(integrator_config.transceivers[0], transceiver_address);
 }
+
+#[tokio::test]
+async fn test_register_transceiver_non_authority() {
+    let (mut context, payer, owner, integrator_program, integrator_config_pda) =
+        setup_test_environment().await;
+
+    // Create a non-authority signer
+    let non_authority = Keypair::new();
+
+    // Attempt to register a transceiver with non-authority signer
+    let transceiver_address = Keypair::new().pubkey();
+    let (registered_transceiver_pda, _) =
+        RegisteredTransceiver::pda(&integrator_program.pubkey(), &transceiver_address);
+
+    let result = register_transceiver(
+        &mut context,
+        &non_authority, // Use non-authority signer
+        &payer,
+        integrator_config_pda,
+        registered_transceiver_pda,
+        integrator_program.pubkey(),
+        transceiver_address,
+    )
+    .await;
+
+    // Verify that the transaction failed with the InvalidIntegratorAuthority error
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err().unwrap(),
+        TransactionError::InstructionError(
+            0,
+            InstructionError::Custom(RouterError::InvalidIntegratorAuthority.into())
+        )
+    );
+
+    // Verify that the integrator config's transceivers list has not been updated
+    let integrator_config: IntegratorConfig =
+        get_account(&mut context.banks_client, integrator_config_pda).await;
+    assert_eq!(integrator_config.transceivers.len(), 0);
+}
