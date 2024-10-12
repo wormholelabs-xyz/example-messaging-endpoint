@@ -11,7 +11,4 @@ pub enum RouterError {
 
     #[msg("Maximum number of transceivers reached")]
     MaxTransceiversReached,
-
-    #[msg("Invalid Transceiver Id")]
-    InvalidTransceiverId,
 }
