@@ -16,7 +16,7 @@ pub struct IntegratorConfig {
     pub integrator_program_id: Pubkey,
 
     /// Vector of registered transceiver addresses
-    #[max_len(32)]
+    #[max_len(128)]
     pub transceivers: Vec<Pubkey>,
 }
 
