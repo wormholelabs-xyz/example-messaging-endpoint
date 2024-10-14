@@ -3,6 +3,8 @@
 mod common;
 mod instructions;
 
+use std::assert_eq;
+
 use crate::instructions::register::register;
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
@@ -20,12 +22,12 @@ async fn test_register_success() {
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
     let authority = Keypair::new().pubkey();
-    let integrator_program = Keypair::new();
+    let integrator_program_id = Pubkey::new_unique();
 
     let (integrator_config_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorConfig::SEED_PREFIX,
-            integrator_program.pubkey().as_ref(),
+            integrator_program_id.as_ref(),
         ],
         &router::id(),
     );
@@ -36,7 +38,7 @@ async fn test_register_success() {
         &payer,
         authority,
         integrator_config_pda,
-        &integrator_program,
+        integrator_program_id,
     )
     .await
     .unwrap();
@@ -48,7 +50,7 @@ async fn test_register_success() {
     assert_eq!(integrator_config.admin, authority);
     assert_eq!(
         integrator_config.integrator_program_id,
-        integrator_program.pubkey()
+        integrator_program_id
     );
     assert_eq!(integrator_config.registered_transceivers.len(), 0);
 }
@@ -59,12 +61,12 @@ async fn test_register_reinitialization() {
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
     let authority = Keypair::new().pubkey();
-    let integrator_program = Keypair::new();
+    let integrator_program_id = Pubkey::new_unique();
 
     let (integrator_config_pda, _) = Pubkey::find_program_address(
         &[
             IntegratorConfig::SEED_PREFIX,
-            integrator_program.pubkey().as_ref(),
+            integrator_program_id.as_ref(),
         ],
         &router::id(),
     );
@@ -75,7 +77,7 @@ async fn test_register_reinitialization() {
         &payer,
         authority,
         integrator_config_pda,
-        &integrator_program,
+        integrator_program_id,
     )
     .await
     .unwrap();
@@ -86,19 +88,16 @@ async fn test_register_reinitialization() {
         &payer,
         authority,
         integrator_config_pda,
-        &integrator_program,
+        integrator_program_id,
     )
     .await;
 
-    let err = result.unwrap_err();
     assert_eq!(
-        err.unwrap(),
+        result.unwrap_err().unwrap(),
         TransactionError::InstructionError(
             0,
             InstructionError::Custom(SystemError::AccountAlreadyInUse as u32)
         ),
-        "Expected AccountAlreadyInUse error, but got: {:?}",
-        err
     );
 }
 
@@ -108,13 +107,13 @@ async fn test_register_different_programs() {
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
     let authority = Keypair::new().pubkey();
-    let integrator_program_1 = Keypair::new();
-    let integrator_program_2 = Keypair::new();
+    let integrator_program_id_1 = Pubkey::new_unique();
+    let integrator_program_id_2 = Pubkey::new_unique();
 
     let (integrator_config_pda_1, _) = Pubkey::find_program_address(
         &[
             IntegratorConfig::SEED_PREFIX,
-            integrator_program_1.pubkey().as_ref(),
+            integrator_program_id_1.as_ref(),
         ],
         &router::id(),
     );
@@ -122,7 +121,7 @@ async fn test_register_different_programs() {
     let (integrator_config_pda_2, _) = Pubkey::find_program_address(
         &[
             IntegratorConfig::SEED_PREFIX,
-            integrator_program_2.pubkey().as_ref(),
+            integrator_program_id_2.as_ref(),
         ],
         &router::id(),
     );
@@ -133,7 +132,7 @@ async fn test_register_different_programs() {
         &payer,
         authority,
         integrator_config_pda_1,
-        &integrator_program_1,
+        integrator_program_id_1,
     )
     .await
     .unwrap();
@@ -144,7 +143,7 @@ async fn test_register_different_programs() {
         &payer,
         authority,
         integrator_config_pda_2,
-        &integrator_program_2,
+        integrator_program_id_2,
     )
     .await
     .unwrap();
@@ -157,10 +156,10 @@ async fn test_register_different_programs() {
 
     assert_eq!(
         integrator_config_1.integrator_program_id,
-        integrator_program_1.pubkey()
+        integrator_program_id_1
     );
     assert_eq!(
         integrator_config_2.integrator_program_id,
-        integrator_program_2.pubkey()
+        integrator_program_id_2
     );
 }

@@ -19,8 +19,9 @@ pub mod router {
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
-    pub fn init_integrator_config(ctx: Context<Register>) -> Result<()> {
-        instructions::register::register(ctx)
+    /// * `args` - The arguments for registration, including the integrator program ID
+    pub fn init_integrator_config(ctx: Context<Register>, args: RegisterArgs) -> Result<()> {
+        instructions::register::register(ctx, args)
     }
 
     /// Registers a new transceiver for an integrator
