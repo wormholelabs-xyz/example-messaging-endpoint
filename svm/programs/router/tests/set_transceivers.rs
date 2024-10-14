@@ -58,18 +58,6 @@ async fn initialize_test_environment(
         &router::id(),
     );
 
-    initialize_integrator_chain_transceivers(
-        context,
-        &owner,
-        &payer,
-        integrator_config_pda,
-        integrator_chain_transceivers_pda,
-        chain_id,
-        integrator_program.pubkey(),
-    )
-    .await
-    .unwrap();
-
     // Register a transceiver
     let transceiver_address = Pubkey::new_unique(); // Generate a unique pubkey for the transceiver
     let (registered_transceiver_pda, _) = Pubkey::find_program_address(
@@ -307,8 +295,6 @@ async fn test_set_transceivers_invalid_authority() {
             InstructionError::Custom(RouterError::InvalidIntegratorAuthority.into())
         )
     );
-    // Verify that the state hasn't changed
-    verify_transceiver_state(&mut context, integrator_chain_transceivers_pda, 0, 0).await;
 }
 
 #[tokio::test]
@@ -348,7 +334,4 @@ async fn test_set_transceivers_invalid_transceiver_id() {
         err.unwrap(),
         TransactionError::InstructionError(0, InstructionError::Custom(2006))
     );
-
-    // Verify that the state hasn't changed
-    verify_transceiver_state(&mut context, integrator_chain_transceivers_pda, 0, 0).await;
 }

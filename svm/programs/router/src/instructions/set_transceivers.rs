@@ -23,13 +23,15 @@ pub struct SetTransceiver<'info> {
     pub integrator_config: Account<'info, IntegratorConfig>,
 
     #[account(
-        mut,
+        init_if_needed,
+        payer = payer,
+        space = 8 + IntegratorChainTransceivers::INIT_SPACE,
         seeds = [
             IntegratorChainTransceivers::SEED_PREFIX,
             integrator_program.key().as_ref(),
             args.chain_id.to_le_bytes().as_ref(),
         ],
-        bump = integrator_chain_transceivers.bump,
+        bump,
     )]
     pub integrator_chain_transceivers: Account<'info, IntegratorChainTransceivers>,
 
@@ -49,6 +51,9 @@ pub struct SetTransceiver<'info> {
     /// The transceiver account being set
     /// CHECK: This account is only used as a reference for PDA derivation and is not accessed directly
     pub transceiver: AccountInfo<'info>,
+
+    /// The System Program
+    pub system_program: Program<'info, System>,
 }
 
 pub fn set_recv_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverArgs) -> Result<()> {

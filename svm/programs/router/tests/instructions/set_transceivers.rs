@@ -29,6 +29,7 @@ async fn execute_set_transceiver(
         integrator_program,
         registered_transceiver,
         transceiver,
+        system_program: solana_sdk::system_program::id(),
     };
 
     let ix = Instruction {
