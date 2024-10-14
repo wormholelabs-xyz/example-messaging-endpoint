@@ -1,5 +1,5 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use router::accounts::TransferIntegratorConfigOwnership;
+use router::accounts::UpdateAdmin;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -9,7 +9,7 @@ use solana_sdk::{
 
 use crate::common::execute_transaction::execute_transaction;
 
-pub async fn transfer_integrator_config_ownership(
+pub async fn update_admin(
     context: &mut ProgramTestContext,
     current_admin: &Keypair,
     new_admin: &Keypair,
@@ -17,7 +17,7 @@ pub async fn transfer_integrator_config_ownership(
     integrator_config: Pubkey,
     integrator_program: Pubkey,
 ) -> Result<(), BanksClientError> {
-    let accounts = TransferIntegratorConfigOwnership {
+    let accounts = UpdateAdmin {
         admin: current_admin.pubkey(),
         new_admin: new_admin.pubkey(),
         integrator_config,

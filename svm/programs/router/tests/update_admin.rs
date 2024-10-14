@@ -4,7 +4,7 @@ mod common;
 mod instructions;
 
 use crate::instructions::register::register;
-use crate::instructions::transfer_integrator_config_ownership::transfer_integrator_config_ownership;
+use crate::instructions::update_admin::update_admin;
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
 use router::error::RouterError;
@@ -50,14 +50,14 @@ async fn initialize_test_environment(
 }
 
 #[tokio::test]
-async fn test_transfer_integrator_config_ownership_success() {
+async fn test_update_admin_success() {
     let mut context = setup().await;
     let (current_owner, payer, integrator_program_id, integrator_config_pda) =
         initialize_test_environment(&mut context).await;
 
     let new_owner = Keypair::new();
 
-    transfer_integrator_config_ownership(
+    update_admin(
         &mut context,
         &current_owner,
         &new_owner,
@@ -75,7 +75,7 @@ async fn test_transfer_integrator_config_ownership_success() {
 }
 
 #[tokio::test]
-async fn test_transfer_integrator_config_ownership_invalid_current_owner() {
+async fn test_update_admin_invalid_current_owner() {
     let mut context = setup().await;
     let (current_owner, payer, integrator_program_id, integrator_config_pda) =
         initialize_test_environment(&mut context).await;
@@ -83,7 +83,7 @@ async fn test_transfer_integrator_config_ownership_invalid_current_owner() {
     let invalid_owner = Keypair::new();
     let new_owner = Keypair::new();
 
-    let result = transfer_integrator_config_ownership(
+    let result = update_admin(
         &mut context,
         &invalid_owner,
         &new_owner,
@@ -108,12 +108,12 @@ async fn test_transfer_integrator_config_ownership_invalid_current_owner() {
 }
 
 #[tokio::test]
-async fn test_transfer_integrator_config_ownership_same_owner() {
+async fn test_update_admin_same_owner() {
     let mut context = setup().await;
     let (current_owner, payer, integrator_program_id, integrator_config_pda) =
         initialize_test_environment(&mut context).await;
 
-    let result = transfer_integrator_config_ownership(
+    let result = update_admin(
         &mut context,
         &current_owner,
         &current_owner,

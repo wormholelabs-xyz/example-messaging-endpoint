@@ -3,7 +3,7 @@ use crate::state::IntegratorConfig;
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
-pub struct TransferIntegratorConfigOwnership<'info> {
+pub struct UpdateAdmin<'info> {
     /// The current owner of the IntegratorConfig account
     pub admin: Signer<'info>,
 
@@ -27,11 +27,9 @@ pub struct TransferIntegratorConfigOwnership<'info> {
     pub integrator_program: UncheckedAccount<'info>,
 }
 
-pub fn transfer_integrator_config_ownership(
-    ctx: Context<TransferIntegratorConfigOwnership>,
-) -> Result<()> {
+pub fn update_admin(ctx: Context<UpdateAdmin>) -> Result<()> {
     msg!(
-        "Transferring IntegratorConfig ownership from {} to {}",
+        "Transferring IntegratorConfig admin from {} to {}",
         ctx.accounts.admin.key(),
         ctx.accounts.new_admin.key()
     );

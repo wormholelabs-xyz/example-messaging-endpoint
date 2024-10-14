@@ -109,11 +109,7 @@ pub mod router {
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
-    pub fn transfer_integrator_config_ownership(
-        ctx: Context<TransferIntegratorConfigOwnership>,
-    ) -> Result<()> {
-        instructions::transfer_integrator_config_ownership::transfer_integrator_config_ownership(
-            ctx,
-        )
+    pub fn transfer_integrator_config_ownership(ctx: Context<UpdateAdmin>) -> Result<()> {
+        instructions::update_admin::update_admin(ctx)
     }
 }
