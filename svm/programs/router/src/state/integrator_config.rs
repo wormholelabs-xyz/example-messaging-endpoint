@@ -9,15 +9,15 @@ pub struct IntegratorConfig {
     /// Bump seed for PDA derivation
     pub bump: u8,
 
-    /// Owner of the IntegratorConfig account
-    pub owner: Pubkey,
+    /// Admin of the IntegratorConfig account
+    pub admin: Pubkey,
 
     /// Program ID associated with this integrator
     pub integrator_program_id: Pubkey,
 
     /// Vector of registered transceiver addresses
     #[max_len(128)]
-    pub transceivers: Vec<Pubkey>,
+    pub registered_transceivers: Vec<Pubkey>,
 }
 
 impl IntegratorConfig {
@@ -27,21 +27,21 @@ impl IntegratorConfig {
     /// Maximum number of transceivers allowed
     pub const MAX_TRANSCEIVERS: usize = 128;
 
-    pub fn transfer_owner(&mut self, current_owner: &Signer, new_owner: Pubkey) -> Result<()> {
+    pub fn update_admin(&mut self, current_admin: &Signer, new_admin: Pubkey) -> Result<()> {
         require!(
-            self.owner == current_owner.key(),
+            self.admin == current_admin.key(),
             RouterError::InvalidIntegratorAuthority
         );
-        self.owner = new_owner;
+        self.admin = new_admin;
         Ok(())
     }
 
     pub fn add_transceiver(&mut self, transceiver: Pubkey) -> Result<()> {
         require!(
-            self.transceivers.len() < Self::MAX_TRANSCEIVERS,
+            self.registered_transceivers.len() < Self::MAX_TRANSCEIVERS,
             RouterError::MaxTransceiversReached
         );
-        self.transceivers.push(transceiver);
+        self.registered_transceivers.push(transceiver);
         Ok(())
     }
 }

@@ -3,7 +3,7 @@
 mod common;
 mod instructions;
 
-use crate::instructions::initialize_integrator_config::initialize_integrator_config;
+use crate::instructions::register::register;
 use crate::instructions::transfer_integrator_config_ownership::transfer_integrator_config_ownership;
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
@@ -31,7 +31,7 @@ async fn initialize_test_environment(
     );
 
     // Initialize the integrator config
-    initialize_integrator_config(
+    register(
         context,
         &payer,
         owner.pubkey(),
@@ -71,7 +71,7 @@ async fn test_transfer_integrator_config_ownership_success() {
     // Verify that the ownership has been transferred
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.owner, new_owner.pubkey());
+    assert_eq!(integrator_config.admin, new_owner.pubkey());
 }
 
 #[tokio::test]
@@ -104,7 +104,7 @@ async fn test_transfer_integrator_config_ownership_invalid_current_owner() {
     // Verify that the ownership has not been transferred
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.owner, current_owner.pubkey());
+    assert_eq!(integrator_config.admin, current_owner.pubkey());
 }
 
 #[tokio::test]
@@ -129,5 +129,5 @@ async fn test_transfer_integrator_config_ownership_same_owner() {
     // Verify that the ownership has not changed
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.owner, current_owner.pubkey());
+    assert_eq!(integrator_config.admin, current_owner.pubkey());
 }

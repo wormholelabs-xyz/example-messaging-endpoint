@@ -3,7 +3,7 @@
 mod common;
 mod instructions;
 
-use crate::instructions::initialize_integrator_config::initialize_integrator_config;
+use crate::instructions::register::register;
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
 use router::state::IntegratorConfig;
@@ -15,7 +15,7 @@ use solana_sdk::{
 };
 
 #[tokio::test]
-async fn test_initialize_integrator_config_success() {
+async fn test_register_success() {
     // Set up the test environment
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
@@ -31,7 +31,7 @@ async fn test_initialize_integrator_config_success() {
     );
 
     // Initialize the integrator config
-    initialize_integrator_config(
+    register(
         &mut context,
         &payer,
         authority,
@@ -45,16 +45,16 @@ async fn test_initialize_integrator_config_success() {
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
 
-    assert_eq!(integrator_config.owner, authority);
+    assert_eq!(integrator_config.admin, authority);
     assert_eq!(
         integrator_config.integrator_program_id,
         integrator_program.pubkey()
     );
-    assert_eq!(integrator_config.transceivers.len(), 0);
+    assert_eq!(integrator_config.registered_transceivers.len(), 0);
 }
 
 #[tokio::test]
-async fn test_initialize_integrator_config_reinitialization() {
+async fn test_register_reinitialization() {
     // Set up the test environment
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
@@ -70,7 +70,7 @@ async fn test_initialize_integrator_config_reinitialization() {
     );
 
     // Initialize the integrator config
-    initialize_integrator_config(
+    register(
         &mut context,
         &payer,
         authority,
@@ -81,7 +81,7 @@ async fn test_initialize_integrator_config_reinitialization() {
     .unwrap();
 
     // Try to initialize again
-    let result = initialize_integrator_config(
+    let result = register(
         &mut context,
         &payer,
         authority,
@@ -103,7 +103,7 @@ async fn test_initialize_integrator_config_reinitialization() {
 }
 
 #[tokio::test]
-async fn test_initialize_integrator_config_different_programs() {
+async fn test_register_different_programs() {
     // Set up the test environment
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
@@ -128,7 +128,7 @@ async fn test_initialize_integrator_config_different_programs() {
     );
 
     // Initialize for program 1
-    initialize_integrator_config(
+    register(
         &mut context,
         &payer,
         authority,
@@ -139,7 +139,7 @@ async fn test_initialize_integrator_config_different_programs() {
     .unwrap();
 
     // Initialize for program 2
-    initialize_integrator_config(
+    register(
         &mut context,
         &payer,
         authority,

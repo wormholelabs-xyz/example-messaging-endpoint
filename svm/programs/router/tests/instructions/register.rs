@@ -1,5 +1,5 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use router::accounts::InitIntegratorConfig;
+use router::accounts::Register;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -9,14 +9,14 @@ use solana_sdk::{
 
 use crate::common::execute_transaction::execute_transaction;
 
-pub async fn initialize_integrator_config(
+pub async fn register(
     context: &mut ProgramTestContext,
     payer: &Keypair,
     owner: Pubkey,
     integrator_config: Pubkey,
     integrator_program: &Keypair,
 ) -> Result<(), BanksClientError> {
-    let accounts = InitIntegratorConfig {
+    let accounts = Register {
         payer: payer.pubkey(),
         owner,
         integrator_config,

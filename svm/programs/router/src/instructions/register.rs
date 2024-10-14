@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 
 /// Accounts struct for initializing an IntegratorConfig account
 #[derive(Accounts)]
-pub struct InitIntegratorConfig<'info> {
+pub struct Register<'info> {
     /// The account paying for the initialization
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -33,7 +33,7 @@ pub struct InitIntegratorConfig<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn init_integrator_config(ctx: Context<InitIntegratorConfig>) -> Result<()> {
+pub fn register(ctx: Context<Register>) -> Result<()> {
     msg!(
         "Initializing IntegratorConfig for program: {}",
         ctx.accounts.integrator_program.key()
@@ -41,9 +41,9 @@ pub fn init_integrator_config(ctx: Context<InitIntegratorConfig>) -> Result<()> 
 
     ctx.accounts.integrator_config.set_inner(IntegratorConfig {
         bump: ctx.bumps.integrator_config,
-        owner: ctx.accounts.owner.key(),
+        admin: ctx.accounts.owner.key(),
         integrator_program_id: ctx.accounts.integrator_program.key(),
-        transceivers: Vec::new(),
+        registered_transceivers: Vec::new(),
     });
 
     msg!("IntegratorConfig initialized successfully");

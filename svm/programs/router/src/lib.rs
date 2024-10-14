@@ -19,8 +19,8 @@ pub mod router {
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
-    pub fn init_integrator_config(ctx: Context<InitIntegratorConfig>) -> Result<()> {
-        instructions::initialize_integrator_config::init_integrator_config(ctx)
+    pub fn init_integrator_config(ctx: Context<Register>) -> Result<()> {
+        instructions::register::register(ctx)
     }
 
     /// Initializes the chain transceivers for an integrator

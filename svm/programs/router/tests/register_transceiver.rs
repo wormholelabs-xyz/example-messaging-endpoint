@@ -3,7 +3,7 @@
 mod common;
 mod instructions;
 
-use crate::instructions::initialize_integrator_config::initialize_integrator_config;
+use crate::instructions::register::register;
 use crate::instructions::register_transceiver::register_transceiver;
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
@@ -29,7 +29,7 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Keyp
         &router::id(),
     );
 
-    initialize_integrator_config(
+    register(
         &mut context,
         &payer,
         owner.pubkey(),
@@ -105,8 +105,11 @@ async fn test_register_transceiver_success() {
     // Verify that the integrator config's transceivers list has been updated
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.transceivers.len(), 1);
-    assert_eq!(integrator_config.transceivers[0], transceiver_address);
+    assert_eq!(integrator_config.registered_transceivers.len(), 1);
+    assert_eq!(
+        integrator_config.registered_transceivers[0],
+        transceiver_address
+    );
 }
 
 #[tokio::test]
@@ -131,8 +134,11 @@ async fn test_register_multiple_transceivers() {
     // Verify that the integrator config's transceivers list has been updated
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.transceivers.len(), 2);
-    assert_eq!(integrator_config.transceivers, transceiver_addresses);
+    assert_eq!(integrator_config.registered_transceivers.len(), 2);
+    assert_eq!(
+        integrator_config.registered_transceivers,
+        transceiver_addresses
+    );
 }
 
 #[tokio::test]
@@ -182,7 +188,7 @@ async fn test_register_max_transceivers() {
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
     assert_eq!(
-        integrator_config.transceivers.len(),
+        integrator_config.registered_transceivers.len(),
         IntegratorConfig::MAX_TRANSCEIVERS
     );
 }
@@ -227,8 +233,11 @@ async fn test_register_transceiver_reinitialization() {
     // Verify that the integrator config's transceivers list has not been updated
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.transceivers.len(), 1);
-    assert_eq!(integrator_config.transceivers[0], transceiver_address);
+    assert_eq!(integrator_config.registered_transceivers.len(), 1);
+    assert_eq!(
+        integrator_config.registered_transceivers[0],
+        transceiver_address
+    );
 }
 
 #[tokio::test]
@@ -268,5 +277,5 @@ async fn test_register_transceiver_non_authority() {
     // Verify that the integrator config's transceivers list has not been updated
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.transceivers.len(), 0);
+    assert_eq!(integrator_config.registered_transceivers.len(), 0);
 }

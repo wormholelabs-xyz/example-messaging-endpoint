@@ -11,7 +11,7 @@ use crate::common::execute_transaction::execute_transaction;
 
 pub async fn register_transceiver(
     context: &mut ProgramTestContext,
-    owner: &Keypair,
+    admin: &Keypair,
     payer: &Keypair,
     integrator_config: Pubkey,
     registered_transceiver: Pubkey,
@@ -20,7 +20,7 @@ pub async fn register_transceiver(
 ) -> Result<(), BanksClientError> {
     let accounts = RegisterTransceiver {
         payer: payer.pubkey(),
-        owner: owner.pubkey(),
+        admin: admin.pubkey(),
         integrator_config,
         registered_transceiver,
         integrator_program,
@@ -34,5 +34,5 @@ pub async fn register_transceiver(
         data: router::instruction::RegisterTransceiver {}.data(),
     };
 
-    execute_transaction(context, ix, &[owner, payer], payer).await
+    execute_transaction(context, ix, &[admin, payer], payer).await
 }

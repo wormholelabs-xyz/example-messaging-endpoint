@@ -11,7 +11,7 @@ use crate::common::execute_transaction::execute_transaction;
 
 pub async fn initialize_integrator_chain_transceivers(
     context: &mut ProgramTestContext,
-    owner: &Keypair,
+    admin: &Keypair,
     payer: &Keypair,
     integrator_config: Pubkey,
     integrator_chain_transceivers: Pubkey,
@@ -19,7 +19,7 @@ pub async fn initialize_integrator_chain_transceivers(
     integrator_program: Pubkey,
 ) -> Result<(), BanksClientError> {
     let accounts = InitializeIntegratorChainTransceivers {
-        owner: owner.pubkey(),
+        admin: admin.pubkey(),
         payer: payer.pubkey(),
         integrator_config,
         integrator_chain_transceivers,
@@ -33,5 +33,5 @@ pub async fn initialize_integrator_chain_transceivers(
         data: router::instruction::InitializeIntegratorChainTransceivers { chain_id }.data(),
     };
 
-    execute_transaction(context, ix, &[owner, payer], payer).await
+    execute_transaction(context, ix, &[admin, payer], payer).await
 }

@@ -12,7 +12,7 @@ use crate::common::execute_transaction::execute_transaction;
 
 async fn execute_set_transceiver(
     context: &mut ProgramTestContext,
-    owner: &Keypair,
+    admin: &Keypair,
     payer: &Keypair,
     integrator_config: Pubkey,
     integrator_chain_transceivers: Pubkey,
@@ -23,7 +23,7 @@ async fn execute_set_transceiver(
 ) -> Result<(), BanksClientError> {
     let accounts = SetTransceiver {
         payer: payer.pubkey(),
-        owner: owner.pubkey(),
+        admin: admin.pubkey(),
         integrator_config,
         integrator_chain_transceivers,
         integrator_program,
@@ -36,7 +36,7 @@ async fn execute_set_transceiver(
         accounts: accounts.to_account_metas(None),
         data: instruction_data,
     };
-    execute_transaction(context, ix, &[owner, payer], payer).await
+    execute_transaction(context, ix, &[admin, payer], payer).await
 }
 
 pub async fn set_recv_transceiver(

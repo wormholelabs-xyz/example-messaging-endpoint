@@ -12,8 +12,8 @@ pub struct InitializeIntegratorChainTransceivers<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
-    /// The owner of the IntegratorConfig account
-    pub owner: Signer<'info>,
+    /// The admin of the IntegratorConfig account
+    pub admin: Signer<'info>,
 
     /// The IntegratorChainTransceivers account being initialized
     #[account(
@@ -40,7 +40,7 @@ pub struct InitializeIntegratorChainTransceivers<'info> {
             integrator_program.key().as_ref(),
         ],
         bump,
-        has_one = owner @ RouterError::InvalidIntegratorAuthority
+        has_one = admin @ RouterError::InvalidIntegratorAuthority
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 

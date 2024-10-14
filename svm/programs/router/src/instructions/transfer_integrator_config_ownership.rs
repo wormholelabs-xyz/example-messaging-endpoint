@@ -5,10 +5,10 @@ use anchor_lang::prelude::*;
 #[derive(Accounts)]
 pub struct TransferIntegratorConfigOwnership<'info> {
     /// The current owner of the IntegratorConfig account
-    pub owner: Signer<'info>,
+    pub admin: Signer<'info>,
 
     /// The new owner of the IntegratorConfig account
-    pub new_owner: Signer<'info>,
+    pub new_admin: Signer<'info>,
 
     /// The IntegratorConfig account being transferred
     #[account(
@@ -18,7 +18,7 @@ pub struct TransferIntegratorConfigOwnership<'info> {
             integrator_program.key().as_ref(),
         ],
         bump = integrator_config.bump,
-        has_one = owner @ RouterError::InvalidIntegratorAuthority,
+        has_one = admin @ RouterError::InvalidIntegratorAuthority,
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 
@@ -32,13 +32,13 @@ pub fn transfer_integrator_config_ownership(
 ) -> Result<()> {
     msg!(
         "Transferring IntegratorConfig ownership from {} to {}",
-        ctx.accounts.owner.key(),
-        ctx.accounts.new_owner.key()
+        ctx.accounts.admin.key(),
+        ctx.accounts.new_admin.key()
     );
 
     ctx.accounts
         .integrator_config
-        .transfer_owner(&ctx.accounts.owner, ctx.accounts.new_owner.key())?;
+        .update_admin(&ctx.accounts.admin, ctx.accounts.new_admin.key())?;
 
     msg!("IntegratorConfig ownership transferred successfully");
     Ok(())

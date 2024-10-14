@@ -8,13 +8,13 @@ pub struct RegisterTransceiver<'info> {
     pub payer: Signer<'info>,
 
     #[account(mut)]
-    pub owner: Signer<'info>,
+    pub admin: Signer<'info>,
 
     #[account(
         mut,
         seeds = [IntegratorConfig::SEED_PREFIX, integrator_program.key().as_ref()],
         bump = integrator_config.bump,
-        has_one = owner @ RouterError::InvalidIntegratorAuthority,
+        has_one = admin @ RouterError::InvalidIntegratorAuthority,
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 
@@ -41,7 +41,7 @@ pub struct RegisterTransceiver<'info> {
 }
 
 pub fn register_transceiver(ctx: Context<RegisterTransceiver>) -> Result<()> {
-    let transceiver_id = ctx.accounts.integrator_config.transceivers.len() as u8;
+    let transceiver_id = ctx.accounts.integrator_config.registered_transceivers.len() as u8;
 
     // Check if we've reached the maximum number of transceivers
     if transceiver_id >= IntegratorConfig::MAX_TRANSCEIVERS as u8 {
@@ -51,7 +51,7 @@ pub fn register_transceiver(ctx: Context<RegisterTransceiver>) -> Result<()> {
     // Add the new transceiver to the list
     ctx.accounts
         .integrator_config
-        .transceivers
+        .registered_transceivers
         .push(ctx.accounts.transceiver_address.key());
 
     // Initialize RegisteredTransceiver

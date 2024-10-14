@@ -13,12 +13,12 @@ pub struct SetTransceiver<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
-    pub owner: Signer<'info>,
+    pub admin: Signer<'info>,
 
     #[account(
         seeds = [IntegratorConfig::SEED_PREFIX, integrator_program.key().as_ref()],
         bump = integrator_config.bump,
-        has_one = owner @ RouterError::InvalidIntegratorAuthority,
+        has_one = admin @ RouterError::InvalidIntegratorAuthority,
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 

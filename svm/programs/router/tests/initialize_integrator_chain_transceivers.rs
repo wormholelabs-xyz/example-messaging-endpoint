@@ -4,7 +4,7 @@ mod common;
 mod instructions;
 
 use crate::instructions::initialize_integrator_chain_transceivers::initialize_integrator_chain_transceivers;
-use crate::instructions::initialize_integrator_config::initialize_integrator_config;
+use crate::instructions::register::register;
 
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
@@ -33,7 +33,7 @@ async fn initialize_test_environment(
     );
 
     // Initialize the integrator config
-    initialize_integrator_config(
+    register(
         context,
         &payer,
         owner.pubkey(),
