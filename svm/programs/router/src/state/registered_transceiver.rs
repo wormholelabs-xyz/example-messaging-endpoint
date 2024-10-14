@@ -6,7 +6,7 @@ use anchor_lang::prelude::*;
 /// within that integrator's context. It can be used across multiple chains.
 #[account]
 #[derive(InitSpace)]
-pub struct RegisteredTransceiver {
+pub struct TransceiverInfo {
     /// Bump seed for PDA derivation
     pub bump: u8,
 
@@ -20,9 +20,9 @@ pub struct RegisteredTransceiver {
     pub transceiver_address: Pubkey,
 }
 
-impl RegisteredTransceiver {
-    /// Seed prefix for deriving RegisteredTransceiver PDAs
-    pub const SEED_PREFIX: &'static [u8] = b"registered_transceiver";
+impl TransceiverInfo {
+    /// Seed prefix for deriving TransceiverInfo PDAs
+    pub const SEED_PREFIX: &'static [u8] = b"transceiver_info";
 
     pub fn pda(integrator_program_id: &Pubkey, transceiver_address: &Pubkey) -> (Pubkey, u8) {
         Pubkey::find_program_address(

@@ -1,5 +1,5 @@
 use crate::error::RouterError;
-use crate::state::{IntegratorConfig, RegisteredTransceiver};
+use crate::state::{IntegratorConfig, TransceiverInfo};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
@@ -21,15 +21,15 @@ pub struct RegisterTransceiver<'info> {
     #[account(
         init,
         payer = payer,
-        space = 8 + RegisteredTransceiver::INIT_SPACE,
+        space = 8 + TransceiverInfo::INIT_SPACE,
         seeds = [
-            RegisteredTransceiver::SEED_PREFIX,
+            TransceiverInfo::SEED_PREFIX,
             integrator_program.key().as_ref(),
             transceiver_address.key().as_ref(),
         ],
         bump
     )]
-    pub registered_transceiver: Account<'info, RegisteredTransceiver>,
+    pub transceiver_info: Account<'info, TransceiverInfo>,
 
     /// CHECK: This account is not read or written in this instruction
     pub integrator_program: UncheckedAccount<'info>,
@@ -54,15 +54,13 @@ pub fn register_transceiver(ctx: Context<RegisterTransceiver>) -> Result<()> {
         .registered_transceivers
         .push(ctx.accounts.transceiver_address.key());
 
-    // Initialize RegisteredTransceiver
-    ctx.accounts
-        .registered_transceiver
-        .set_inner(RegisteredTransceiver {
-            bump: ctx.bumps.registered_transceiver,
-            id: transceiver_id,
-            integrator_program_id: ctx.accounts.integrator_program.key(),
-            transceiver_address: ctx.accounts.transceiver_address.key(),
-        });
+    // Initialize TransceiverInfo
+    ctx.accounts.transceiver_info.set_inner(TransceiverInfo {
+        bump: ctx.bumps.transceiver_info,
+        id: transceiver_id,
+        integrator_program_id: ctx.accounts.integrator_program.key(),
+        transceiver_address: ctx.accounts.transceiver_address.key(),
+    });
 
     Ok(())
 }

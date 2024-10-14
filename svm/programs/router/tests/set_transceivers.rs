@@ -11,7 +11,7 @@ use anchor_lang::prelude::*;
 use common::setup::setup;
 use router::error::RouterError;
 use router::{
-    state::{IntegratorChainConfig, IntegratorConfig, RegisteredTransceiver},
+    state::{IntegratorChainConfig, IntegratorConfig, TransceiverInfo},
     utils::bitmap::Bitmap,
 };
 use solana_program_test::*;
@@ -61,7 +61,7 @@ async fn initialize_test_environment(
     let transceiver_address = Pubkey::new_unique(); // Generate a unique pubkey for the transceiver
     let (registered_transceiver_pda, _) = Pubkey::find_program_address(
         &[
-            RegisteredTransceiver::SEED_PREFIX,
+            TransceiverInfo::SEED_PREFIX,
             integrator_program.pubkey().as_ref(),
             transceiver_address.as_ref(),
         ],
@@ -183,7 +183,7 @@ async fn test_set_in_transceivers_multiple_sets_success() {
     let transceiver2_address = Pubkey::new_unique();
     let (registered_transceiver2_pda, _) = Pubkey::find_program_address(
         &[
-            RegisteredTransceiver::SEED_PREFIX,
+            TransceiverInfo::SEED_PREFIX,
             integrator_program_id.as_ref(),
             transceiver2_address.as_ref(),
         ],

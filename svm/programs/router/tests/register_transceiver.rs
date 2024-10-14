@@ -8,7 +8,7 @@ use crate::instructions::register_transceiver::register_transceiver;
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
 use router::error::RouterError;
-use router::state::{IntegratorConfig, RegisteredTransceiver};
+use router::state::{IntegratorConfig, TransceiverInfo};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::InstructionError, signature::Keypair, signer::Signer,
@@ -57,7 +57,7 @@ async fn register_test_transceiver(
 ) -> (Pubkey, Pubkey) {
     let transceiver_address = Keypair::new().pubkey();
     let (registered_transceiver_pda, _) =
-        RegisteredTransceiver::pda(&integrator_program.pubkey(), &transceiver_address);
+        TransceiverInfo::pda(&integrator_program.pubkey(), &transceiver_address);
 
     register_transceiver(
         context,
@@ -89,7 +89,7 @@ async fn test_register_transceiver_success() {
     .await;
 
     // Fetch and verify the registered transceiver
-    let registered_transceiver: RegisteredTransceiver =
+    let registered_transceiver: TransceiverInfo =
         get_account(&mut context.banks_client, registered_transceiver_pda).await;
 
     assert_eq!(registered_transceiver.id, 0);
@@ -161,7 +161,7 @@ async fn test_register_max_transceivers() {
     // Attempt to register one more transceiver (should fail)
     let extra_transceiver_address = Keypair::new().pubkey();
     let (extra_registered_transceiver_pda, _) =
-        RegisteredTransceiver::pda(&integrator_program.pubkey(), &extra_transceiver_address);
+        TransceiverInfo::pda(&integrator_program.pubkey(), &extra_transceiver_address);
 
     let result = register_transceiver(
         &mut context,
@@ -251,7 +251,7 @@ async fn test_register_transceiver_non_authority() {
     // Attempt to register a transceiver with non-authority signer
     let transceiver_address = Keypair::new().pubkey();
     let (registered_transceiver_pda, _) =
-        RegisteredTransceiver::pda(&integrator_program.pubkey(), &transceiver_address);
+        TransceiverInfo::pda(&integrator_program.pubkey(), &transceiver_address);
 
     let result = register_transceiver(
         &mut context,

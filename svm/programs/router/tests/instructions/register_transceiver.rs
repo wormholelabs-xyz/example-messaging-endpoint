@@ -14,15 +14,15 @@ pub async fn register_transceiver(
     admin: &Keypair,
     payer: &Keypair,
     integrator_config: Pubkey,
-    registered_transceiver: Pubkey,
+    transceiver_info: Pubkey,
     integrator_program: Pubkey,
     transceiver_address: Pubkey,
 ) -> Result<(), BanksClientError> {
-    let accounts = RegisterTransceiver {
+    let accounts: RegisterTransceiver = RegisterTransceiver {
         payer: payer.pubkey(),
         admin: admin.pubkey(),
         integrator_config,
-        registered_transceiver,
+        transceiver_info,
         integrator_program,
         transceiver_address,
         system_program: solana_sdk::system_program::id(),

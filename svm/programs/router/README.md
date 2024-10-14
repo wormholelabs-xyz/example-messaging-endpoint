@@ -213,6 +213,7 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 
 - [x] Successful setting of incoming transceivers
 - [x] Successful setting of outgoing transceivers
+- [ ] Disabling incoming/outgoing transceivers
 - [x] Setting transceivers with invalid authority
 - [x] Setting transceivers with invalid transceiver ID
 - [x] Multiple updates of transceiver settings

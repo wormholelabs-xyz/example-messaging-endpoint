@@ -1,5 +1,5 @@
 use crate::error::RouterError;
-use crate::state::{IntegratorChainConfig, IntegratorConfig, RegisteredTransceiver};
+use crate::state::{IntegratorChainConfig, IntegratorConfig, TransceiverInfo};
 use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -37,13 +37,13 @@ pub struct SetTransceiver<'info> {
 
     #[account(
         seeds = [
-            RegisteredTransceiver::SEED_PREFIX,
+            TransceiverInfo::SEED_PREFIX,
             integrator_program.key().as_ref(),
             transceiver.key().as_ref(),
         ],
         bump = registered_transceiver.bump,
     )]
-    pub registered_transceiver: Account<'info, RegisteredTransceiver>,
+    pub registered_transceiver: Account<'info, TransceiverInfo>,
 
     /// CHECK: This account is not read or written in this instruction
     pub integrator_program: UncheckedAccount<'info>,
