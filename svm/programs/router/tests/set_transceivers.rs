@@ -11,7 +11,7 @@ use anchor_lang::prelude::*;
 use common::setup::setup;
 use router::error::RouterError;
 use router::{
-    state::{IntegratorChainTransceivers, IntegratorConfig, RegisteredTransceiver},
+    state::{IntegratorChainConfig, IntegratorConfig, RegisteredTransceiver},
     utils::bitmap::Bitmap,
 };
 use solana_program_test::*;
@@ -48,9 +48,9 @@ async fn initialize_test_environment(
     .unwrap();
 
     // Initialize integrator chain transceivers
-    let (integrator_chain_transceivers_pda, _) = Pubkey::find_program_address(
+    let (integrator_chain_config_pda, _) = Pubkey::find_program_address(
         &[
-            IntegratorChainTransceivers::SEED_PREFIX,
+            IntegratorChainConfig::SEED_PREFIX,
             integrator_program.pubkey().as_ref(),
             &chain_id.to_le_bytes(),
         ],
@@ -84,7 +84,7 @@ async fn initialize_test_environment(
         owner,
         integrator_program.pubkey(),
         integrator_config_pda,
-        integrator_chain_transceivers_pda,
+        integrator_chain_config_pda,
         registered_transceiver_pda,
         transceiver_address,
         chain_id,
@@ -93,26 +93,26 @@ async fn initialize_test_environment(
 
 async fn verify_transceiver_state(
     context: &mut ProgramTestContext,
-    integrator_chain_transceivers_pda: Pubkey,
+    integrator_chain_config_pda: Pubkey,
     expected_recv_bitmap: u128,
     expected_send_bitmap: u128,
 ) {
     let account = context
         .banks_client
-        .get_account(integrator_chain_transceivers_pda)
+        .get_account(integrator_chain_config_pda)
         .await
         .unwrap()
         .unwrap();
 
-    let integrator_chain_transceivers: IntegratorChainTransceivers =
-        IntegratorChainTransceivers::try_deserialize(&mut account.data.as_ref()).unwrap();
+    let integrator_chain_config: IntegratorChainConfig =
+        IntegratorChainConfig::try_deserialize(&mut account.data.as_ref()).unwrap();
 
     assert_eq!(
-        integrator_chain_transceivers.recv_transceiver_bitmap,
+        integrator_chain_config.recv_transceiver_bitmap,
         Bitmap::from_value(expected_recv_bitmap)
     );
     assert_eq!(
-        integrator_chain_transceivers.send_transceiver_bitmap,
+        integrator_chain_config.send_transceiver_bitmap,
         Bitmap::from_value(expected_send_bitmap)
     );
 }
@@ -124,7 +124,7 @@ async fn test_set_in_transceivers_success() {
         authority,
         integrator_program_id,
         integrator_config_pda,
-        integrator_chain_transceivers_pda,
+        integrator_chain_config_pda,
         registered_transceiver_pda,
         transceiver,
         chain_id,
@@ -137,7 +137,7 @@ async fn test_set_in_transceivers_success() {
         &authority,
         &payer,
         integrator_config_pda,
-        integrator_chain_transceivers_pda,
+        integrator_chain_config_pda,
         integrator_program_id,
         registered_transceiver_pda,
         transceiver,
@@ -146,7 +146,7 @@ async fn test_set_in_transceivers_success() {
     .await;
     assert!(result.is_ok());
 
-    verify_transceiver_state(&mut context, integrator_chain_transceivers_pda, 1, 0).await;
+    verify_transceiver_state(&mut context, integrator_chain_config_pda, 1, 0).await;
 }
 
 #[tokio::test]
@@ -156,7 +156,7 @@ async fn test_set_in_transceivers_multiple_sets_success() {
         authority,
         integrator_program_id,
         integrator_config_pda,
-        integrator_chain_transceivers_pda,
+        integrator_chain_config_pda,
         registered_transceiver_pda,
         transceiver,
         chain_id,
@@ -170,7 +170,7 @@ async fn test_set_in_transceivers_multiple_sets_success() {
         &authority,
         &payer,
         integrator_config_pda,
-        integrator_chain_transceivers_pda,
+        integrator_chain_config_pda,
         integrator_program_id,
         registered_transceiver_pda,
         transceiver,
@@ -208,7 +208,7 @@ async fn test_set_in_transceivers_multiple_sets_success() {
         &authority,
         &payer,
         integrator_config_pda,
-        integrator_chain_transceivers_pda,
+        integrator_chain_config_pda,
         integrator_program_id,
         registered_transceiver2_pda,
         transceiver2_address,
@@ -218,7 +218,7 @@ async fn test_set_in_transceivers_multiple_sets_success() {
     assert!(result.is_ok());
 
     // Verify that both transceivers are set
-    verify_transceiver_state(&mut context, integrator_chain_transceivers_pda, 0b11, 0).await;
+    verify_transceiver_state(&mut context, integrator_chain_config_pda, 0b11, 0).await;
 }
 
 #[tokio::test]
@@ -228,7 +228,7 @@ async fn test_set_out_transceivers_success() {
         authority,
         integrator_program_id,
         integrator_config_pda,
-        integrator_chain_transceivers_pda,
+        integrator_chain_config_pda,
         registered_transceiver_pda,
         transceiver,
         chain_id,
@@ -241,7 +241,7 @@ async fn test_set_out_transceivers_success() {
         &authority,
         &payer,
         integrator_config_pda,
-        integrator_chain_transceivers_pda,
+        integrator_chain_config_pda,
         integrator_program_id,
         registered_transceiver_pda,
         transceiver,
@@ -251,7 +251,7 @@ async fn test_set_out_transceivers_success() {
 
     assert!(result.is_ok());
 
-    verify_transceiver_state(&mut context, integrator_chain_transceivers_pda, 0, 1).await;
+    verify_transceiver_state(&mut context, integrator_chain_config_pda, 0, 1).await;
 }
 
 #[tokio::test]
@@ -261,7 +261,7 @@ async fn test_set_transceivers_invalid_authority() {
         _authority,
         integrator_program_id,
         integrator_config_pda,
-        integrator_chain_transceivers_pda,
+        integrator_chain_config_pda,
         registered_transceiver_pda,
         transceiver,
         chain_id,
@@ -276,7 +276,7 @@ async fn test_set_transceivers_invalid_authority() {
         &invalid_authority,
         &payer,
         integrator_config_pda,
-        integrator_chain_transceivers_pda,
+        integrator_chain_config_pda,
         integrator_program_id,
         registered_transceiver_pda,
         transceiver,
@@ -303,7 +303,7 @@ async fn test_set_transceivers_invalid_transceiver_id() {
         authority,
         integrator_program_id,
         integrator_config_pda,
-        integrator_chain_transceivers_pda,
+        integrator_chain_config_pda,
         registered_transceiver_pda,
         _transceiver,
         chain_id,
@@ -318,7 +318,7 @@ async fn test_set_transceivers_invalid_transceiver_id() {
         &authority,
         &payer,
         integrator_config_pda,
-        integrator_chain_transceivers_pda,
+        integrator_chain_config_pda,
         integrator_program_id,
         registered_transceiver_pda,
         invalid_transceiver,

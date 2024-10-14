@@ -8,7 +8,7 @@ use crate::utils::bitmap::Bitmap;
 /// using bitmaps for efficient storage and lookup.
 #[account]
 #[derive(InitSpace)]
-pub struct IntegratorChainTransceivers {
+pub struct IntegratorChainConfig {
     /// Bump seed for PDA derivation
     pub bump: u8,
 
@@ -25,9 +25,9 @@ pub struct IntegratorChainTransceivers {
     pub send_transceiver_bitmap: Bitmap,
 }
 
-impl IntegratorChainTransceivers {
-    /// Seed prefix for deriving IntegratorChainTransceivers PDAs
-    pub const SEED_PREFIX: &'static [u8] = b"integrator_chain_transceivers";
+impl IntegratorChainConfig {
+    /// Seed prefix for deriving IntegratorChainConfig PDAs
+    pub const SEED_PREFIX: &'static [u8] = b"integrator_chain_config";
 
     /// Maximum number of transceivers allowed per direction (recv/send)
     pub const MAX_TRANSCEIVERS: u8 = 128;

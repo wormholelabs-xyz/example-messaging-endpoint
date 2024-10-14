@@ -1,5 +1,5 @@
 use crate::error::RouterError;
-use crate::state::{IntegratorChainTransceivers, IntegratorConfig, RegisteredTransceiver};
+use crate::state::{IntegratorChainConfig, IntegratorConfig, RegisteredTransceiver};
 use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -25,15 +25,15 @@ pub struct SetTransceiver<'info> {
     #[account(
         init_if_needed,
         payer = payer,
-        space = 8 + IntegratorChainTransceivers::INIT_SPACE,
+        space = 8 + IntegratorChainConfig::INIT_SPACE,
         seeds = [
-            IntegratorChainTransceivers::SEED_PREFIX,
+            IntegratorChainConfig::SEED_PREFIX,
             integrator_program.key().as_ref(),
             args.chain_id.to_le_bytes().as_ref(),
         ],
         bump,
     )]
-    pub integrator_chain_transceivers: Account<'info, IntegratorChainTransceivers>,
+    pub integrator_chain_config: Account<'info, IntegratorChainConfig>,
 
     #[account(
         seeds = [
@@ -58,10 +58,10 @@ pub struct SetTransceiver<'info> {
 
 pub fn set_recv_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverArgs) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
-    let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
+    let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
     // Set the bit corresponding to the registered_transceiver id
-    integrator_chain_transceivers
+    integrator_chain_config
         .recv_transceiver_bitmap
         .set(registered_transceiver.id, true)?;
 
@@ -73,10 +73,10 @@ pub fn disable_recv_transceiver(
     _args: SetTransceiverArgs,
 ) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
-    let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
+    let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
     // Clear the bit corresponding to the registered_transceiver id
-    integrator_chain_transceivers
+    integrator_chain_config
         .recv_transceiver_bitmap
         .set(registered_transceiver.id, false)?;
 
@@ -85,10 +85,10 @@ pub fn disable_recv_transceiver(
 
 pub fn set_send_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverArgs) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
-    let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
+    let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
     // Set the bit corresponding to the registered_transceiver id
-    integrator_chain_transceivers
+    integrator_chain_config
         .send_transceiver_bitmap
         .set(registered_transceiver.id, true)?;
 
@@ -100,10 +100,10 @@ pub fn disable_send_transceiver(
     _args: SetTransceiverArgs,
 ) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
-    let integrator_chain_transceivers = &mut ctx.accounts.integrator_chain_transceivers;
+    let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
     // Clear the bit corresponding to the registered_transceiver id
-    integrator_chain_transceivers
+    integrator_chain_config
         .send_transceiver_bitmap
         .set(registered_transceiver.id, false)?;
 
