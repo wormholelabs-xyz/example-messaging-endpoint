@@ -20,7 +20,7 @@ classDiagram
         transceivers: Vec<Pubkey>
     }
 
-    class IntegratorChainTransceivers {
+    class IntegratorChainConfig {
         bump: u8
         chain_id: u16
         integrator_program_id: Pubkey
@@ -28,21 +28,21 @@ classDiagram
         send_transceiver_bitmap: Bitmap
     }
 
-    class RegisteredTransceiver {
+    class TransceiverInfo {
         bump: u8
         id: u8
         integrator_program_id: Pubkey
-        address: Pubkey
+        transceiver_address: Pubkey
     }
 
     class Bitmap {
         map: u128
     }
 
-   IntegratorConfig "1" -- "" IntegratorChainTransceivers : manages
-   IntegratorChainTransceivers "1" -- "2" Bitmap : uses
-   IntegratorConfig "1" -- "*" RegisteredTransceiver : tracks
-   IntegratorChainTransceivers "1" -- "*" RegisteredTransceiver : corresponds to
+   IntegratorConfig "1" -- "" IntegratorChainConfig : manages
+   IntegratorChainConfig "1" -- "2" Bitmap : uses
+   IntegratorConfig "1" -- "*" TransceiverInfo : tracks
+   IntegratorChainConfig "1" -- "*" TransceiverInfo : corresponds to
 ```
 
 ### Program Structure
@@ -82,7 +82,7 @@ graph LR
     C3 --> SB3
     C3 --> RB3
 
-    subgraph "Transceiver Vector"
+    subgraph "Registered Transceivers"
     T1 --- TV1[T1]
     T1 --- TV2[T2]
     T1 --- TV3[T3]
@@ -133,9 +133,9 @@ Stores configuration specific to an Integrator.
   - The integrator program must sign the transaction
   - Owner is set during initialization (not required to sign)
 
-### IntegratorChainTransceivers
+### IntegratorChainConfig
 
-Manages transceivers for a specific integrator on a particular chain.
+Manages transceivers enabled and config for a specific integrator on a particular chain.
 
 - **bump**: Bump seed for PDA derivation
 - **chain_id**: Identifier for the blockchain network
@@ -149,7 +149,7 @@ Manages transceivers for a specific integrator on a particular chain.
 - Unique for each integrator program and chain combination
 - Initialization: Requires owner's signature and existing IntegratorConfig account
 
-### RegisteredTransceiver
+### TransceiverInfo
 
 Represents a registered transceiver in the GMP Router.
 
@@ -177,13 +177,12 @@ Utility struct for efficient storage and manipulation of boolean flags.
 ## Instructions
 
 1. `init_integrator_config`: Initialize integrator configuration
-2. `initialize_integrator_chain_transceivers`: Set up chain transceivers for an integrator on a specific chain
-3. `register_transceiver`: Register a new transceiver for an integrator
-4. `set_recv_transceiver`: Enable a receive transceiver for a specific chain
-5. `disable_recv_transceiver`: Disable a receive transceiver for a specific chain
-6. `set_send_transceiver`: Enable a send transceiver for a specific chain
-7. `disable_send_transceiver`: Disable a send transceiver for a specific chain
-8. `transfer_integrator_config_ownership`: Transfer ownership of the IntegratorConfig
+2. `register_transceiver`: Register a new transceiver for an integrator
+3. `set_recv_transceiver`: Enable a receive transceiver for a specific chain. It initializes IntegratorChainConfig if it doesn't exist.
+4. `disable_recv_transceiver`: Disable a receive transceiver for a specific chain
+5. `set_send_transceiver`: Enable a send transceiver for a specific chain. It initializes IntegratorChainConfig if it doesn't exist.
+6. `disable_send_transceiver`: Disable a send transceiver for a specific chain
+7. `update_admin`: Transfer admin of the IntegratorConfig
 
 ## Error Handling
 
@@ -192,22 +191,14 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 - Invalid integrator authority
 - Bitmap index out of bounds
 - Maximum number of transceivers reached
-- Invalid transceiver ID
 
 ## Testing
 
-### InitIntegratorConfig
+### Register
 
-- [x] Successful initialization
+- [x] Successful initialization of IntegratorConfig
 - [x] Reinitialization (should fail with AccountAlreadyInUse error)
 - [x] Initialization for different integrator programs
-
-### InitializeIntegratorChainTransceivers
-
-- [x] Successful initialization
-- [x] Initialization for already initialized chain (should fail)
-- [x] Initialization for different chains
-- [x] Initialization with invalid authority
 
 ### RegisterTransceiver
 

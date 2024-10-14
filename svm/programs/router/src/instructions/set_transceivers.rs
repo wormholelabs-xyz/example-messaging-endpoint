@@ -68,6 +68,7 @@ pub fn set_recv_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverA
     Ok(())
 }
 
+//TODO: Disable shouldn't init chain config
 pub fn disable_recv_transceiver(
     ctx: Context<SetTransceiver>,
     _args: SetTransceiverArgs,
