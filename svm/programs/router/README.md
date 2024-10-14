@@ -14,25 +14,25 @@
 ```mermaid
 classDiagram
     class IntegratorConfig {
-        bump: u8
+        *bump: u8
+        *integrator_program_id: Pubkey
         owner: Pubkey
-        integrator_program_id: Pubkey
         transceivers: Vec<Pubkey>
     }
 
     class IntegratorChainConfig {
-        bump: u8
-        chain_id: u16
-        integrator_program_id: Pubkey
+        *bump: u8
+        *integrator_program_id: Pubkey
+        *chain_id: u16
         recv_transceiver_bitmap: Bitmap
         send_transceiver_bitmap: Bitmap
     }
 
     class TransceiverInfo {
-        bump: u8
+        *bump: u8
+        *integrator_program_id: Pubkey
+        *transceiver_address: Pubkey
         id: u8
-        integrator_program_id: Pubkey
-        transceiver_address: Pubkey
     }
 
     class Bitmap {
@@ -44,6 +44,8 @@ classDiagram
    IntegratorConfig "1" -- "*" TransceiverInfo : tracks
    IntegratorChainConfig "1" -- "*" TransceiverInfo : corresponds to
 ```
+
+> **Note:** fields marked with an asterisk (\*) in the class diagrams are used as seeds for Program Derived Address (PDA) derivation.
 
 ### Program Structure
 
