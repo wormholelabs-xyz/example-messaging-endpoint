@@ -3,7 +3,6 @@
 mod common;
 mod instructions;
 
-use crate::instructions::initialize_integrator_chain_transceivers::initialize_integrator_chain_transceivers;
 use crate::instructions::register::register;
 use crate::instructions::register_transceiver::register_transceiver;
 use crate::instructions::set_transceivers::{set_recv_transceiver, set_send_transceiver};

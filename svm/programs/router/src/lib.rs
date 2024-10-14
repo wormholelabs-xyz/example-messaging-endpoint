@@ -23,21 +23,6 @@ pub mod router {
         instructions::register::register(ctx)
     }
 
-    /// Initializes the chain transceivers for an integrator
-    ///
-    /// # Arguments
-    ///
-    /// * `ctx` - The context of the instruction
-    /// * `chain_id` - The ID of the chain for which the transceivers are being initialized
-    pub fn initialize_integrator_chain_transceivers(
-        ctx: Context<InitializeIntegratorChainTransceivers>,
-        chain_id: u16,
-    ) -> Result<()> {
-        instructions::initialize_integrator_chain_transceivers::initialize_integrator_chain_transceivers(
-            ctx, chain_id,
-        )
-    }
-
     /// Registers a new transceiver for an integrator
     ///
     /// # Arguments
