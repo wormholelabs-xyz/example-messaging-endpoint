@@ -22,10 +22,7 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubk
     let integrator_program = mock_integrator::id();
 
     let (integrator_config_pda, _) = Pubkey::find_program_address(
-        &[
-            IntegratorConfig::SEED_PREFIX,
-            integrator_program.as_ref(),
-        ],
+        &[IntegratorConfig::SEED_PREFIX, integrator_program.as_ref()],
         &router::id(),
     );
 
