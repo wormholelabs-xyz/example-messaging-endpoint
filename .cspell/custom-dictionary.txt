@@ -1,6 +1,18 @@
 # Custom Dictionary Words
+agnostically
 Aptos
+Axelar
+Composability
 Devnet
+Discoverability
+keccak
+permissioned
+Permissionless
 Ruleset
 Rulesets
+runtimes
 Solana
+struct
+thresholding
+trustlessness
+upgradability
