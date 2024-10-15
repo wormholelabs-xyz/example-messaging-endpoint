@@ -7,8 +7,9 @@ pub struct UpdateAdmin<'info> {
     /// The current owner of the IntegratorConfig account
     pub admin: Signer<'info>,
 
-    /// The new owner of the IntegratorConfig account
-    pub new_admin: Signer<'info>,
+    /// The new admin of the IntegratorConfig account
+    /// CHECK: The integrator program is responsible for passing the correct owner
+    pub new_admin: UncheckedAccount<'info>,
 
     /// The IntegratorConfig account being transferred
     #[account(
