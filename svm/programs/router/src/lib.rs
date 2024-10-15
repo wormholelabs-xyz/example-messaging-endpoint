@@ -29,9 +29,12 @@ pub mod router {
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
-    /// * `transceiver_address` - The address of the transceiver to be registered
-    pub fn register_transceiver(ctx: Context<RegisterTransceiver>) -> Result<()> {
-        instructions::register_transceiver::register_transceiver(ctx)
+    /// * `args` - The arguments for registering a transceiver, including the integrator program ID and transceiver address
+    pub fn register_transceiver(
+        ctx: Context<RegisterTransceiver>,
+        args: RegisterTransceiverArgs,
+    ) -> Result<()> {
+        instructions::register_transceiver::register_transceiver(ctx, args)
     }
 
     /// Sets a transceiver as a receive transceiver for a specific chain

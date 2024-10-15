@@ -2,7 +2,14 @@ use crate::error::RouterError;
 use crate::state::{IntegratorConfig, TransceiverInfo};
 use anchor_lang::prelude::*;
 
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct RegisterTransceiverArgs {
+    pub integrator_program: Pubkey,
+    pub transceiver_address: Pubkey,
+}
+
 #[derive(Accounts)]
+#[instruction(args: RegisterTransceiverArgs)]
 pub struct RegisterTransceiver<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -12,7 +19,7 @@ pub struct RegisterTransceiver<'info> {
 
     #[account(
         mut,
-        seeds = [IntegratorConfig::SEED_PREFIX, integrator_program.key().as_ref()],
+        seeds = [IntegratorConfig::SEED_PREFIX, args.integrator_program.as_ref()],
         bump = integrator_config.bump,
         has_one = admin @ RouterError::InvalidIntegratorAuthority,
     )]
@@ -24,23 +31,20 @@ pub struct RegisterTransceiver<'info> {
         space = 8 + TransceiverInfo::INIT_SPACE,
         seeds = [
             TransceiverInfo::SEED_PREFIX,
-            integrator_program.key().as_ref(),
-            transceiver_address.key().as_ref(),
+            args.integrator_program.as_ref(),
+            args.transceiver_address.as_ref(),
         ],
         bump
     )]
     pub transceiver_info: Account<'info, TransceiverInfo>,
 
-    /// CHECK: This account is not read or written in this instruction
-    pub integrator_program: UncheckedAccount<'info>,
-
-    /// CHECK: This is the address of the transceiver being registered
-    pub transceiver_address: UncheckedAccount<'info>,
-
     pub system_program: Program<'info, System>,
 }
 
-pub fn register_transceiver(ctx: Context<RegisterTransceiver>) -> Result<()> {
+pub fn register_transceiver(
+    ctx: Context<RegisterTransceiver>,
+    args: RegisterTransceiverArgs,
+) -> Result<()> {
     let transceiver_id = ctx.accounts.integrator_config.registered_transceivers.len() as u8;
 
     // Check if we've reached the maximum number of transceivers
@@ -52,14 +56,14 @@ pub fn register_transceiver(ctx: Context<RegisterTransceiver>) -> Result<()> {
     ctx.accounts
         .integrator_config
         .registered_transceivers
-        .push(ctx.accounts.transceiver_address.key());
+        .push(args.transceiver_address);
 
     // Initialize TransceiverInfo
     ctx.accounts.transceiver_info.set_inner(TransceiverInfo {
         bump: ctx.bumps.transceiver_info,
         id: transceiver_id,
-        integrator_program_id: ctx.accounts.integrator_program.key(),
-        transceiver_address: ctx.accounts.transceiver_address.key(),
+        integrator_program_id: args.integrator_program,
+        transceiver_address: args.transceiver_address,
     });
 
     Ok(())
