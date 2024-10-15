@@ -93,7 +93,7 @@ pub mod router {
         instructions::set_transceivers::disable_send_transceiver(ctx, args)
     }
 
-    /// Transfers ownership of the IntegratorConfig to a new owner
+    /// Transfers adminship of the IntegratorConfig to a new admin
     ///
     /// # Arguments
     ///

@@ -49,7 +49,7 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubk
 
 async fn register_test_transceiver(
     context: &mut ProgramTestContext,
-    owner: &Keypair,
+    admin: &Keypair,
     payer: &Keypair,
     integrator_config_pda: Pubkey,
     integrator_program: Pubkey,
@@ -60,7 +60,7 @@ async fn register_test_transceiver(
 
     register_transceiver(
         context,
-        owner,
+        admin,
         payer,
         integrator_config_pda,
         registered_transceiver_pda,
@@ -75,12 +75,12 @@ async fn register_test_transceiver(
 
 #[tokio::test]
 async fn test_register_transceiver_success() {
-    let (mut context, payer, owner, integrator_program, integrator_config_pda) =
+    let (mut context, payer, admin, integrator_program, integrator_config_pda) =
         setup_test_environment().await;
 
     let (transceiver_address, registered_transceiver_pda) = register_test_transceiver(
         &mut context,
-        &owner,
+        &admin,
         &payer,
         integrator_config_pda,
         integrator_program,
@@ -113,7 +113,7 @@ async fn test_register_transceiver_success() {
 
 #[tokio::test]
 async fn test_register_multiple_transceivers() {
-    let (mut context, payer, owner, integrator_program, integrator_config_pda) =
+    let (mut context, payer, admin, integrator_program, integrator_config_pda) =
         setup_test_environment().await;
 
     // Register two transceivers
@@ -121,7 +121,7 @@ async fn test_register_multiple_transceivers() {
     for _ in 0..2 {
         let (transceiver_address, _) = register_test_transceiver(
             &mut context,
-            &owner,
+            &admin,
             &payer,
             integrator_config_pda,
             integrator_program,
@@ -142,14 +142,14 @@ async fn test_register_multiple_transceivers() {
 
 #[tokio::test]
 async fn test_register_max_transceivers() {
-    let (mut context, payer, owner, integrator_program, integrator_config_pda) =
+    let (mut context, payer, admin, integrator_program, integrator_config_pda) =
         setup_test_environment().await;
 
     // Register the maximum number of transceivers
     for _ in 0..IntegratorConfig::MAX_TRANSCEIVERS {
         register_test_transceiver(
             &mut context,
-            &owner,
+            &admin,
             &payer,
             integrator_config_pda,
             integrator_program,
@@ -164,7 +164,7 @@ async fn test_register_max_transceivers() {
 
     let result = register_transceiver(
         &mut context,
-        &owner,
+        &admin,
         &payer,
         integrator_config_pda,
         extra_registered_transceiver_pda,
@@ -194,13 +194,13 @@ async fn test_register_max_transceivers() {
 
 #[tokio::test]
 async fn test_register_transceiver_reinitialization() {
-    let (mut context, payer, owner, integrator_program, integrator_config_pda) =
+    let (mut context, payer, admin, integrator_program, integrator_config_pda) =
         setup_test_environment().await;
 
     // Register a transceiver
     let (transceiver_address, registered_transceiver_pda) = register_test_transceiver(
         &mut context,
-        &owner,
+        &admin,
         &payer,
         integrator_config_pda,
         integrator_program,
@@ -210,7 +210,7 @@ async fn test_register_transceiver_reinitialization() {
     // Attempt to register the same transceiver again
     let result = register_transceiver(
         &mut context,
-        &owner,
+        &admin,
         &payer,
         integrator_config_pda,
         registered_transceiver_pda,

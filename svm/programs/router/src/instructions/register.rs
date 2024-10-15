@@ -3,12 +3,13 @@ use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct RegisterArgs {
+    // Integrator Program
     pub integrator_program_id: Pubkey,
-    pub integrator_config_bump: u8,
+
+    // Bump to make sure the same PDA is derived
     pub integrator_program_pda_bump: u8,
 }
 
-/// Accounts struct for initializing an IntegratorConfig account
 /// Accounts struct for initializing an IntegratorConfig account
 #[derive(Accounts)]
 #[instruction(args: RegisterArgs)]
@@ -18,7 +19,7 @@ pub struct Register<'info> {
     pub payer: Signer<'info>,
 
     /// The admin of the IntegratorConfig account
-    /// CHECK: The integrator program is responsible for passing the correct owner
+    /// CHECK: The integrator program is responsible for passing the correct admin
     pub admin: UncheckedAccount<'info>,
 
     /// The IntegratorConfig account being initialized
@@ -35,8 +36,7 @@ pub struct Register<'info> {
     pub integrator_config: Account<'info, IntegratorConfig>,
 
     /// The integrator program's PDA
-    /// CHECK: This account is checked in the instruction handler
-
+    /// This makes sure that the Signer is a Integrator Program PDA Signer
     #[account(
         seeds = [b"router_integrator"],
         bump = args.integrator_program_pda_bump,

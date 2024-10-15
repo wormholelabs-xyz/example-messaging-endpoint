@@ -4,11 +4,11 @@ use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct UpdateAdmin<'info> {
-    /// The current owner of the IntegratorConfig account
+    /// The current admin of the IntegratorConfig account
     pub admin: Signer<'info>,
 
     /// The new admin of the IntegratorConfig account
-    /// CHECK: The integrator program is responsible for passing the correct owner
+    /// CHECK: The integrator program is responsible for passing the correct admin
     pub new_admin: UncheckedAccount<'info>,
 
     /// The IntegratorConfig account being transferred
@@ -39,6 +39,6 @@ pub fn update_admin(ctx: Context<UpdateAdmin>) -> Result<()> {
         .integrator_config
         .update_admin(&ctx.accounts.admin, ctx.accounts.new_admin.key())?;
 
-    msg!("IntegratorConfig ownership transferred successfully");
+    msg!("IntegratorConfig adminship transferred successfully");
     Ok(())
 }

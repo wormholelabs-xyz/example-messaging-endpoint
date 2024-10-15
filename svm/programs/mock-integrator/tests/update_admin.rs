@@ -18,7 +18,7 @@ use solana_sdk::{
 async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubkey, Pubkey) {
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
-    let owner = Keypair::new();
+    let admin = Keypair::new();
     let integrator_program = mock_integrator::id();
 
     let (integrator_config_pda, _) = Pubkey::find_program_address(
@@ -29,7 +29,7 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubk
     register(
         &mut context,
         &payer,
-        &owner,
+        &admin,
         integrator_config_pda,
         integrator_program,
     )
@@ -39,7 +39,7 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubk
     (
         context,
         payer,
-        owner,
+        admin,
         integrator_program,
         integrator_config_pda,
     )
@@ -47,14 +47,14 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubk
 
 #[tokio::test]
 async fn test_update_admin_success() {
-    let (mut context, payer, owner, integrator_program, integrator_config_pda) =
+    let (mut context, payer, admin, integrator_program, integrator_config_pda) =
         setup_test_environment().await;
 
     let new_admin = Keypair::new();
 
     let result = update_admin(
         &mut context,
-        &owner,
+        &admin,
         &new_admin.pubkey(),
         &payer,
         integrator_config_pda,
@@ -72,7 +72,7 @@ async fn test_update_admin_success() {
 
 #[tokio::test]
 async fn test_update_admin_non_authority() {
-    let (mut context, payer, owner, integrator_program, integrator_config_pda) =
+    let (mut context, payer, admin, integrator_program, integrator_config_pda) =
         setup_test_environment().await;
 
     let non_authority = Keypair::new();
@@ -100,18 +100,18 @@ async fn test_update_admin_non_authority() {
     // Verify that the admin has not been updated
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.admin, owner.pubkey());
+    assert_eq!(integrator_config.admin, admin.pubkey());
 }
 
 #[tokio::test]
 async fn test_update_admin_same_address() {
-    let (mut context, payer, owner, integrator_program, integrator_config_pda) =
+    let (mut context, payer, admin, integrator_program, integrator_config_pda) =
         setup_test_environment().await;
 
     let result = update_admin(
         &mut context,
-        &owner,
-        &owner.pubkey(),
+        &admin,
+        &admin.pubkey(),
         &payer,
         integrator_config_pda,
         integrator_program,
@@ -123,5 +123,5 @@ async fn test_update_admin_same_address() {
     // Verify that the admin remains the same
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.admin, owner.pubkey());
+    assert_eq!(integrator_config.admin, admin.pubkey());
 }

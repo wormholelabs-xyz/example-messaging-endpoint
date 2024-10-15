@@ -42,7 +42,7 @@ async fn execute_set_transceiver(
 
 pub async fn set_recv_transceiver(
     context: &mut ProgramTestContext,
-    owner: &Keypair,
+    admin: &Keypair,
     payer: &Keypair,
     integrator_config: Pubkey,
     integrator_chain_config: Pubkey,
@@ -55,7 +55,7 @@ pub async fn set_recv_transceiver(
     let instruction_data = router::instruction::SetRecvTransceiver { args }.data();
     execute_set_transceiver(
         context,
-        owner,
+        admin,
         payer,
         integrator_config,
         integrator_chain_config,
@@ -69,7 +69,7 @@ pub async fn set_recv_transceiver(
 
 pub async fn disable_recv_transceiver(
     context: &mut ProgramTestContext,
-    owner: &Keypair,
+    admin: &Keypair,
     payer: &Keypair,
     integrator_config: Pubkey,
     integrator_chain_config: Pubkey,
@@ -82,7 +82,7 @@ pub async fn disable_recv_transceiver(
     let instruction_data = router::instruction::DisableRecvTransceiver { args }.data();
     execute_set_transceiver(
         context,
-        owner,
+        admin,
         payer,
         integrator_config,
         integrator_chain_config,
@@ -96,7 +96,7 @@ pub async fn disable_recv_transceiver(
 
 pub async fn set_send_transceiver(
     context: &mut ProgramTestContext,
-    owner: &Keypair,
+    admin: &Keypair,
     payer: &Keypair,
     integrator_config: Pubkey,
     integrator_chain_config: Pubkey,
@@ -109,7 +109,7 @@ pub async fn set_send_transceiver(
     let instruction_data = router::instruction::SetSendTransceiver { args }.data();
     execute_set_transceiver(
         context,
-        owner,
+        admin,
         payer,
         integrator_config,
         integrator_chain_config,
@@ -123,7 +123,7 @@ pub async fn set_send_transceiver(
 
 pub async fn disable_send_transceiver(
     context: &mut ProgramTestContext,
-    owner: &Keypair,
+    admin: &Keypair,
     payer: &Keypair,
     integrator_config: Pubkey,
     integrator_chain_config: Pubkey,
@@ -136,7 +136,7 @@ pub async fn disable_send_transceiver(
     let instruction_data = router::instruction::DisableSendTransceiver { args }.data();
     execute_set_transceiver(
         context,
-        owner,
+        admin,
         payer,
         integrator_config,
         integrator_chain_config,

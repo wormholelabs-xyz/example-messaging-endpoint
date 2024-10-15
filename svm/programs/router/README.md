@@ -16,7 +16,7 @@ classDiagram
     class IntegratorConfig {
         *bump: u8
         *integrator_program_id: Pubkey
-        owner: Pubkey
+        admin: Pubkey
         transceivers: Vec<Pubkey>
     }
 
@@ -123,7 +123,7 @@ This diagram illustrates the overall structure of the GMP Router program:
 Stores configuration specific to an Integrator.
 
 - **bump**: Bump seed for PDA derivation
-- **owner**: The owner of the IntegratorConfig account
+- **admin**: The admin of the IntegratorConfig account
 - **integrator_program_id**: The program ID of the Integrator
 - **transceivers**: Vector of registered transceiver addresses (max 32)
 
@@ -133,7 +133,7 @@ Stores configuration specific to an Integrator.
 - Unique for each integrator program
 - Initialization:
   - The integrator program must sign the transaction
-  - Owner is set during initialization (not required to sign)
+  - admin is set during initialization (not required to sign)
 
 ### IntegratorChainConfig
 
@@ -149,7 +149,7 @@ Manages transceivers enabled and config for a specific integrator on a particula
 
 - Seeds: `[SEED_PREFIX, integrator_program_id, chain_id]`
 - Unique for each integrator program and chain combination
-- Initialization: Requires owner's signature and existing IntegratorConfig account
+- Initialization: Requires admin's signature and existing IntegratorConfig account
 
 ### TransceiverInfo
 
@@ -220,8 +220,8 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 - [x] Setting transceivers with invalid transceiver ID
 - [x] Multiple updates of transceiver settings
 
-### TransferIntegratorConfigOwnership
+### TransferIntegratorConfigadminship
 
-- [x] Successful ownership transfer
-- [x] Transfer with invalid current owner
-- [x] Transfer to the same owner
+- [x] Successful adminship transfer
+- [x] Transfer with invalid current admin
+- [x] Transfer to the same admin
