@@ -35,7 +35,8 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubk
         integrator_config_pda,
         mock_integrator::id(),
     )
-    .await;
+    .await
+    .unwrap();
 
     (
         context,

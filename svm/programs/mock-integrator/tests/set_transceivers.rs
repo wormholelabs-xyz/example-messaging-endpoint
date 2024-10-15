@@ -43,7 +43,8 @@ async fn initialize_test_environment(
         integrator_config_pda,
         mock_integrator::id(),
     )
-    .await;
+    .await
+    .unwrap();
 
     // Initialize integrator chain transceivers
     let (integrator_chain_config_pda, _) = Pubkey::find_program_address(
