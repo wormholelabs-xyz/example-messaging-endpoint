@@ -4,8 +4,11 @@ use anchor_lang::prelude::*;
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct RegisterArgs {
     pub integrator_program_id: Pubkey,
+    pub integrator_config_bump: u8,
+    pub integrator_program_pda_bump: u8,
 }
 
+/// Accounts struct for initializing an IntegratorConfig account
 /// Accounts struct for initializing an IntegratorConfig account
 #[derive(Accounts)]
 #[instruction(args: RegisterArgs)]
@@ -15,7 +18,6 @@ pub struct Register<'info> {
     pub payer: Signer<'info>,
 
     /// The admin of the IntegratorConfig account
-    /// TODO: check if this should be a signer
     /// CHECK: The integrator program is responsible for passing the correct owner
     pub admin: UncheckedAccount<'info>,
 
@@ -33,12 +35,14 @@ pub struct Register<'info> {
     pub integrator_config: Account<'info, IntegratorConfig>,
 
     /// The integrator program's PDA
+    /// CHECK: This account is checked in the instruction handler
+
     #[account(
-        seeds = [b"router_integrator", args.integrator_program_id.as_ref()],
-        bump,
+        seeds = [b"router_integrator"],
+        bump = args.integrator_program_pda_bump,
         seeds::program = args.integrator_program_id
     )]
-    pub integrator_program: SystemAccount<'info>,
+    pub integrator_program_pda: Signer<'info>,
 
     /// The System Program
     pub system_program: Program<'info, System>,

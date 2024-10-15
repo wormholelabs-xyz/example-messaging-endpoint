@@ -20,7 +20,7 @@ pub mod router {
     ///
     /// * `ctx` - The context of the instruction
     /// * `args` - The arguments for registration, including the integrator program ID
-    pub fn init_integrator_config(ctx: Context<Register>, args: RegisterArgs) -> Result<()> {
+    pub fn register(ctx: Context<Register>, args: RegisterArgs) -> Result<()> {
         instructions::register::register(ctx, args)
     }
 

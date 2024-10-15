@@ -1,12 +1,13 @@
 [toolchain]
 anchor_version = "0.30.1"
-solana_version = "1.18.17"
+solana_version = "1.18.23"
 
 [features]
 resolution = true
 skip-lint = false
 
 [programs.localnet]
+mock-integrator = "B86KSKnHBRiJeDcP7vwaXuxfkqfChZmYKBqh4dkLYEpj"
 router = "7qtLhNMdb9dNAWwFvNBMok64EJrS1toY9TQoedVhU1xp"
 
 [registry]
