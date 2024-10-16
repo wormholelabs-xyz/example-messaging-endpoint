@@ -3,9 +3,6 @@
 mod common;
 mod instructions;
 
-use crate::instructions::disable_transceivers::{
-    disable_recv_transceiver, disable_send_transceiver,
-};
 use crate::instructions::register::register;
 use crate::instructions::register_transceiver::register_transceiver;
 use crate::instructions::set_transceivers::{set_recv_transceiver, set_send_transceiver};
@@ -14,7 +11,7 @@ use anchor_lang::prelude::*;
 use common::setup::setup;
 use router::error::RouterError;
 use router::{
-    state::{IntegratorChainConfig, TransceiverInfo},
+    state::{IntegratorChainConfig, IntegratorConfig, TransceiverInfo},
     utils::bitmap::Bitmap,
 };
 use solana_program_test::*;
@@ -31,13 +28,7 @@ async fn initialize_test_environment(
     let integrator_program = mock_integrator::id();
     let chain_id: u16 = 1;
 
-    let (integrator_config_pda, _) = Pubkey::find_program_address(
-        &[
-            router::state::IntegratorConfig::SEED_PREFIX,
-            mock_integrator::id().as_ref(),
-        ],
-        &router::id(),
-    );
+    let (integrator_config_pda, _) = IntegratorConfig::pda(&mock_integrator::id());
 
     register(
         context,
@@ -49,15 +40,9 @@ async fn initialize_test_environment(
     .await
     .unwrap();
 
-    // Initialize integrator chain transceivers
-    let (integrator_chain_config_pda, _) = Pubkey::find_program_address(
-        &[
-            IntegratorChainConfig::SEED_PREFIX,
-            integrator_program.as_ref(),
-            &chain_id.to_le_bytes(),
-        ],
-        &router::id(),
-    );
+    // Prepare integrator_chain_config_pda
+    let (integrator_chain_config_pda, _) =
+        IntegratorChainConfig::pda(&integrator_program, chain_id);
 
     // Register a transceiver
     let transceiver_address = Keypair::new().pubkey();
@@ -177,14 +162,8 @@ async fn test_set_in_transceivers_multiple_sets_success() {
 
     // Register a second transceiver
     let transceiver2_address = Pubkey::new_unique();
-    let (registered_transceiver2_pda, _) = Pubkey::find_program_address(
-        &[
-            TransceiverInfo::SEED_PREFIX,
-            integrator_program_id.as_ref(),
-            transceiver2_address.as_ref(),
-        ],
-        &router::id(),
-    );
+    let (registered_transceiver2_pda, _) =
+        TransceiverInfo::pda(&integrator_program_id, &transceiver2_address);
 
     register_transceiver(
         &mut context,
@@ -389,5 +368,3 @@ async fn test_enable_already_enabled_transceiver() {
     // Verify that the state hasn't changed
     verify_transceiver_state(&mut context, integrator_chain_config_pda, 1, 0).await;
 }
-
-

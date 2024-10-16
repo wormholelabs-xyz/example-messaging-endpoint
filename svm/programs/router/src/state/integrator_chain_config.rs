@@ -42,6 +42,17 @@ impl IntegratorChainConfig {
         }
     }
 
+    pub fn pda(integrator_program: &Pubkey, chain_id: u16) -> (Pubkey, u8) {
+        Pubkey::find_program_address(
+            &[
+                Self::SEED_PREFIX,
+                integrator_program.as_ref(),
+                chain_id.to_le_bytes().as_ref(),
+            ],
+            &crate::ID,
+        )
+    }
+
     pub fn set_recv_transceiver(&mut self, index: u8, value: bool) -> Result<()> {
         self.recv_transceiver_bitmap
             .set(index, value)

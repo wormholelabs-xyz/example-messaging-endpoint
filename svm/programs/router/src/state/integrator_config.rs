@@ -27,6 +27,16 @@ impl IntegratorConfig {
     /// Maximum number of transceivers allowed
     pub const MAX_TRANSCEIVERS: usize = 128;
 
+    pub fn pda(integrator_program_id: &Pubkey) -> (Pubkey, u8) {
+        Pubkey::find_program_address(
+            &[
+                Self::SEED_PREFIX,
+                integrator_program_id.as_ref(),
+            ],
+            &crate::ID,
+        )
+    }
+
     pub fn update_admin(&mut self, current_admin: &Signer, new_admin: Pubkey) -> Result<()> {
         require!(
             self.admin == current_admin.key(),

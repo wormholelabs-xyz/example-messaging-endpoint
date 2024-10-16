@@ -13,6 +13,7 @@ use crate::instructions::set_transceivers::{set_recv_transceiver, set_send_trans
 use anchor_lang::prelude::*;
 use common::setup::setup;
 use router::error::RouterError;
+use router::state::IntegratorConfig;
 use router::{
     state::{IntegratorChainConfig, TransceiverInfo},
     utils::bitmap::Bitmap,
@@ -31,13 +32,7 @@ async fn initialize_test_environment(
     let integrator_program = mock_integrator::id();
     let chain_id: u16 = 1;
 
-    let (integrator_config_pda, _) = Pubkey::find_program_address(
-        &[
-            router::state::IntegratorConfig::SEED_PREFIX,
-            mock_integrator::id().as_ref(),
-        ],
-        &router::id(),
-    );
+    let (integrator_config_pda, _) = IntegratorConfig::pda(&integrator_program);
 
     register(
         context,
@@ -49,15 +44,9 @@ async fn initialize_test_environment(
     .await
     .unwrap();
 
-    // Initialize integrator chain transceivers
-    let (integrator_chain_config_pda, _) = Pubkey::find_program_address(
-        &[
-            IntegratorChainConfig::SEED_PREFIX,
-            integrator_program.as_ref(),
-            &chain_id.to_le_bytes(),
-        ],
-        &router::id(),
-    );
+    // Prepare integrator_chain_config_pda
+    let (integrator_chain_config_pda, _) =
+        IntegratorChainConfig::pda(&integrator_program, chain_id);
 
     // Register a transceiver
     let transceiver_address = Keypair::new().pubkey();
@@ -228,7 +217,7 @@ async fn test_disable_transceivers_invalid_authority() {
 
     let payer = context.payer.insecure_clone();
 
-	// Set the receive transceiver first
+    // Set the receive transceiver first
     set_recv_transceiver(
         &mut context,
         &authority,
@@ -385,5 +374,3 @@ async fn test_disable_already_disabled_transceiver() {
         )
     );
 }
-
-

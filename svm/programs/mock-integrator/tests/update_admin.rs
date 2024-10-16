@@ -7,8 +7,7 @@ use crate::instructions::register::register;
 use crate::instructions::update_admin::update_admin;
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
-use router::error::RouterError;
-use router::state::IntegratorConfig;
+use router::{error::RouterError, state::IntegratorConfig};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::InstructionError, signature::Keypair, signer::Signer,
@@ -21,10 +20,7 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubk
     let admin = Keypair::new();
     let integrator_program = mock_integrator::id();
 
-    let (integrator_config_pda, _) = Pubkey::find_program_address(
-        &[IntegratorConfig::SEED_PREFIX, integrator_program.as_ref()],
-        &router::id(),
-    );
+    let (integrator_config_pda, _) = IntegratorConfig::pda(&integrator_program);
 
     register(
         &mut context,

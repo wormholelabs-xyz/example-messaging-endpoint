@@ -1,6 +1,6 @@
 #![cfg(feature = "test-sbf")]
 
-use anchor_lang::prelude::*;
+use router::state::IntegratorConfig;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::InstructionError, signature::Keypair, signer::Signer,
@@ -19,13 +19,7 @@ async fn test_invoke_register() {
     let payer = context.payer.insecure_clone();
     let admin = Keypair::new();
 
-    let (integrator_config, _) = Pubkey::find_program_address(
-        &[
-            router::state::IntegratorConfig::SEED_PREFIX,
-            mock_integrator::id().as_ref(),
-        ],
-        &router::id(),
-    );
+    let (integrator_config, _) = IntegratorConfig::pda(&mock_integrator::id());
 
     let result = register(
         &mut context,
@@ -61,13 +55,7 @@ async fn test_invoke_register_reinitialization() {
     let payer = context.payer.insecure_clone();
     let admin = Keypair::new();
 
-    let (integrator_config, _) = Pubkey::find_program_address(
-        &[
-            router::state::IntegratorConfig::SEED_PREFIX,
-            mock_integrator::id().as_ref(),
-        ],
-        &router::id(),
-    );
+    let (integrator_config, _) = IntegratorConfig::pda(&mock_integrator::id());
 
     // First registration
     let result = register(

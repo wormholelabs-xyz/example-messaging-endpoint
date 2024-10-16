@@ -20,13 +20,7 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubk
     let payer = context.payer.insecure_clone();
     let admin = Keypair::new();
 
-    let (integrator_config_pda, _) = Pubkey::find_program_address(
-        &[
-            router::state::IntegratorConfig::SEED_PREFIX,
-            mock_integrator::id().as_ref(),
-        ],
-        &router::id(),
-    );
+    let (integrator_config_pda, _) = IntegratorConfig::pda(&mock_integrator::id());
 
     register(
         &mut context,
