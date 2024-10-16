@@ -5,13 +5,18 @@ use router::{cpi::accounts::Register, instructions::RegisterArgs};
 
 declare_id!("B86KSKnHBRiJeDcP7vwaXuxfkqfChZmYKBqh4dkLYEpj");
 
+/// This module serves as a mock integrator to demonstrate how to call the register function
+/// in the router program. It's designed to simulate the process of registering an integrator,
+/// which requires a Cross-Program Invocation (CPI) call with a Program Derived Address (PDA) signer.
+
 #[program]
 pub mod mock_integrator {
     use super::*;
 
+    /// Invokes the register function in the router program via a CPI call.
+    /// This function demonstrates how to properly set up the accounts and sign the transaction
+    /// using a PDA, which is required for the registration process.
     pub fn invoke_register(ctx: Context<InvokeRegister>, args: RegisterArgs) -> Result<()> {
-        msg!("Greetings from: {:?} invoke_register", ctx.program_id);
-        msg!("Integrator program id: {:?}", args.integrator_program_id);
         let bump_seed = &[args.integrator_program_pda_bump][..];
         let signer_seeds: &[&[&[u8]]] = &[&[b"router_integrator", bump_seed]];
 
@@ -52,11 +57,6 @@ pub struct InvokeRegister<'info> {
 impl<'info> InvokeRegister<'info> {
     pub fn invoke_register(&self) -> CpiContext<'_, '_, '_, 'info, Register<'info>> {
         let cpi_program = self.router_program.to_account_info();
-        msg!(
-            "Integrator program pda: {:?}",
-            self.integrator_program_pda.key()
-        );
-
         let cpi_accounts = Register {
             payer: self.payer.to_account_info(),
             admin: self.admin.to_account_info(),

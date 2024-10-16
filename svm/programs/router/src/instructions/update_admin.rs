@@ -28,6 +28,19 @@ pub struct UpdateAdmin<'info> {
     pub integrator_program: UncheckedAccount<'info>,
 }
 
+/// Updates the admin of an IntegratorConfig account.
+///
+/// This function transfers the adminship of an IntegratorConfig account from the current admin
+/// to a new admin. It checks that the current admin is the signer of the transaction and updates
+/// the admin field in the IntegratorConfig account.
+///
+/// # Arguments
+///
+/// * `ctx` - The context of the request, containing the accounts involved in the admin update.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the admin update is successful, otherwise returns an error.
 pub fn update_admin(ctx: Context<UpdateAdmin>) -> Result<()> {
     msg!(
         "Transferring IntegratorConfig admin from {} to {}",

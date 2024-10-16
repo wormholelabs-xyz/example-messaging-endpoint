@@ -10,11 +10,9 @@ pub struct RegisterArgs {
     pub integrator_program_pda_bump: u8,
 }
 
-/// Accounts struct for initializing an IntegratorConfig account
 #[derive(Accounts)]
 #[instruction(args: RegisterArgs)]
 pub struct Register<'info> {
-    /// The account paying for the initialization
     #[account(mut)]
     pub payer: Signer<'info>,
 
@@ -48,12 +46,29 @@ pub struct Register<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// Register an integrator program with the router
+///
+/// This function initializes an IntegratorConfig account for the given integrator program.
+/// It sets up the configuration with the provided admin and program ID, and initializes
+/// an empty list of registered transceivers.
+///
+/// # Arguments
+///
+/// * `ctx` - The context of the instruction, containing the accounts involved
+/// * `args` - The arguments for the register instruction, containing:
+///   - `integrator_program_id`: The public key of the integrator program
+///   - `integrator_program_pda_bump`: The bump used to derive the integrator program's PDA
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the registration is successful, or an error if it fails
 pub fn register(ctx: Context<Register>, args: RegisterArgs) -> Result<()> {
     msg!(
         "Initializing IntegratorConfig for program: {}",
         args.integrator_program_id
     );
 
+    // Initialize the IntegratorConfig account with the provided information
     ctx.accounts.integrator_config.set_inner(IntegratorConfig {
         bump: ctx.bumps.integrator_config,
         admin: ctx.accounts.admin.key(),

@@ -2,9 +2,13 @@ use crate::error::RouterError;
 use crate::state::{IntegratorConfig, TransceiverInfo};
 use anchor_lang::prelude::*;
 
+/// Arguments for the register_transceiver instruction
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct RegisterTransceiverArgs {
+    /// The Pubkey of the integrator program
     pub integrator_program: Pubkey,
+
+    /// The Pubkey of the transceiver to be registered
     pub transceiver_address: Pubkey,
 }
 
@@ -14,9 +18,14 @@ pub struct RegisterTransceiver<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
+    /// The admin registered on IntegratroConfig
     #[account(mut)]
     pub admin: Signer<'info>,
 
+    /// The integrator config account
+    /// This makes sure that the admin signing this ix is the one registed in the IntegratorConfig
+    /// The new registered transceiver will be pushed to the `registered_transceivers` field in
+    /// this account
     #[account(
         mut,
         seeds = [IntegratorConfig::SEED_PREFIX, args.integrator_program.as_ref()],
@@ -25,6 +34,7 @@ pub struct RegisterTransceiver<'info> {
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 
+    /// The account to store information about the registered transceiver
     #[account(
         init,
         payer = payer,
@@ -38,9 +48,27 @@ pub struct RegisterTransceiver<'info> {
     )]
     pub transceiver_info: Account<'info, TransceiverInfo>,
 
+    /// The system program
     pub system_program: Program<'info, System>,
 }
 
+/// Register a new transceiver for an integrator.
+///
+/// This function performs the following steps:
+/// 1. Checks if the maximum number of transceivers has been reached.
+/// 2. Adds the new transceiver to the list of registered transceivers in IntegratorConfig
+/// 3. Initializes the TransceiverInfo account with the provided information.
+///
+/// # Arguments
+///
+/// * `ctx` - The context for the instruction, containing the accounts.
+/// * `args` - The arguments for registering a transceiver, including:
+///     * `integrator_program`: The Pubkey of the integrator program.
+///     * `transceiver_address`: The Pubkey of the transceiver to be registered.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the transceiver is successfully registered, or an error otherwise.
 pub fn register_transceiver(
     ctx: Context<RegisterTransceiver>,
     args: RegisterTransceiverArgs,
