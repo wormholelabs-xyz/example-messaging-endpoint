@@ -9,11 +9,6 @@ declare_id!("B86KSKnHBRiJeDcP7vwaXuxfkqfChZmYKBqh4dkLYEpj");
 pub mod mock_integrator {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        msg!("Greetings from: {:?}", ctx.program_id);
-        Ok(())
-    }
-
     pub fn invoke_register(ctx: Context<InvokeRegister>, args: RegisterArgs) -> Result<()> {
         msg!("Greetings from: {:?} invoke_register", ctx.program_id);
         msg!("Integrator program id: {:?}", args.integrator_program_id);
@@ -27,9 +22,6 @@ pub mod mock_integrator {
         Ok(())
     }
 }
-
-#[derive(Accounts)]
-pub struct Initialize {}
 
 #[derive(Accounts)]
 #[instruction(args: RegisterArgs)]
@@ -48,7 +40,6 @@ pub struct InvokeRegister<'info> {
     #[account(
         seeds = [b"router_integrator"],
         bump = args.integrator_program_pda_bump,
-        seeds::program = args.integrator_program_id
     )]
     pub integrator_program_pda: SystemAccount<'info>,
 

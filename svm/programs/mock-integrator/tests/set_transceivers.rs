@@ -8,7 +8,7 @@ use crate::instructions::register_transceiver::register_transceiver;
 use crate::instructions::set_transceivers::{set_recv_transceiver, set_send_transceiver};
 
 use anchor_lang::prelude::*;
-use common::setup::setup;
+use common::setup::{get_account, setup};
 use router::error::RouterError;
 use router::{
     state::{IntegratorChainConfig, IntegratorConfig, TransceiverInfo},
@@ -78,15 +78,7 @@ async fn verify_transceiver_state(
     expected_recv_bitmap: u128,
     expected_send_bitmap: u128,
 ) {
-    let account = context
-        .banks_client
-        .get_account(integrator_chain_config_pda)
-        .await
-        .unwrap()
-        .unwrap();
-
-    let integrator_chain_config: IntegratorChainConfig =
-        IntegratorChainConfig::try_deserialize(&mut account.data.as_ref()).unwrap();
+    let integrator_chain_config: IntegratorChainConfig = get_account(&mut context.banks_client, integrator_chain_config_pda).await;
 
     assert_eq!(
         integrator_chain_config.recv_transceiver_bitmap,
@@ -301,6 +293,7 @@ async fn test_set_transceivers_invalid_transceiver_id() {
     .await;
 
     // The transaction should fail due to invalid transceiver id
+    // It will return AccountNotInitialized because the transceiver is not registered
     let err = result.unwrap_err();
 
     assert_eq!(

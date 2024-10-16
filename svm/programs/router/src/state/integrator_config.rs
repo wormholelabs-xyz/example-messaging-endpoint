@@ -29,10 +29,7 @@ impl IntegratorConfig {
 
     pub fn pda(integrator_program_id: &Pubkey) -> (Pubkey, u8) {
         Pubkey::find_program_address(
-            &[
-                Self::SEED_PREFIX,
-                integrator_program_id.as_ref(),
-            ],
+            &[Self::SEED_PREFIX, integrator_program_id.as_ref()],
             &crate::ID,
         )
     }
