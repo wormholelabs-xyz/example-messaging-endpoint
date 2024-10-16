@@ -51,20 +51,6 @@ pub mod router {
         instructions::set_transceivers::set_recv_transceiver(ctx, args)
     }
 
-    /// Disables a receive transceiver for a specific chain
-    ///
-    /// # Arguments
-    ///
-    /// * `ctx` - The context of the instruction
-    /// * `args` - A `SetTransceiverArgs` struct containing:
-    ///     * `chain_id` - The ID of the chain for which the transceiver is being disabled
-    pub fn disable_recv_transceiver(
-        ctx: Context<SetTransceiver>,
-        args: SetTransceiverArgs,
-    ) -> Result<()> {
-        instructions::set_transceivers::disable_recv_transceiver(ctx, args)
-    }
-
     /// Sets a transceiver as a send transceiver for a specific chain
     ///
     /// # Arguments
@@ -79,6 +65,20 @@ pub mod router {
         instructions::set_transceivers::set_send_transceiver(ctx, args)
     }
 
+    /// Disables a receive transceiver for a specific chain
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `args` - A `SetTransceiverArgs` struct containing:
+    ///     * `chain_id` - The ID of the chain for which the transceiver is being disabled
+    pub fn disable_recv_transceiver(
+        ctx: Context<DisableTransceiver>,
+        args: DisableTransceiverArgs,
+    ) -> Result<()> {
+        instructions::disable_transceivers::disable_recv_transceiver(ctx, args)
+    }
+
     /// Disables a send transceiver for a specific chain
     ///
     /// # Arguments
@@ -87,10 +87,10 @@ pub mod router {
     /// * `args` - A `SetTransceiverArgs` struct containing:
     ///     * `chain_id` - The ID of the chain for which the transceiver is being disabled
     pub fn disable_send_transceiver(
-        ctx: Context<SetTransceiver>,
-        args: SetTransceiverArgs,
+        ctx: Context<DisableTransceiver>,
+        args: DisableTransceiverArgs,
     ) -> Result<()> {
-        instructions::set_transceivers::disable_send_transceiver(ctx, args)
+        instructions::disable_transceivers::disable_send_transceiver(ctx, args)
     }
 
     /// Transfers adminship of the IntegratorConfig to a new admin

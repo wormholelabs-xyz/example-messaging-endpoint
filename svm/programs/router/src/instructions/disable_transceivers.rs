@@ -3,18 +3,15 @@ use crate::state::{IntegratorChainConfig, IntegratorConfig, TransceiverInfo};
 use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct SetTransceiverArgs {
+pub struct DisableTransceiverArgs {
     pub chain_id: u16,
     pub transceiver: Pubkey,
     pub integrator_program: Pubkey,
 }
 
 #[derive(Accounts)]
-#[instruction(args: SetTransceiverArgs)]
-pub struct SetTransceiver<'info> {
-    #[account(mut)]
-    pub payer: Signer<'info>,
-
+#[instruction(args: DisableTransceiverArgs)]
+pub struct DisableTransceiver<'info> {
     pub admin: Signer<'info>,
 
     #[account(
@@ -25,9 +22,7 @@ pub struct SetTransceiver<'info> {
     pub integrator_config: Account<'info, IntegratorConfig>,
 
     #[account(
-        init_if_needed,
-        payer = payer,
-        space = 8 + IntegratorChainConfig::INIT_SPACE,
+        mut,
         seeds = [
             IntegratorChainConfig::SEED_PREFIX,
             args.integrator_program.as_ref(),
@@ -46,34 +41,51 @@ pub struct SetTransceiver<'info> {
         bump = registered_transceiver.bump,
     )]
     pub registered_transceiver: Account<'info, TransceiverInfo>,
-
-    /// The System Program
-    pub system_program: Program<'info, System>,
 }
 
-pub fn set_recv_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverArgs) -> Result<()> {
+pub fn disable_recv_transceiver(
+    ctx: Context<DisableTransceiver>,
+    _args: DisableTransceiverArgs,
+) -> Result<()> {
     msg!(
-        "Set Recv Transceiver PDA: {:?}",
+        "Disable Recv Transceiver PDA: {:?}",
         ctx.accounts.integrator_chain_config.key()
     );
 
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
+    if !integrator_chain_config
+        .recv_transceiver_bitmap
+        .get(registered_transceiver.id)?
+    {
+        return Err(RouterError::TransceiverAlreadyDisabled.into());
+    }
+
     integrator_chain_config
         .recv_transceiver_bitmap
-        .set(registered_transceiver.id, true)?;
+        .set(registered_transceiver.id, false)?;
 
     Ok(())
 }
 
-pub fn set_send_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverArgs) -> Result<()> {
+pub fn disable_send_transceiver(
+    ctx: Context<DisableTransceiver>,
+    _args: DisableTransceiverArgs,
+) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
+    if !integrator_chain_config
+        .send_transceiver_bitmap
+        .get(registered_transceiver.id)?
+    {
+        return Err(RouterError::TransceiverAlreadyDisabled.into());
+    }
+
     integrator_chain_config
         .send_transceiver_bitmap
-        .set(registered_transceiver.id, true)?;
+        .set(registered_transceiver.id, false)?;
 
     Ok(())
 }

@@ -114,7 +114,7 @@ async fn verify_transceiver_state(
 }
 
 #[tokio::test]
-async fn test_set_in_transceivers_success() {
+async fn test_disable_recv_transceiver_success() {
     let mut context = setup().await;
     let (
         authority,
@@ -128,7 +128,8 @@ async fn test_set_in_transceivers_success() {
 
     let payer = context.payer.insecure_clone();
 
-    let result = set_recv_transceiver(
+    // Set the receive transceiver first
+    set_recv_transceiver(
         &mut context,
         &authority,
         &payer,
@@ -138,86 +139,32 @@ async fn test_set_in_transceivers_success() {
         chain_id,
         transceiver,
         integrator_program_id,
-    )
-    .await;
-    assert!(result.is_ok());
-
-    verify_transceiver_state(&mut context, integrator_chain_config_pda, 1, 0).await;
-}
-
-#[tokio::test]
-async fn test_set_in_transceivers_multiple_sets_success() {
-    let mut context = setup().await;
-    let (
-        authority,
-        integrator_program_id,
-        integrator_config_pda,
-        integrator_chain_config_pda,
-        registered_transceiver_pda,
-        transceiver,
-        chain_id,
-    ) = initialize_test_environment(&mut context).await;
-
-    let payer = context.payer.insecure_clone();
-
-    // Set the first transceiver
-    let result = set_recv_transceiver(
-        &mut context,
-        &authority,
-        &payer,
-        integrator_config_pda,
-        integrator_chain_config_pda,
-        registered_transceiver_pda,
-        chain_id,
-        transceiver,
-        integrator_program_id,
-    )
-    .await;
-    assert!(result.is_ok());
-
-    // Register a second transceiver
-    let transceiver2_address = Pubkey::new_unique();
-    let (registered_transceiver2_pda, _) = Pubkey::find_program_address(
-        &[
-            TransceiverInfo::SEED_PREFIX,
-            integrator_program_id.as_ref(),
-            transceiver2_address.as_ref(),
-        ],
-        &router::id(),
-    );
-
-    register_transceiver(
-        &mut context,
-        &authority,
-        &payer,
-        integrator_config_pda,
-        registered_transceiver2_pda,
-        integrator_program_id,
-        transceiver2_address,
     )
     .await
     .unwrap();
 
-    let result = set_recv_transceiver(
+    // Disable the receive transceiver
+    let result = disable_recv_transceiver(
         &mut context,
         &authority,
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver2_pda,
+        registered_transceiver_pda,
         chain_id,
-        transceiver2_address,
+        transceiver,
         integrator_program_id,
     )
     .await;
+
     assert!(result.is_ok());
 
-    // Verify that both transceivers are set
-    verify_transceiver_state(&mut context, integrator_chain_config_pda, 0b11, 0).await;
+    // Verify that the transceiver is disabled
+    verify_transceiver_state(&mut context, integrator_chain_config_pda, 0, 0).await;
 }
 
 #[tokio::test]
-async fn test_set_out_transceivers_success() {
+async fn test_disable_send_transceiver_success() {
     let mut context = setup().await;
     let (
         authority,
@@ -231,7 +178,23 @@ async fn test_set_out_transceivers_success() {
 
     let payer = context.payer.insecure_clone();
 
-    let result = set_send_transceiver(
+    // Set the send transceiver first
+    set_send_transceiver(
+        &mut context,
+        &authority,
+        &payer,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        chain_id,
+        transceiver,
+        integrator_program_id,
+    )
+    .await
+    .unwrap();
+
+    // Disable the send transceiver
+    let result = disable_send_transceiver(
         &mut context,
         &authority,
         &payer,
@@ -246,14 +209,15 @@ async fn test_set_out_transceivers_success() {
 
     assert!(result.is_ok());
 
-    verify_transceiver_state(&mut context, integrator_chain_config_pda, 0, 1).await;
+    // Verify that the transceiver is disabled
+    verify_transceiver_state(&mut context, integrator_chain_config_pda, 0, 0).await;
 }
 
 #[tokio::test]
-async fn test_set_transceivers_invalid_authority() {
+async fn test_disable_transceivers_invalid_authority() {
     let mut context = setup().await;
     let (
-        _authority,
+        authority,
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_config_pda,
@@ -262,11 +226,27 @@ async fn test_set_transceivers_invalid_authority() {
         chain_id,
     ) = initialize_test_environment(&mut context).await;
 
-    // Create a new keypair to act as an invalid authority
-    let invalid_authority = Keypair::new();
     let payer = context.payer.insecure_clone();
 
-    let result = set_recv_transceiver(
+	// Set the receive transceiver first
+    set_recv_transceiver(
+        &mut context,
+        &authority,
+        &payer,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        chain_id,
+        transceiver,
+        integrator_program_id,
+    )
+    .await
+    .unwrap();
+
+    // Create a new keypair to act as an invalid authority
+    let invalid_authority = Keypair::new();
+
+    let result = disable_recv_transceiver(
         &mut context,
         &invalid_authority,
         &payer,
@@ -292,7 +272,7 @@ async fn test_set_transceivers_invalid_authority() {
 }
 
 #[tokio::test]
-async fn test_set_transceivers_invalid_transceiver_id() {
+async fn test_disable_transceivers_invalid_transceiver_id() {
     let mut context = setup().await;
     let (
         authority,
@@ -308,7 +288,7 @@ async fn test_set_transceivers_invalid_transceiver_id() {
     let invalid_transceiver = Keypair::new().pubkey();
     let payer = context.payer.insecure_clone();
 
-    let result = set_recv_transceiver(
+    let result = disable_recv_transceiver(
         &mut context,
         &authority,
         &payer,
@@ -326,6 +306,6 @@ async fn test_set_transceivers_invalid_transceiver_id() {
 
     assert_eq!(
         err.unwrap(),
-        TransactionError::InstructionError(0, InstructionError::Custom(2006))
+        TransactionError::InstructionError(0, InstructionError::Custom(3012))
     );
 }

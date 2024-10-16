@@ -1,6 +1,6 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use router::accounts::SetTransceiver;
-use router::instructions::SetTransceiverArgs;
+use router::accounts::DisableTransceiver;
+use router::instructions::DisableTransceiverArgs;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -10,7 +10,7 @@ use solana_sdk::{
 
 use crate::common::execute_transaction::execute_transaction;
 
-pub async fn execute_set_transceiver(
+async fn execute_disable_transceiver(
     context: &mut ProgramTestContext,
     admin: &Keypair,
     payer: &Keypair,
@@ -19,13 +19,11 @@ pub async fn execute_set_transceiver(
     registered_transceiver: Pubkey,
     instruction_data: Vec<u8>,
 ) -> Result<(), BanksClientError> {
-    let accounts = SetTransceiver {
-        payer: payer.pubkey(),
+    let accounts = DisableTransceiver {
         admin: admin.pubkey(),
         integrator_config,
         integrator_chain_config,
         registered_transceiver,
-        system_program: solana_sdk::system_program::id(),
     };
 
     let ix = Instruction {
@@ -36,7 +34,7 @@ pub async fn execute_set_transceiver(
     execute_transaction(context, ix, &[admin, payer], payer).await
 }
 
-pub async fn set_recv_transceiver(
+pub async fn disable_recv_transceiver(
     context: &mut ProgramTestContext,
     admin: &Keypair,
     payer: &Keypair,
@@ -47,13 +45,13 @@ pub async fn set_recv_transceiver(
     transceiver: Pubkey,
     integrator_program: Pubkey,
 ) -> Result<(), BanksClientError> {
-    let args = SetTransceiverArgs {
+    let args = DisableTransceiverArgs {
         chain_id,
         transceiver,
         integrator_program,
     };
-    let instruction_data = router::instruction::SetRecvTransceiver { args }.data();
-    execute_set_transceiver(
+    let instruction_data = router::instruction::DisableRecvTransceiver { args }.data();
+    execute_disable_transceiver(
         context,
         admin,
         payer,
@@ -65,7 +63,7 @@ pub async fn set_recv_transceiver(
     .await
 }
 
-pub async fn set_send_transceiver(
+pub async fn disable_send_transceiver(
     context: &mut ProgramTestContext,
     admin: &Keypair,
     payer: &Keypair,
@@ -76,13 +74,13 @@ pub async fn set_send_transceiver(
     transceiver: Pubkey,
     integrator_program: Pubkey,
 ) -> Result<(), BanksClientError> {
-    let args = SetTransceiverArgs {
+    let args = DisableTransceiverArgs {
         chain_id,
         transceiver,
         integrator_program,
     };
-    let instruction_data = router::instruction::SetSendTransceiver { args }.data();
-    execute_set_transceiver(
+    let instruction_data = router::instruction::DisableSendTransceiver { args }.data();
+    execute_disable_transceiver(
         context,
         admin,
         payer,
