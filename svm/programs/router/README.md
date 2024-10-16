@@ -231,6 +231,6 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 
 > **Note:** The `update_admin` logic needs to be redone. Ignore this for now
 
-- [x] Successful adminship transfer
+- [x] Successful admin transfer
 - [x] Transfer with invalid current admin
 - [x] Transfer to the same admin
