@@ -17,7 +17,7 @@ classDiagram
         *bump: u8
         *integrator_program_id: Pubkey
         admin: Pubkey
-        transceivers: Vec<Pubkey>
+        registered_transceivers: Vec<Pubkey>
     }
 
     class IntegratorChainConfig {
@@ -118,22 +118,21 @@ This diagram illustrates the overall structure of the GMP Router program:
 
 ## Key Components
 
-### IntegratorConfig
+### IntegratorChainConfig
 
-Stores configuration specific to an Integrator.
+Manages transceivers enabled and config for a specific integrator on a particular chain.
 
 - **bump**: Bump seed for PDA derivation
-- **admin**: The admin of the IntegratorConfig account
+- **chain_id**: Identifier for the blockchain network
 - **integrator_program_id**: The program ID of the Integrator
-- **transceivers**: Vector of registered transceiver addresses (max 32)
+- **recv_transceiver_bitmap**: Bitmap tracking enabled receive transceivers
+- **send_transceiver_bitmap**: Bitmap tracking enabled send transceivers
 
 **PDA Derivation**:
 
-- Seeds: `[SEED_PREFIX, integrator_program_id]`
-- Unique for each integrator program
-- Initialization:
-  - The integrator program must sign the transaction
-  - admin is set during initialization (not required to sign)
+- Seeds: `[SEED_PREFIX, integrator_program_id, chain_id]`
+- Unique for each integrator program and chain combination
+- Initialization: Requires admin's signature and existing IntegratorConfig account
 
 ### IntegratorChainConfig
 
@@ -178,49 +177,59 @@ Utility struct for efficient storage and manipulation of boolean flags.
 
 ## Instructions
 
-1. `init_integrator_config`: Initialize integrator configuration
-2. `register_transceiver`: Register a new transceiver for an integrator
-3. `set_recv_transceiver`: Enable a receive transceiver for a specific chain. It initializes IntegratorChainConfig if it doesn't exist.
-4. `disable_recv_transceiver`: Disable a receive transceiver for a specific chain
-5. `set_send_transceiver`: Enable a send transceiver for a specific chain. It initializes IntegratorChainConfig if it doesn't exist.
-6. `disable_send_transceiver`: Disable a send transceiver for a specific chain
-7. `update_admin`: Transfer admin of the IntegratorConfig
+1. `register`: Registers an integrator and initializes their configuration
+2. `register_transceiver`: Registers a new transceiver for an integrator
+3. `set_recv_transceiver`: Sets a transceiver as a receive transceiver for a specific chain
+4. `set_send_transceiver`: Sets a transceiver as a send transceiver for a specific chain
+5. `disable_recv_transceiver`: Disables a receive transceiver for a specific chain
+6. `disable_send_transceiver`: Disables a send transceiver for a specific chain
+7. `update_admin`: Transfers admin of the IntegratorConfig to a new admin
 
 ## Error Handling
 
 The program uses a custom `RouterError` enum to handle various error cases, including:
 
-- Invalid integrator authority
-- Bitmap index out of bounds
-- Maximum number of transceivers reached
+- `InvalidIntegratorAuthority`: Invalid integrator authority
+- `BitmapIndexOutOfBounds`: Bitmap index is out of bounds
+- `MaxTransceiversReached`: Maximum number of transceivers reached
+- `TransceiverAlreadyEnabled`: Transceiver was already enabled
+- `TransceiverAlreadyDisabled`: Transceiver was already disabled
 
 ## Testing
 
 ### Register
 
 - [x] Successful initialization of IntegratorConfig
-- [x] Reinitialization (should fail with AccountAlreadyInUse error)
-- [x] Initialization for different integrator programs
+- [x] Reinitialization (fails with AccountAlreadyInUse error)
 
 ### RegisterTransceiver
 
 - [x] Successful registration
 - [x] Registration of multiple transceivers
-- [x] Registration causing maximum transceivers reached error
-- [x] Registration of duplicate transceiver (reinitialization)
-- [x] Registration with non-authority signer
-- [ ] Registration with invalid transceiver address (TBD: determine validation criteria)
+- [x] Registration of more than 128 transceivers (fails with MaxTransceiversReached)
+- [x] Registration of duplicate transceiver (fails with AccountAlreadyInUse error)
+- [x] Registration with non-authority signer (fails with InvalidIntegratorAuthority error)
 
 ### SetTransceivers
 
 - [x] Successful setting of incoming transceivers
 - [x] Successful setting of outgoing transceivers
-- [ ] Disabling incoming/outgoing transceivers
-- [x] Setting transceivers with invalid authority
-- [x] Setting transceivers with invalid transceiver ID
+- [x] Setting transceivers with invalid authority (fails with InvalidIntegratorAuthority error)
+- [x] Setting transceivers with invalid transceiver ID (fails with AccountNotInitialized error)
 - [x] Multiple updates of transceiver settings
+- [x] Attempt to enable already enabled transceiver (fails with TransceiverAlreadyEnabledError)
 
-### TransferIntegratorConfigadminship
+### DisableTransceivers
+
+- [x] Successful disabling of incoming transceivers
+- [x] Successful disabling of outgoing transceivers
+- [x] Disabling transceivers with invalid authority (fails with InvalidIntegratorAuthority error)
+- [x] Disabling transceivers with invalid transceiver ID (fails with AccountNotInitialized error)
+- [x] Attempt to disable already disabled transceiver (fails with TransceiverAlreadyDisabled error)
+
+### UpdateAdmin
+
+> **Note:** The `update_admin` logic needs to be redone. Ignore this for now
 
 - [x] Successful adminship transfer
 - [x] Transfer with invalid current admin

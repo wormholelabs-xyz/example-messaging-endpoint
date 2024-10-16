@@ -112,8 +112,8 @@ async fn test_register_multiple_transceivers() {
 
     // Register two transceivers
     let mut transceiver_addresses = Vec::new();
-    for _ in 0..2 {
-        let (transceiver_address, _) = register_test_transceiver(
+    for id in 0..2 {
+        let (transceiver_address, registered_transceiver_pda) = register_test_transceiver(
             &mut context,
             &admin,
             &payer,
@@ -122,6 +122,20 @@ async fn test_register_multiple_transceivers() {
         )
         .await;
         transceiver_addresses.push(transceiver_address);
+
+        // Fetch and verify the registered transceiver
+        let registered_transceiver: TransceiverInfo =
+            get_account(&mut context.banks_client, registered_transceiver_pda).await;
+
+        assert_eq!(registered_transceiver.id, id as u8);
+        assert_eq!(
+            registered_transceiver.integrator_program_id,
+            integrator_program
+        );
+        assert_eq!(
+            registered_transceiver.transceiver_address,
+            transceiver_address
+        );
     }
 
     // Verify that the integrator config's transceivers list has been updated
