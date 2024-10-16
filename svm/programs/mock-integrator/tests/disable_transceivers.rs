@@ -14,7 +14,7 @@ use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
 use router::error::RouterError;
 use router::{
-    state::{IntegratorChainConfig, TransceiverInfo, IntegratorConfig},
+    state::{IntegratorChainConfig, IntegratorConfig, TransceiverInfo},
     utils::bitmap::Bitmap,
 };
 use solana_program_test::*;

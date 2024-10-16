@@ -78,7 +78,8 @@ async fn verify_transceiver_state(
     expected_recv_bitmap: u128,
     expected_send_bitmap: u128,
 ) {
-    let integrator_chain_config: IntegratorChainConfig = get_account(&mut context.banks_client, integrator_chain_config_pda).await;
+    let integrator_chain_config: IntegratorChainConfig =
+        get_account(&mut context.banks_client, integrator_chain_config_pda).await;
 
     assert_eq!(
         integrator_chain_config.recv_transceiver_bitmap,
