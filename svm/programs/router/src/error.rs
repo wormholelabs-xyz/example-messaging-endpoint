@@ -12,6 +12,9 @@ pub enum RouterError {
     #[msg("Maximum number of transceivers reached")]
     MaxTransceiversReached,
 
+    #[msg("Transceiver was already enabled")]
+    TransceiverAlreadyEnabled,
+
     #[msg("Transceiver was already disabled")]
     TransceiverAlreadyDisabled,
 }

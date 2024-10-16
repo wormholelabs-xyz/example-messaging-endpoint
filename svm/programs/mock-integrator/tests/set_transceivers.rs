@@ -329,3 +329,65 @@ async fn test_set_transceivers_invalid_transceiver_id() {
         TransactionError::InstructionError(0, InstructionError::Custom(2006))
     );
 }
+
+#[tokio::test]
+async fn test_enable_already_enabled_transceiver() {
+    let mut context = setup().await;
+    let (
+        authority,
+        integrator_program_id,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        transceiver,
+        chain_id,
+    ) = initialize_test_environment(&mut context).await;
+
+    let payer = context.payer.insecure_clone();
+
+    // First attempt: should succeed
+    let result = set_recv_transceiver(
+        &mut context,
+        &authority,
+        &payer,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        chain_id,
+        transceiver,
+        integrator_program_id,
+    )
+    .await;
+    assert!(result.is_ok());
+
+    verify_transceiver_state(&mut context, integrator_chain_config_pda, 1, 0).await;
+
+    // Second attempt: should fail with TransceiverAlreadyEnabled
+    let result = set_recv_transceiver(
+        &mut context,
+        &authority,
+        &payer,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        chain_id,
+        transceiver,
+        integrator_program_id,
+    )
+    .await;
+
+    assert!(result.is_err());
+    let err = result.unwrap_err();
+    assert_eq!(
+        err.unwrap(),
+        TransactionError::InstructionError(
+            0,
+            InstructionError::Custom(RouterError::TransceiverAlreadyEnabled.into())
+        )
+    );
+
+    // Verify that the state hasn't changed
+    verify_transceiver_state(&mut context, integrator_chain_config_pda, 1, 0).await;
+}
+
+

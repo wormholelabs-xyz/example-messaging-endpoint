@@ -309,3 +309,81 @@ async fn test_disable_transceivers_invalid_transceiver_id() {
         TransactionError::InstructionError(0, InstructionError::Custom(3012))
     );
 }
+
+#[tokio::test]
+async fn test_disable_already_disabled_transceiver() {
+    let mut context = setup().await;
+    let (
+        authority,
+        integrator_program_id,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        transceiver,
+        chain_id,
+    ) = initialize_test_environment(&mut context).await;
+
+    let payer = context.payer.insecure_clone();
+
+    // Set the receive transceiver first to make sure that the integrator_chain_config_pda is
+    // initialized
+    set_recv_transceiver(
+        &mut context,
+        &authority,
+        &payer,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        chain_id,
+        transceiver,
+        integrator_program_id,
+    )
+    .await
+    .unwrap();
+
+    // Disable the receive transceiver
+    let result = disable_recv_transceiver(
+        &mut context,
+        &authority,
+        &payer,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        chain_id,
+        transceiver,
+        integrator_program_id,
+    )
+    .await;
+
+    assert!(result.is_ok());
+
+    // Verify that the transceiver is disabled
+    verify_transceiver_state(&mut context, integrator_chain_config_pda, 0, 0).await;
+
+    // Try to disable the already disabled receive transceiver
+    let result = disable_recv_transceiver(
+        &mut context,
+        &authority,
+        &payer,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        chain_id,
+        transceiver,
+        integrator_program_id,
+    )
+    .await;
+
+    // The transaction should fail due to the transceiver already being disabled
+    let err = result.unwrap_err();
+
+    assert_eq!(
+        err.unwrap(),
+        TransactionError::InstructionError(
+            0,
+            InstructionError::Custom(RouterError::TransceiverAlreadyDisabled.into())
+        )
+    );
+}
+
+

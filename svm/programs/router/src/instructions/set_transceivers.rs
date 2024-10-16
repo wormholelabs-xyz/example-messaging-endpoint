@@ -60,6 +60,13 @@ pub fn set_recv_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverA
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
+    if integrator_chain_config
+        .recv_transceiver_bitmap
+        .get(registered_transceiver.id)?
+    {
+        return Err(RouterError::TransceiverAlreadyEnabled.into());
+    }
+
     integrator_chain_config
         .recv_transceiver_bitmap
         .set(registered_transceiver.id, true)?;
@@ -70,6 +77,13 @@ pub fn set_recv_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverA
 pub fn set_send_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverArgs) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
+
+    if integrator_chain_config
+        .send_transceiver_bitmap
+        .get(registered_transceiver.id)?
+    {
+        return Err(RouterError::TransceiverAlreadyEnabled.into());
+    }
 
     integrator_chain_config
         .send_transceiver_bitmap
