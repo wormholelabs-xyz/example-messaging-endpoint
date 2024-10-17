@@ -113,6 +113,34 @@ All implementations should prioritize the following best practices:
 
 ### Technical Details
 
+#### Terminology
+
+> The following variable / parameter naming conventions are in camel case and should be adapted to the implementation's programming language standards accordingly.
+
+Admin - `admin` - The designated public key / address / etc (as applicable to the given runtime) which can perform the administrative functions on behalf of an Integrator.
+
+Message - `message` - A cross-chain message, consisting of a Source Chain and Address, Sequence, Destination Chain and Address, and Payload. The Router only attests to the hash of that Payload.
+
+Source Chain - `srcChain` - The Wormhole Chain ID (`u16`) of the sending / emitting chain.
+
+Source Address - `srcAddr` - The UniversalAddress (`bytes32`) representation (according to the Wormhole specification) of the sending Integrator address.
+
+Sequence - `sequence` - The auto-incremented `u64` on each message sent by an Integrator
+
+Destination Chain - `dstChain` - The Wormhole Chain ID (`u16`) of the intended recipient chain.
+
+Destination Address - `dstAddr` - The UniversalAddress (`bytes32`) representation of the intended recipient Integrator address.
+
+Payload - `payload` - A message payload of arbitrary bytes, encoded by the Integrator, intended to reach the destination chain / address.
+
+Payload Hash - `payloadHash` - The `keccak256` (`bytes32`) of the message `payload`.
+
+Message Hash - `messageHash` - The `keccak256` (`bytes32`) of the concatenated `srcChain`, `srcAddr`, `sequence`, `dstChain`, `dstAddr`, `payloadHash` (in that order).
+
+Send Transceiver - `sendTransceiver` - A Transceiver enabled to send messages for a given Integrator _to_ a given Destination Chain.
+
+Receive Transceiver - `recvTransceiver` - A Transceiver enabled to attest to messages for a given Integrator _from_ a given Source Chain.
+
 #### Router
 
 - MUST be non-upgradeable, non-"pause"-able, and non-administrated/owned. It should be able to be trusted by being completely trustless.
@@ -124,7 +152,9 @@ All implementations should prioritize the following best practices:
 - MUST support 128 Transceivers, per-integrator, in an append-only fashion [*admin only*].
 - MUST configure send and receive Transceivers independently, per-chain [*admin only*].
 - MUST track an unsigned 64-bit sequence number per-integrator.
-- MUST handle replay protection for the integrator.
+- MUST handle replay protection for the Integrator.
+- MUST handle replay protection on attestations for a Transceiver.
+- MUST allow additional attestations on messages which have been executed.
 - MUST allow for the integrator to perform custom thresholding logic.
 - MUST allow for integrators to add any Transceiver to their configuration.
 - MUST allow for off-chain configuration discoverability.
@@ -157,6 +187,8 @@ Generally, messages make the following journey:
   - A relayer executes the Integrator which _pulls_ the attestations from the Router, marking the message as received.
 
 ### API / database schema
+
+#### Router
 
 The Router MUST store the following information.
 
@@ -223,6 +255,93 @@ The Router MUST calculate the message digest as
 ```solidity
 keccak256(abi.encodePacked(sourceChain, sourceAddress, sequence, destinationChain, destinationAddress, payloadHash));
 ```
+
+Generally, Integrators (and the public) will require getters (as applicable) for all state.
+
+Every one of the following methods MUST generate traceable events.
+
+The Router MUST contain the following functionality for an Integrator:
+
+- `register(initialAdmin)`
+  - MUST check that the caller (Integrator) is not already registered.
+  - If possible, MUST check that the admin is potentially valid / non-null (e.g. `initialAdmin != address(0)` on EVM).
+  - In general, it is up to the Integrator to ensure the validity of the admin address.
+  - Initializes their registration and sets the initial admin.
+- `sendMessage(dstChain, dstAddr, payloadHash)` → `sequence`
+  - MUST have at least one enabled send Transceiver for `dstChain`.
+  - Increments the Integrator’s sequence and performs the steps to send the message or prepare it for sending, as applicable.
+- `getMessageStatus(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash)` → `enabledBitmap, attestedBitmap, executed`
+  - Returns the enabled receive Transceivers for that chain along with the attestations and the executed flag.
+- `recvMessage(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash)` → `enabledBitmap, attestedBitmap`
+  - MUST check that at least one Transceiver has attested.
+  - MUST revert if already executed.
+  - Marks the message as executed and returns the enabled receive Transceivers for that chain along with the attestations.
+  - NOTE: for efficiency, this combines `getMessageStatus` and `execMessage` into one call and is expected to be the primary way that Integrators receive messages.
+    - If they do not wish for the Router to perform replay protection, they may simply use `getMessageStatus`.
+    - If they need to explicitly mark a message as executed regardless of its attestation state, they may use `execMessage`.
+- `execMessage(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash)`
+  - MUST revert if already executed.
+  - MUST NOT require any Transceivers to have attested
+  - Marks the message as executed.
+
+The Router MUST contain the following functionality for a Transceiver
+
+- `attestMessage(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash)`
+  - MUST check that the Transceiver is an enabled receive Transceiver for the Integrator (`dstAddr`) and chain (`dstChain`).
+  - MUST check that the Transceiver has NOT already attested.
+  - MUST allow a Transceiver to attest after message execution.
+  - Calculates the message hash and marks the Transceiver as having attested to the message.
+
+The Router MAY contain the following functionality for a Transceiver, if the implementation cannot arbitrarily call `sendMessage` on a Transceiver (e.g. Solana, Sui, Aptos).
+
+- `pickUpMessage(srcAddr, sequence)` → `dstChain, dstAddr, payloadHash`
+  - MUST check that the Transceiver is an enabled send Transceiver for the Integrator (`dstAddr`) and chain (`dstChain`).
+  - MUST check that the Transceiver has NOT already picked up the message.
+  - Marks the Transceiver as having picked up the message.
+  - In order to reduce integrator / user costs, upon the last enabled sending Transceiver’s pickup, any outgoing message state MUST be cleared.
+
+The Router MUST contain the following functionality for an Admin
+
+- `updateAdmin(integratorAddr, newAdmin)`
+  - MUST check that the caller is the current admin and there is not a pending transfer.
+  - If possible, MUST NOT allow the admin to discard admin via this command (e.g. `newAdmin != address(0)` on EVM).
+  - Immediately sets `newAdmin` as the admin of the integrator.
+- `transferAdmin(integratorAddr, newAdmin)`
+  - MUST check that the caller is the current admin and there is not a pending transfer.
+  - Initiates the first step of a two-step process in which the current admin (to cancel) or new admin must claim.
+- `claimAdmin(integratorAddr)`
+  - MUST check that the caller is the current admin OR the pending admin.
+  - MUST check that there is an admin transfer pending (e.g. pendingAdmin != address(0) on EVM).
+  - Cancels / Completes the second step of the two-step transfer. Sets the admin to the caller and clears the pending admin.
+- `discardAdmin(integratorAddr)`
+  - MUST check that the caller is the current admin and there is not a pending transfer.
+  - Clears the current admin. THIS IS NOT REVERSIBLE. This ensures that the Integrator configuration becomes immutable.
+- `addTransceiver(integratorAddr, transceiverAddr)`
+  - MUST check that the caller is the current admin and there is not a pending transfer.
+  - MUST check that `transceiverAddr` is not already in the array.
+  - MUST check that the array would not surpass 128 entries.
+  - Appends the `transceiverAddr` to the Integrator’s array of Transceivers. THIS IS NOT REVERSIBLE. Once a transceiver is added for an Integrator, it cannot be removed.
+  - Note: When a Transceiver is added, it is not enabled for sending or receiving on any chain.
+- `enableSendTransceiver(integratorAddr, chain, transceiverAddr)`
+  - MUST check that the caller is the current admin and there is not a pending transfer.
+  - MUST check that the `transceiverAddr` is in the Integrator’s array of Transceivers.
+  - MUST check that the `transceiverAddr` is currently disabled for sending to the given chain.
+  - Enables the Transceiver for sending to the given chain.
+- `disableSendTransceiver(integratorAddr, chain, transceiverAddr)`
+  - MUST check that the caller is the current admin and there is not a pending transfer.
+  - MUST check that the `transceiverAddr` is in the Integrator’s array of Transceivers.
+  - MUST check that the `transceiverAddr` is currently enabled for sending to the given chain.
+  - Disables the Transceiver for sending to the given chain.
+- `enableRecvTransceiver(integratorAddr, chain, transceiverAddr)`
+  - MUST check that the caller is the current admin and there is not a pending transfer.
+  - MUST check that the `transceiverAddr` is in the Integrator’s array of Transceivers.
+  - MUST check that the `transceiverAddr` is currently disabled for receiving from the given chain.
+  - Enables the Transceiver for receiving from the given chain.
+- `disableRecvTransceiver(integratorAddr, chain, transceiverAddr)`
+  - MUST check that the caller is the current admin and there is not a pending transfer.
+  - MUST check that the `transceiverAddr` is in the Integrator’s array of Transceivers.
+  - MUST check that the `transceiverAddr` is currently enabled for receiving from the given chain.
+  - Disables the Transceiver for receiving from the given chain.
 
 ## Caveats
 
