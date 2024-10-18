@@ -3,13 +3,14 @@
 mod common;
 mod instructions;
 
-use crate::instructions::disable_transceivers::{
+use crate::instructions::add_transceiver::add_transceiver;
+use crate::instructions::disable_transceiver::{
     disable_recv_transceiver, disable_send_transceiver,
 };
+use crate::instructions::discard_admin::discard_admin;
+use crate::instructions::enable_transceiver::{enable_recv_transceiver, enable_send_transceiver};
 use crate::instructions::register::register;
-use crate::instructions::register_transceiver::register_transceiver;
-use crate::instructions::set_transceivers::{set_recv_transceiver, set_send_transceiver};
-
+use crate::instructions::transfer_admin::transfer_admin;
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
 use router::error::RouterError;
@@ -28,10 +29,10 @@ async fn initialize_test_environment(
 ) -> (Keypair, Pubkey, Pubkey, Pubkey, Pubkey, Pubkey, u16) {
     let payer = context.payer.insecure_clone();
     let admin = Keypair::new();
-    let integrator_program = mock_integrator::id();
+    let integrator_program_id = mock_integrator::id();
     let chain_id: u16 = 1;
 
-    let (integrator_config_pda, _) = IntegratorConfig::pda(&integrator_program);
+    let (integrator_config_pda, _) = IntegratorConfig::pda(&integrator_program_id);
 
     register(
         context,
@@ -45,32 +46,32 @@ async fn initialize_test_environment(
 
     // Prepare integrator_chain_config_pda
     let (integrator_chain_config_pda, _) =
-        IntegratorChainConfig::pda(&integrator_program, chain_id);
+        IntegratorChainConfig::pda(&integrator_program_id, chain_id);
 
     // Register a transceiver
-    let transceiver_address = Keypair::new().pubkey();
+    let transceiver_program_id = Keypair::new().pubkey();
     let (registered_transceiver_pda, _) =
-        TransceiverInfo::pda(&integrator_program, &transceiver_address);
+        TransceiverInfo::pda(&integrator_program_id, &transceiver_program_id);
 
-    register_transceiver(
+    add_transceiver(
         context,
         &admin,
         &payer,
         integrator_config_pda,
         registered_transceiver_pda,
-        integrator_program,
-        transceiver_address,
+        integrator_program_id,
+        transceiver_program_id,
     )
     .await
     .unwrap();
 
     (
         admin,
-        integrator_program,
+        integrator_program_id,
         integrator_config_pda,
         integrator_chain_config_pda,
         registered_transceiver_pda,
-        transceiver_address,
+        transceiver_program_id,
         chain_id,
     )
 }
@@ -110,7 +111,7 @@ async fn test_disable_recv_transceiver_success() {
     let payer = context.payer.insecure_clone();
 
     // Set the receive transceiver first
-    set_recv_transceiver(
+    enable_recv_transceiver(
         &mut context,
         &authority,
         &payer,
@@ -160,7 +161,7 @@ async fn test_disable_send_transceiver_success() {
     let payer = context.payer.insecure_clone();
 
     // Set the send transceiver first
-    set_send_transceiver(
+    enable_send_transceiver(
         &mut context,
         &authority,
         &payer,
@@ -198,7 +199,7 @@ async fn test_disable_send_transceiver_success() {
 }
 
 #[tokio::test]
-async fn test_disable_transceivers_invalid_authority() {
+async fn test_disable_transceiver_invalid_authority() {
     let mut context = setup().await;
     let (
         authority,
@@ -213,7 +214,7 @@ async fn test_disable_transceivers_invalid_authority() {
     let payer = context.payer.insecure_clone();
 
     // Set the receive transceiver first
-    set_recv_transceiver(
+    enable_recv_transceiver(
         &mut context,
         &authority,
         &payer,
@@ -250,13 +251,13 @@ async fn test_disable_transceivers_invalid_authority() {
         err.unwrap(),
         TransactionError::InstructionError(
             0,
-            InstructionError::Custom(RouterError::InvalidIntegratorAuthority.into())
+            InstructionError::Custom(RouterError::CallerNotAuthorized.into())
         )
     );
 }
 
 #[tokio::test]
-async fn test_disable_transceivers_invalid_transceiver_id() {
+async fn test_disable_transceiver_invalid_transceiver_id() {
     let mut context = setup().await;
     let (
         authority,
@@ -312,7 +313,7 @@ async fn test_disable_already_disabled_transceiver() {
 
     // Set the receive transceiver first to make sure that the integrator_chain_config_pda is
     // initialized
-    set_recv_transceiver(
+    enable_recv_transceiver(
         &mut context,
         &authority,
         &payer,
@@ -369,4 +370,150 @@ async fn test_disable_already_disabled_transceiver() {
             InstructionError::Custom(RouterError::TransceiverAlreadyDisabled.into())
         )
     );
+}
+
+#[tokio::test]
+async fn test_disable_transceiver_with_transfer_in_progress() {
+    let mut context = setup().await;
+    let (
+        admin,
+        integrator_program_id,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        transceiver,
+        chain_id,
+    ) = initialize_test_environment(&mut context).await;
+
+    let payer = context.payer.insecure_clone();
+    let pending_admin = Keypair::new();
+
+    // Enable the receive transceiver first
+    enable_recv_transceiver(
+        &mut context,
+        &admin,
+        &payer,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        chain_id,
+        transceiver,
+        integrator_program_id,
+    )
+    .await
+    .unwrap();
+
+    // Initiate an admin transfer
+    transfer_admin(
+        &mut context,
+        &admin,
+        &pending_admin.pubkey(),
+        &payer,
+        integrator_config_pda,
+        integrator_program_id,
+    )
+    .await
+    .unwrap();
+
+    // Now try to disable the transceiver
+    let result = disable_recv_transceiver(
+        &mut context,
+        &admin,
+        &payer,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        chain_id,
+        transceiver,
+        integrator_program_id,
+    )
+    .await;
+
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err().unwrap(),
+        TransactionError::InstructionError(
+            0,
+            InstructionError::Custom(RouterError::AdminTransferInProgress.into())
+        )
+    );
+
+    // Verify that the transceiver state hasn't changed
+    verify_transceiver_state(&mut context, integrator_chain_config_pda, 1, 0).await;
+
+    // Verify that the integrator config hasn't changed
+    let integrator_config: IntegratorConfig =
+        get_account(&mut context.banks_client, integrator_config_pda).await;
+    assert_eq!(integrator_config.admin, admin.pubkey());
+    assert_eq!(
+        integrator_config.pending_admin,
+        Some(pending_admin.pubkey())
+    );
+}
+
+#[tokio::test]
+async fn test_disable_transceiver_with_immutable_config() {
+    let mut context = setup().await;
+    let (
+        admin,
+        integrator_program_id,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        transceiver,
+        chain_id,
+    ) = initialize_test_environment(&mut context).await;
+
+    let payer = context.payer.insecure_clone();
+
+    // Enable the receive transceiver first
+    enable_recv_transceiver(
+        &mut context,
+        &admin,
+        &payer,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        chain_id,
+        transceiver,
+        integrator_program_id,
+    )
+    .await
+    .unwrap();
+
+    // Discard the admin to make the config immutable
+    discard_admin(&mut context, &admin, &payer, integrator_config_pda)
+        .await
+        .unwrap();
+
+    // Now try to disable the transceiver
+    let result = disable_recv_transceiver(
+        &mut context,
+        &admin,
+        &payer,
+        integrator_config_pda,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        chain_id,
+        transceiver,
+        integrator_program_id,
+    )
+    .await;
+
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err().unwrap(),
+        TransactionError::InstructionError(
+            0,
+            InstructionError::Custom(RouterError::CallerNotAuthorized.into())
+        )
+    );
+
+    // Verify that the transceiver state hasn't changed
+    verify_transceiver_state(&mut context, integrator_chain_config_pda, 1, 0).await;
+
+    // Verify that the integrator config is immutable
+    let integrator_config: IntegratorConfig =
+        get_account(&mut context.banks_client, integrator_config_pda).await;
+    assert_eq!(integrator_config.is_immutable, true);
 }

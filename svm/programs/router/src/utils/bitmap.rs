@@ -1,4 +1,4 @@
-// This code is copied directly from `example-native-token-transfer` and updated to show RouterError instead of RouterError
+// This code is copied directly from `example-native-token-transfer` and updated to show NTTError instead of RouterError
 // Link: https://github.com/wormhole-foundation/example-native-token-transfers/blob/6cc8beee57e8a06dec96fffa02dd4ace7b22168d/solana/programs/example-native-token-transfers/src/bitmap.rs
 use crate::error::RouterError;
 use anchor_lang::prelude::*;
@@ -44,7 +44,7 @@ impl Bitmap {
         Ok(BM::<128>::from_value(self.map).get(usize::from(index)))
     }
 
-    pub fn count_enabled_votes(&self, enabled: Bitmap) -> u8 {
+    pub fn count_enabled_bits(&self, enabled: Bitmap) -> u8 {
         let bm = BM::<128>::from_value(self.map) & BM::<128>::from_value(enabled.map);
         bm.len()
             .try_into()
@@ -68,30 +68,30 @@ mod tests {
     fn test_bitmap() {
         let mut enabled = Bitmap::from_value(u128::MAX);
         let mut bm = Bitmap::new();
-        assert_eq!(bm.count_enabled_votes(enabled), 0);
+        assert_eq!(bm.count_enabled_bits(enabled), 0);
         bm.set(0, true).unwrap();
-        assert_eq!(bm.count_enabled_votes(enabled), 1);
+        assert_eq!(bm.count_enabled_bits(enabled), 1);
         assert!(bm.get(0).unwrap());
         assert!(!bm.get(1).unwrap());
         bm.set(1, true).unwrap();
-        assert_eq!(bm.count_enabled_votes(enabled), 2);
+        assert_eq!(bm.count_enabled_bits(enabled), 2);
         assert!(bm.get(0).unwrap());
         assert!(bm.get(1).unwrap());
         bm.set(0, false).unwrap();
-        assert_eq!(bm.count_enabled_votes(enabled), 1);
+        assert_eq!(bm.count_enabled_bits(enabled), 1);
         assert!(!bm.get(0).unwrap());
         assert!(bm.get(1).unwrap());
         bm.set(18, true).unwrap();
-        assert_eq!(bm.count_enabled_votes(enabled), 2);
+        assert_eq!(bm.count_enabled_bits(enabled), 2);
 
         enabled.set(18, false).unwrap();
-        assert_eq!(bm.count_enabled_votes(enabled), 1);
+        assert_eq!(bm.count_enabled_bits(enabled), 1);
     }
 
     #[test]
     fn test_bitmap_len() {
         let max_bitmap = Bitmap::from_value(u128::MAX);
-        assert_eq!(128, max_bitmap.count_enabled_votes(max_bitmap));
+        assert_eq!(128, max_bitmap.count_enabled_bits(max_bitmap));
     }
 
     #[test]

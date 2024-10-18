@@ -1,6 +1,6 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
 use router::accounts::DisableTransceiver;
-use router::instructions::DisableTransceiverArgs;
+use router::instructions::TransceiverInfoArgs;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -42,13 +42,13 @@ pub async fn disable_recv_transceiver(
     integrator_chain_config: Pubkey,
     registered_transceiver: Pubkey,
     chain_id: u16,
-    transceiver: Pubkey,
-    integrator_program: Pubkey,
+    transceiver_program_id: Pubkey,
+    integrator_program_id: Pubkey,
 ) -> Result<(), BanksClientError> {
-    let args = DisableTransceiverArgs {
+    let args = TransceiverInfoArgs {
         chain_id,
-        transceiver,
-        integrator_program,
+        transceiver_program_id,
+        integrator_program_id,
     };
     let instruction_data = router::instruction::DisableRecvTransceiver { args }.data();
     execute_disable_transceiver(
@@ -71,13 +71,13 @@ pub async fn disable_send_transceiver(
     integrator_chain_config: Pubkey,
     registered_transceiver: Pubkey,
     chain_id: u16,
-    transceiver: Pubkey,
-    integrator_program: Pubkey,
+    transceiver_program_id: Pubkey,
+    integrator_program_id: Pubkey,
 ) -> Result<(), BanksClientError> {
-    let args = DisableTransceiverArgs {
+    let args = TransceiverInfoArgs {
         chain_id,
-        transceiver,
-        integrator_program,
+        transceiver_program_id,
+        integrator_program_id,
     };
     let instruction_data = router::instruction::DisableSendTransceiver { args }.data();
     execute_disable_transceiver(

@@ -1,24 +1,31 @@
 use crate::error::RouterError;
+use crate::error::RouterError::AdminTransferInProgress;
 use crate::state::{IntegratorConfig, TransceiverInfo};
 use anchor_lang::prelude::*;
 
-/// Arguments for the register_transceiver instruction
+/// Arguments for the add_transceiver instruction
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct RegisterTransceiverArgs {
+pub struct AddTransceiverArgs {
     /// The Pubkey of the integrator program
-    pub integrator_program: Pubkey,
+    pub integrator_program_id: Pubkey,
 
     /// The Pubkey of the transceiver to be registered
-    pub transceiver_address: Pubkey,
+    pub transceiver_program_id: Pubkey,
+}
+
+impl<'info> AddTransceiver<'info> {
+    pub fn validate(&self) -> Result<()> {
+        self.integrator_config.check_admin(&self.admin)
+    }
 }
 
 #[derive(Accounts)]
-#[instruction(args: RegisterTransceiverArgs)]
-pub struct RegisterTransceiver<'info> {
+#[instruction(args: AddTransceiverArgs)]
+pub struct AddTransceiver<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
-    /// The admin registered on IntegratroConfig
+    /// The admin registered on IntegratorConfig
     #[account(mut)]
     pub admin: Signer<'info>,
 
@@ -26,23 +33,26 @@ pub struct RegisterTransceiver<'info> {
     /// This makes sure that the admin signing this ix is the one registed in the IntegratorConfig
     /// The new registered transceiver will be pushed to the `registered_transceivers` field in
     /// this account
+    /// `has_one` constraint checks if admin signer is the current admin of the config
     #[account(
         mut,
-        seeds = [IntegratorConfig::SEED_PREFIX, args.integrator_program.as_ref()],
+        seeds = [IntegratorConfig::SEED_PREFIX, args.integrator_program_id.as_ref()],
         bump = integrator_config.bump,
-        has_one = admin @ RouterError::InvalidIntegratorAuthority,
+        has_one = admin @ RouterError::CallerNotAuthorized,
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 
     /// The account to store information about the registered transceiver
+    /// The `init` constraint checks that the transceiver has not been added. If it is,
+    /// `AccountAlreadyInUse` error will be thrown
     #[account(
         init,
         payer = payer,
         space = 8 + TransceiverInfo::INIT_SPACE,
         seeds = [
             TransceiverInfo::SEED_PREFIX,
-            args.integrator_program.as_ref(),
-            args.transceiver_address.as_ref(),
+            args.integrator_program_id.as_ref(),
+            args.transceiver_program_id.as_ref(),
         ],
         bump
     )]
@@ -64,34 +74,32 @@ pub struct RegisterTransceiver<'info> {
 /// * `ctx` - The context for the instruction, containing the accounts.
 /// * `args` - The arguments for registering a transceiver, including:
 ///     * `integrator_program`: The Pubkey of the integrator program.
-///     * `transceiver_address`: The Pubkey of the transceiver to be registered.
+///     * `transceiver_program_id`: The Pubkey of the transceiver to be registered.
 ///
 /// # Returns
 ///
 /// Returns `Ok(())` if the transceiver is successfully registered, or an error otherwise.
-pub fn register_transceiver(
-    ctx: Context<RegisterTransceiver>,
-    args: RegisterTransceiverArgs,
-) -> Result<()> {
-    let transceiver_id = ctx.accounts.integrator_config.registered_transceivers.len() as u8;
-
-    // Check if we've reached the maximum number of transceivers
-    if transceiver_id >= IntegratorConfig::MAX_TRANSCEIVERS as u8 {
-        return Err(RouterError::MaxTransceiversReached.into());
+#[access_control(AddTransceiver::validate(&ctx.accounts))]
+pub fn add_transceiver(ctx: Context<AddTransceiver>, args: AddTransceiverArgs) -> Result<()> {
+    // Check if there's a pending_config
+    if ctx.accounts.integrator_config.pending_admin.is_some() {
+        return Err(AdminTransferInProgress.into());
     }
 
+    let transceiver_id = ctx.accounts.integrator_config.registered_transceivers.len() as u8;
+
     // Add the new transceiver to the list
+    // The vector length check is in `add_transceiver`
     ctx.accounts
         .integrator_config
-        .registered_transceivers
-        .push(args.transceiver_address);
+        .add_transceiver(args.transceiver_program_id)?;
 
     // Initialize TransceiverInfo
     ctx.accounts.transceiver_info.set_inner(TransceiverInfo {
         bump: ctx.bumps.transceiver_info,
-        id: transceiver_id,
-        integrator_program_id: args.integrator_program,
-        transceiver_address: args.transceiver_address,
+        index: transceiver_id,
+        integrator_program_id: args.integrator_program_id,
+        transceiver_program_id: args.transceiver_program_id,
     });
 
     Ok(())

@@ -8,6 +8,9 @@ pub struct RegisterArgs {
 
     // Bump to make sure the same PDA is derived
     pub integrator_program_pda_bump: u8,
+
+    // Admin of the IntegratorConfig account
+    pub admin: Pubkey,
 }
 
 #[derive(Accounts)]
@@ -16,11 +19,8 @@ pub struct Register<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
-    /// The admin of the IntegratorConfig account
-    /// CHECK: The integrator program is responsible for passing the correct admin
-    pub admin: UncheckedAccount<'info>,
-
     /// The IntegratorConfig account being initialized
+    /// `init` constraint checks that caller is not already registered
     #[account(
         init,
         payer = payer,
@@ -35,6 +35,12 @@ pub struct Register<'info> {
 
     /// The integrator program's PDA
     /// This makes sure that the Signer is a Integrator Program PDA Signer
+    /// TODO: Ideally there is a `AccountUncheckedOwner` that does not explicitly enforce owner
+    /// check on AccountUncheckedOwner<T> and use the `owner = another_program.ID` but it is not
+    /// possible for now. So we have to pass in the bump manually in the args to use it here
+    /// This is easier for monitoring anyways since you don't have to lookup the this account to
+    /// get the integrator program id and bump
+    /// Link to discussion: https://github.com/coral-xyz/anchor/issues/3285#issuecomment-2381329832
     #[account(
         seeds = [b"router_integrator"],
         bump = args.integrator_program_pda_bump,
@@ -63,19 +69,15 @@ pub struct Register<'info> {
 ///
 /// Returns `Ok(())` if the registration is successful, or an error if it fails
 pub fn register(ctx: Context<Register>, args: RegisterArgs) -> Result<()> {
-    msg!(
-        "Initializing IntegratorConfig for program: {}",
-        args.integrator_program_id
-    );
-
     // Initialize the IntegratorConfig account with the provided information
     ctx.accounts.integrator_config.set_inner(IntegratorConfig {
         bump: ctx.bumps.integrator_config,
-        admin: ctx.accounts.admin.key(),
+        admin: args.admin,
+        pending_admin: None,
         integrator_program_id: args.integrator_program_id,
         registered_transceivers: Vec::new(),
+        is_immutable: false,
     });
 
-    msg!("IntegratorConfig initialized successfully");
     Ok(())
 }

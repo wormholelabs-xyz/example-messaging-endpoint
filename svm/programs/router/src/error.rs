@@ -3,8 +3,8 @@ use anchor_lang::prelude::*;
 #[error_code]
 #[derive(PartialEq)]
 pub enum RouterError {
-    #[msg("Invalid integrator authority")]
-    InvalidIntegratorAuthority,
+    #[msg("Caller is not authorized")]
+    CallerNotAuthorized,
 
     #[msg("Bitmap index is out of bounds")]
     BitmapIndexOutOfBounds,
@@ -17,4 +17,7 @@ pub enum RouterError {
 
     #[msg("Transceiver was already disabled")]
     TransceiverAlreadyDisabled,
+
+    #[msg("An admin transfer is in progress")]
+    AdminTransferInProgress,
 }

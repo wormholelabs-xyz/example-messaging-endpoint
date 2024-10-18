@@ -10,26 +10,29 @@ pub struct TransceiverInfo {
     /// Bump seed for PDA derivation
     pub bump: u8,
 
-    /// Unique identifier for the transceiver within its integrator context
-    pub id: u8,
-
     /// The program ID of the integrator
+    /// This is used as a seed for PDA derivation
     pub integrator_program_id: Pubkey,
 
     /// Public key of the transceiver's address
-    pub transceiver_address: Pubkey,
+    /// This is used as a seed for PDA derivation
+    pub transceiver_program_id: Pubkey,
+
+    /// Index of the transceiver with respect to the registered_transceiver vector in
+    /// IntegratorConfig
+    pub index: u8,
 }
 
 impl TransceiverInfo {
     /// Seed prefix for deriving TransceiverInfo PDAs
     pub const SEED_PREFIX: &'static [u8] = b"transceiver_info";
 
-    pub fn pda(integrator_program_id: &Pubkey, transceiver_address: &Pubkey) -> (Pubkey, u8) {
+    pub fn pda(integrator_program_id: &Pubkey, transceiver_program_id: &Pubkey) -> (Pubkey, u8) {
         Pubkey::find_program_address(
             &[
                 Self::SEED_PREFIX,
                 integrator_program_id.as_ref(),
-                transceiver_address.as_ref(),
+                transceiver_program_id.as_ref(),
             ],
             &crate::ID,
         )

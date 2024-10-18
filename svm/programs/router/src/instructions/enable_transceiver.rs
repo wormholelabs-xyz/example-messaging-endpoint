@@ -1,22 +1,11 @@
 use crate::error::RouterError;
+use crate::instructions::common::TransceiverInfoArgs;
 use crate::state::{IntegratorChainConfig, IntegratorConfig, TransceiverInfo};
 use anchor_lang::prelude::*;
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct SetTransceiverArgs {
-    /// The chain ID for the integrator chain configuration
-    pub chain_id: u16,
-
-    /// The Pubkey of the transceiver to be set
-    pub transceiver: Pubkey,
-
-    /// The Pubkey of the integrator program
-    pub integrator_program: Pubkey,
-}
-
 #[derive(Accounts)]
-#[instruction(args: SetTransceiverArgs)]
-pub struct SetTransceiver<'info> {
+#[instruction(args: TransceiverInfoArgs)]
+pub struct EnableTransceiver<'info> {
     /// The account that pays for the transaction
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -27,10 +16,11 @@ pub struct SetTransceiver<'info> {
     /// The integrator config account
     /// The account constraints here make sure that the one signing this transaction is the admin
     /// of the config
+    /// The `has_one` constraint checks if admin signer is the current admin of the config
     #[account(
-        seeds = [IntegratorConfig::SEED_PREFIX, args.integrator_program.as_ref()],
+        seeds = [IntegratorConfig::SEED_PREFIX, args.integrator_program_id.as_ref()],
         bump = integrator_config.bump,
-        has_one = admin @ RouterError::InvalidIntegratorAuthority,
+        has_one = admin @ RouterError::CallerNotAuthorized,
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 
@@ -42,8 +32,8 @@ pub struct SetTransceiver<'info> {
         space = 8 + IntegratorChainConfig::INIT_SPACE,
         seeds = [
             IntegratorChainConfig::SEED_PREFIX,
-            args.integrator_program.as_ref(),
-            args.chain_id.to_le_bytes().as_ref(),
+            args.integrator_program_id.as_ref(),
+            args.chain_id.to_be_bytes().as_ref(),
         ],
         bump,
     )]
@@ -55,8 +45,8 @@ pub struct SetTransceiver<'info> {
     #[account(
         seeds = [
             TransceiverInfo::SEED_PREFIX,
-            args.integrator_program.as_ref(),
-            args.transceiver.as_ref(),
+            args.integrator_program_id.as_ref(),
+            args.transceiver_program_id.as_ref(),
         ],
         bump = registered_transceiver.bump,
     )]
@@ -65,7 +55,11 @@ pub struct SetTransceiver<'info> {
     /// The System Program
     pub system_program: Program<'info, System>,
 }
-
+impl<'info> EnableTransceiver<'info> {
+    pub fn validate(&self) -> Result<()> {
+        self.integrator_config.check_admin(&self.admin)
+    }
+}
 /// Sets a receive transceiver for the integrator chain configuration
 ///
 /// # Arguments
@@ -79,25 +73,24 @@ pub struct SetTransceiver<'info> {
 /// # Returns
 ///
 /// * `Result<()>` - The result of the operation
-pub fn set_recv_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverArgs) -> Result<()> {
-    msg!(
-        "Set Recv Transceiver PDA: {:?}",
-        ctx.accounts.integrator_chain_config.key()
-    );
-
+#[access_control(EnableTransceiver::validate(&ctx.accounts))]
+pub fn enable_recv_transceiver(
+    ctx: Context<EnableTransceiver>,
+    _args: TransceiverInfoArgs,
+) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
     if integrator_chain_config
         .recv_transceiver_bitmap
-        .get(registered_transceiver.id)?
+        .get(registered_transceiver.index)?
     {
         return Err(RouterError::TransceiverAlreadyEnabled.into());
     }
 
     integrator_chain_config
         .recv_transceiver_bitmap
-        .set(registered_transceiver.id, true)?;
+        .set(registered_transceiver.index, true)?;
 
     Ok(())
 }
@@ -115,20 +108,24 @@ pub fn set_recv_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverA
 /// # Returns
 ///
 /// * `Result<()>` - The result of the operation
-pub fn set_send_transceiver(ctx: Context<SetTransceiver>, _args: SetTransceiverArgs) -> Result<()> {
+#[access_control(EnableTransceiver::validate(&ctx.accounts))]
+pub fn enable_send_transceiver(
+    ctx: Context<EnableTransceiver>,
+    _args: TransceiverInfoArgs,
+) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
     if integrator_chain_config
         .send_transceiver_bitmap
-        .get(registered_transceiver.id)?
+        .get(registered_transceiver.index)?
     {
         return Err(RouterError::TransceiverAlreadyEnabled.into());
     }
 
     integrator_chain_config
         .send_transceiver_bitmap
-        .set(registered_transceiver.id, true)?;
+        .set(registered_transceiver.index, true)?;
 
     Ok(())
 }

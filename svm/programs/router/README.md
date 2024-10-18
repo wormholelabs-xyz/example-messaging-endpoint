@@ -18,6 +18,7 @@ classDiagram
         *integrator_program_id: Pubkey
         admin: Pubkey
         registered_transceivers: Vec<Pubkey>
+        is_immutable: boolean
     }
 
     class IntegratorChainConfig {
@@ -31,7 +32,7 @@ classDiagram
     class TransceiverInfo {
         *bump: u8
         *integrator_program_id: Pubkey
-        *transceiver_address: Pubkey
+        *transceiver_program_id: Pubkey
         id: u8
     }
 
@@ -118,21 +119,22 @@ This diagram illustrates the overall structure of the GMP Router program:
 
 ## Key Components
 
-### IntegratorChainConfig
+### IntegratorConfig
 
-Manages transceivers enabled and config for a specific integrator on a particular chain.
+Manages the configuration for a specific integrator.
 
 - **bump**: Bump seed for PDA derivation
-- **chain_id**: Identifier for the blockchain network
-- **integrator_program_id**: The program ID of the Integrator
-- **recv_transceiver_bitmap**: Bitmap tracking enabled receive transceivers
-- **send_transceiver_bitmap**: Bitmap tracking enabled send transceivers
+- **integrator_program_id**: The program ID associated with this integrator
+- **admin**: The current admin of the IntegratorConfig account
+- **pending_admin**: The pending admin of the IntegratorConfig account (if a transfer is in progress)
+- **registered_transceivers**: Vector of registered transceiver addresses
+- **is_immutable**: A boolean to mark that the program is immutable
 
 **PDA Derivation**:
 
-- Seeds: `[SEED_PREFIX, integrator_program_id, chain_id]`
-- Unique for each integrator program and chain combination
-- Initialization: Requires admin's signature and existing IntegratorConfig account
+- Seeds: `[SEED_PREFIX, integrator_program_id]`
+- Unique for each integrator program
+- Initialization: Requires signer's signature
 
 ### IntegratorChainConfig
 
@@ -161,7 +163,7 @@ Represents a registered transceiver in the GMP Router.
 
 **PDA Derivation**:
 
-- Seeds: `[SEED_PREFIX, integrator_program_id, transceiver_address]`
+- Seeds: `[SEED_PREFIX, integrator_program_id, transceiver_program_id]`
 - Unique for each transceiver within an integrator context
 
 **Constraints**:
@@ -178,12 +180,15 @@ Utility struct for efficient storage and manipulation of boolean flags.
 ## Instructions
 
 1. `register`: Registers an integrator and initializes their configuration
-2. `register_transceiver`: Registers a new transceiver for an integrator
-3. `set_recv_transceiver`: Sets a transceiver as a receive transceiver for a specific chain
-4. `set_send_transceiver`: Sets a transceiver as a send transceiver for a specific chain
+2. `add_transceiver`: Registers a new transceiver for an integrator
+3. `enable_recv_transceiver`: Sets a transceiver as a receive transceiver for a specific chain
+4. `enable_send_transceiver`: Sets a transceiver as a send transceiver for a specific chain
 5. `disable_recv_transceiver`: Disables a receive transceiver for a specific chain
 6. `disable_send_transceiver`: Disables a send transceiver for a specific chain
-7. `update_admin`: Transfers admin of the IntegratorConfig to a new admin
+7. `update_admin`: A one-step transfer of admin rights for the IntegratorConfig to a new admin
+8. `transfer_admin`: Initiates the transfer of admin rights for the IntegratorConfig to a new admin
+9. `claim_admin`: Completes the transfer of admin rights, allowing the new admin to claim authority
+10. `discard_admin`: Sets IntegratorConfig as immutable to emulate discarding admin on EVM. Action is irreversible
 
 ## Error Handling
 
@@ -194,43 +199,19 @@ The program uses a custom `RouterError` enum to handle various error cases, incl
 - `MaxTransceiversReached`: Maximum number of transceivers reached
 - `TransceiverAlreadyEnabled`: Transceiver was already enabled
 - `TransceiverAlreadyDisabled`: Transceiver was already disabled
+- `AdminTransferInProgress`: An Admin transfer is in progress
 
 ## Testing
 
-### Register
-
-- [x] Successful initialization of IntegratorConfig
-- [x] Reinitialization (fails with AccountAlreadyInUse error)
-
-### RegisterTransceiver
-
-- [x] Successful registration
-- [x] Registration of multiple transceivers
-- [x] Registration of more than 128 transceivers (fails with MaxTransceiversReached)
-- [x] Registration of duplicate transceiver (fails with AccountAlreadyInUse error)
-- [x] Registration with non-authority signer (fails with InvalidIntegratorAuthority error)
-
-### SetTransceivers
-
-- [x] Successful setting of incoming transceivers
-- [x] Successful setting of outgoing transceivers
-- [x] Setting transceivers with invalid authority (fails with InvalidIntegratorAuthority error)
-- [x] Setting transceivers with invalid transceiver ID (fails with AccountNotInitialized error)
-- [x] Multiple updates of transceiver settings
-- [x] Attempt to enable already enabled transceiver (fails with TransceiverAlreadyEnabledError)
-
-### DisableTransceivers
-
-- [x] Successful disabling of incoming transceivers
-- [x] Successful disabling of outgoing transceivers
-- [x] Disabling transceivers with invalid authority (fails with InvalidIntegratorAuthority error)
-- [x] Disabling transceivers with invalid transceiver ID (fails with AccountNotInitialized error)
-- [x] Attempt to disable already disabled transceiver (fails with TransceiverAlreadyDisabled error)
-
-### UpdateAdmin
-
-> **Note:** The `update_admin` logic needs to be redone. Ignore this for now
-
-- [x] Successful admin transfer
-- [x] Transfer with invalid current admin
-- [x] Transfer to the same admin
+| Instruction                                                    | Requirements                                                                                                                                                                                                                              | Implemented Tests                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| register(initialAdmin)                                         | - Check caller not already registered<br>- Initialize registration and set initial admin                                                                                                                                                  | [x] Successful initialization of IntegratorConfig<br>[x] Reinitialization (fails with AccountAlreadyInUse error)                                                                                                                                                                                                                                                                                                                                              |
+| updateAdmin(integratorAddr, newAdmin)                          | - Check caller is current admin<br>- Check no pending transfer<br>- Check IntegratorConfig is not immutable<br>- Immediately set new admin                                                                                                | [x] Successful admin update<br>[x] Update with non-authority signer (fails with CallerNotAuthorized)<br>[x] Update to the same admin address (succeeds)<br>[x] Update when admin transfer in progress (fails with AdminTransferInProgress)<br>[x] Update when IntegratorConfig is immutable (fails with CallerNotAuthorized)                                                                                                                                  |
+| transferAdmin(integratorAddr, newAdmin)                        | - Check caller is current admin<br>- Check no pending transfer<br>- Check IntegratorConfig is not immutable<br>- Set pending admin to the new admin                                                                                       | [x] Successful initiation of admin transfer<br>[x] Transfer when transfer already in progress (fails with AdminTransferInProgress)<br>[x] Transfer by non-authority signer (fails with CallerNotAuthorized)<br>[x] Transfer when IntegratorConfig is immutable (fails with CallerNotAuthorized)                                                                                                                                                               |
+| claimAdmin(integratorAddr)                                     | - Check caller is current or pending admin<br>- Check admin transfer is pending<br>- Complete/cancel transfer                                                                                                                             | [x] Successful claiming of admin rights by new admin<br>[x] Successful claiming of admin rights by current admin (cancels transfer)<br>[x] Claim when there is no pending admin (fails with CallerNotAuthorized)<br>[x] Claim by unauthorized user (fails with CallerNotAuthorized)                                                                                                                                                                           |
+| discardAdmin(integratorAddr)                                   | - Check caller is current admin<br>- Check no pending transfer<br>- Check IntegratorConfig is not immutable<br>- Clear current admin (make config immutable)                                                                              | [x] Successful discarding of admin<br>[x] Discard when already discarded (fails with CallerNotAuthorized)<br>[x] Discard when transfer in progress (fails with AdminTransferInProgress)                                                                                                                                                                                                                                                                       |
+| addTransceiver(integratorAddr, transceiverAddr)                | - Check caller is current admin<br>- Check no pending transfer<br>- Check IntegratorConfig is not immutable<br>- Check transceiver not already in array<br>- Check array won't surpass 128 entries<br>- Append transceiver to array       | [x] Successful addition of a transceiver<br>[x] Addition of multiple transceivers<br>[x] Addition with non-authority signer (fails with CallerNotAuthorized)<br>[x] Addition when admin transfer in progress (fails with AdminTransferInProgress)<br>[x] Addition when IntegratorConfig is immutable (fails with CallerNotAuthorized)<br>[x] Register max transceivers (fails when exceeding)<br>[x] Reinitialization of existing transceiver (fails)         |
+| enableSendTransceiver(integratorAddr, chain, transceiverAddr)  | - Check caller is current admin<br>- Check no pending transfer<br>- Check IntegratorConfig is not immutable<br>- Check transceiver in array<br>- Check transceiver currently disabled for sending<br>- Enable transceiver for sending     | [x] Successful enabling of send transceiver<br>[x] Enabling with invalid admin (fails with CallerNotAuthorized)<br>[x] Enabling with invalid transceiver ID (fails with AccountNotInitialized)<br>[x] Enabling when admin transfer in progress (fails with AdminTransferInProgress)<br>[x] Enabling when IntegratorConfig is immutable (fails with CallerNotAuthorized)<br>[x] Enabling already enabled transceiver (fails with TransceiverAlreadyEnabled)    |
+| disableSendTransceiver(integratorAddr, chain, transceiverAddr) | - Check caller is current admin<br>- Check no pending transfer<br>- Check IntegratorConfig is not immutable<br>- Check transceiver in array<br>- Check transceiver currently enabled for sending<br>- Disable transceiver for sending     | [x] Successful disabling of send transceiver<br>[x] Disabling with invalid admin (fails with CallerNotAuthorized)<br>[x] Disabling when admin transfer in progress (fails with AdminTransferInProgress)<br>[x] Disabling when IntegratorConfig is immutable (fails with CallerNotAuthorized)<br>[x] Disabling already disabled transceiver (fails with TransceiverAlreadyDisabled)                                                                            |
+| enableRecvTransceiver(integratorAddr, chain, transceiverAddr)  | - Check caller is current admin<br>- Check no pending transfer<br>- Check IntegratorConfig is not immutable<br>- Check transceiver in array<br>- Check transceiver currently disabled for receiving<br>- Enable transceiver for receiving | [x] Successful enabling of receive transceiver<br>[x] Enabling with invalid admin (fails with CallerNotAuthorized)<br>[x] Enabling with invalid transceiver ID (fails with AccountNotInitialized)<br>[x] Enabling when admin transfer in progress (fails with AdminTransferInProgress)<br>[x] Enabling when IntegratorConfig is immutable (fails with CallerNotAuthorized)<br>[x] Enabling already enabled transceiver (fails with TransceiverAlreadyEnabled) |
+| disableRecvTransceiver(integratorAddr, chain, transceiverAddr) | - Check caller is current admin<br>- Check no pending transfer<br>- Check IntegratorConfig is not immutable<br>- Check transceiver in array<br>- Check transceiver currently enabled for receiving<br>- Disable transceiver for receiving | [x] Successful disabling of receive transceiver<br>[x] Disabling with invalid admin (fails with CallerNotAuthorized)<br>[x] Disabling when admin transfer in progress (fails with AdminTransferInProgress)<br>[x] Disabling when IntegratorConfig is immutable (fails with CallerNotAuthorized)<br>[x] Disabling already disabled transceiver (fails with TransceiverAlreadyDisabled)                                                                         |

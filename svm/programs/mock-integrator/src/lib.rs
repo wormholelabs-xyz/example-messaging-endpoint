@@ -16,26 +16,31 @@ pub mod mock_integrator {
     /// Invokes the register function in the router program via a CPI call.
     /// This function demonstrates how to properly set up the accounts and sign the transaction
     /// using a PDA, which is required for the registration process.
-    pub fn invoke_register(ctx: Context<InvokeRegister>, args: RegisterArgs) -> Result<()> {
-        let bump_seed = &[args.integrator_program_pda_bump][..];
+    pub fn invoke_register(ctx: Context<InvokeRegister>, args: InvokeRegisterArgs) -> Result<()> {
+        let bump_seed = &[ctx.bumps.integrator_program_pda][..];
         let signer_seeds: &[&[&[u8]]] = &[&[b"router_integrator", bump_seed]];
 
         router::cpi::register(
             ctx.accounts.invoke_register().with_signer(signer_seeds),
-            args,
+            RegisterArgs {
+                integrator_program_pda_bump: ctx.bumps.integrator_program_pda,
+                integrator_program_id: crate::ID,
+                admin: args.admin,
+            },
         )?;
         Ok(())
     }
 }
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct InvokeRegisterArgs {
+    pub admin: Pubkey,
+}
 
 #[derive(Accounts)]
-#[instruction(args: RegisterArgs)]
+#[instruction(args: InvokeRegisterArgs)]
 pub struct InvokeRegister<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
-
-    /// CHECK: This account is not checked for safety because it is assumed to be a trusted admin account.
-    pub admin: UncheckedAccount<'info>,
 
     #[account(mut)]
     /// CHECK: This account is to be checked and initialized by the router program
@@ -44,7 +49,7 @@ pub struct InvokeRegister<'info> {
     /// The integrator program's PDA
     #[account(
         seeds = [b"router_integrator"],
-        bump = args.integrator_program_pda_bump,
+        bump,
     )]
     pub integrator_program_pda: SystemAccount<'info>,
 
@@ -59,7 +64,6 @@ impl<'info> InvokeRegister<'info> {
         let cpi_program = self.router_program.to_account_info();
         let cpi_accounts = Register {
             payer: self.payer.to_account_info(),
-            admin: self.admin.to_account_info(),
             integrator_config: self.integrator_config.to_account_info(),
             integrator_program_pda: self.integrator_program_pda.to_account_info(),
             system_program: self.system_program.to_account_info(),

@@ -31,14 +31,11 @@ pub mod router {
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
-    /// * `args` - The `RegisterTransceiverArgs` struct containing:
+    /// * `args` - The `EnableTransceiverArgs` struct containing:
     ///     * `integrator_program` - The program id of the integrator_program
-    ///     * `transceiver_address` - The address of the transceiver to register
-    pub fn register_transceiver(
-        ctx: Context<RegisterTransceiver>,
-        args: RegisterTransceiverArgs,
-    ) -> Result<()> {
-        instructions::register_transceiver::register_transceiver(ctx, args)
+    ///     * `transceiver_program_id` - The address of the transceiver to register
+    pub fn add_transceiver(ctx: Context<AddTransceiver>, args: AddTransceiverArgs) -> Result<()> {
+        instructions::add_transceiver::add_transceiver(ctx, args)
     }
 
     /// Sets a transceiver as a receive transceiver for a specific chain
@@ -46,15 +43,15 @@ pub mod router {
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
-    /// * `args` - The `SetTransceiverArgs` struct containing:
+    /// * `args` - The `EnableTransceiverArgs` struct containing:
     ///     * `chain_id` - The ID of the chain for which the transceiver is being set
     ///     * `transceiver` - The Pubkey of the transceiver to be set
     ///     * `integrator_program` - The Pubkey of the integrator program
-    pub fn set_recv_transceiver(
-        ctx: Context<SetTransceiver>,
-        args: SetTransceiverArgs,
+    pub fn enable_recv_transceiver(
+        ctx: Context<EnableTransceiver>,
+        args: TransceiverInfoArgs,
     ) -> Result<()> {
-        instructions::set_transceivers::set_recv_transceiver(ctx, args)
+        instructions::enable_transceiver::enable_recv_transceiver(ctx, args)
     }
 
     /// Sets a transceiver as a send transceiver for a specific chain
@@ -62,15 +59,15 @@ pub mod router {
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
-    /// * `args` - The `SetTransceiverArgs` struct containing:
+    /// * `args` - The `EnableTransceiverArgs` struct containing:
     ///     * `chain_id` - The ID of the chain for which the transceiver is being set
     ///     * `transceiver` - The Pubkey of the transceiver to be set
     ///     * `integrator_program` - The Pubkey of the integrator program
-    pub fn set_send_transceiver(
-        ctx: Context<SetTransceiver>,
-        args: SetTransceiverArgs,
+    pub fn enable_send_transceiver(
+        ctx: Context<EnableTransceiver>,
+        args: TransceiverInfoArgs,
     ) -> Result<()> {
-        instructions::set_transceivers::set_send_transceiver(ctx, args)
+        instructions::enable_transceiver::enable_send_transceiver(ctx, args)
     }
 
     /// Disables a receive transceiver for a specific chain
@@ -84,9 +81,9 @@ pub mod router {
     ///     * `integrator_program` - The Pubkey of the integrator program
     pub fn disable_recv_transceiver(
         ctx: Context<DisableTransceiver>,
-        args: DisableTransceiverArgs,
+        args: TransceiverInfoArgs,
     ) -> Result<()> {
-        instructions::disable_transceivers::disable_recv_transceiver(ctx, args)
+        instructions::disable_transceiver::disable_recv_transceiver(ctx, args)
     }
 
     /// Disables a send transceiver for a specific chain
@@ -100,20 +97,52 @@ pub mod router {
     ///     * `integrator_program` - The Pubkey of the integrator program
     pub fn disable_send_transceiver(
         ctx: Context<DisableTransceiver>,
-        args: DisableTransceiverArgs,
+        args: TransceiverInfoArgs,
     ) -> Result<()> {
-        instructions::disable_transceivers::disable_send_transceiver(ctx, args)
+        instructions::disable_transceiver::disable_send_transceiver(ctx, args)
     }
 
-    /// Transfers adminship of the IntegratorConfig to a new admin
+    /// Updates the admin of an IntegratorConfig account
     ///
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction, containing:
-    ///     * `authority` - The current admin (signer)
-    ///     * `new_admin` - The account of the new admin
+    ///     * `admin` - The current admin (signer)
     ///     * `integrator_config` - The IntegratorConfig account to update
-    pub fn update_admin(ctx: Context<UpdateAdmin>) -> Result<()> {
-        instructions::update_admin::update_admin(ctx)
+    /// * `args` - The `UpdateAdminArgs` struct containing:
+    ///     * `new_admin` - The public key of the new admin
+    ///     * `integrator_program_id` - The program ID of the integrator
+    pub fn update_admin(ctx: Context<UpdateAdmin>, args: UpdateAdminArgs) -> Result<()> {
+        instructions::update_admin::update_admin(ctx, args)
+    }
+
+    /// Initiates the transfer of admin rights for an IntegratorConfig account
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `args` - The `TransferAdminArgs` struct containing:
+    ///     * `new_admin` - The public key of the new admin
+    ///     * `integrator_program_id` - The program ID of the integrator
+    pub fn transfer_admin(ctx: Context<TransferAdmin>, args: TransferAdminArgs) -> Result<()> {
+        instructions::transfer_admin::transfer_admin(ctx, args)
+    }
+
+    /// Claims the admin rights for an IntegratorConfig account
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    pub fn claim_admin(ctx: Context<ClaimAdmin>) -> Result<()> {
+        instructions::transfer_admin::claim_admin(ctx)
+    }
+
+    /// Discards the admin role for an IntegratorConfig account, making it immutable
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    pub fn discard_admin(ctx: Context<DiscardAdmin>) -> Result<()> {
+        instructions::discard_admin::discard_admin(ctx)
     }
 }
