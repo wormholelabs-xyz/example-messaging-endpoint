@@ -141,6 +141,8 @@ Send Transceiver - `sendTransceiver` - A Transceiver enabled to send messages fo
 
 Receive Transceiver - `recvTransceiver` - A Transceiver enabled to attest to messages for a given Integrator _from_ a given Source Chain.
 
+Outstanding Transceiver - `outstandingTransceiver` - On implementations which require Transceivers to pull outgoing messages, a Send Transceiver _at the time of message generation_ which has not yet picked up a given message.
+
 #### Router
 
 - MUST be non-upgradeable, non-"pause"-able, and non-administrated/owned. It should be able to be trusted by being completely trustless.
@@ -270,6 +272,7 @@ The Router MUST contain the following functionality for an Integrator:
 - `sendMessage(dstChain, dstAddr, payloadHash)` → `sequence`
   - MUST have at least one enabled send Transceiver for `dstChain`.
   - Increments the Integrator's sequence and performs the steps to send the message or prepare it for sending, as applicable.
+  - If Transceivers must pull outgoing messages in the given implementation (via `pickUpMessage`), the Router MUST set the current enabled Send Transceivers as the Outstanding Transceivers for that message.
 - `getMessageStatus(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash)` → `enabledBitmap, attestedBitmap, executed`
   - Returns the enabled receive Transceivers for that chain along with the attestations and the executed flag.
 - `recvMessage(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash)` → `enabledBitmap, attestedBitmap`
