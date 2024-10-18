@@ -269,7 +269,7 @@ The Router MUST contain the following functionality for an Integrator:
   - Initializes their registration and sets the initial admin.
 - `sendMessage(dstChain, dstAddr, payloadHash)` → `sequence`
   - MUST have at least one enabled send Transceiver for `dstChain`.
-  - Increments the Integrator’s sequence and performs the steps to send the message or prepare it for sending, as applicable.
+  - Increments the Integrator's sequence and performs the steps to send the message or prepare it for sending, as applicable.
 - `getMessageStatus(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash)` → `enabledBitmap, attestedBitmap, executed`
   - Returns the enabled receive Transceivers for that chain along with the attestations and the executed flag.
 - `recvMessage(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash)` → `enabledBitmap, attestedBitmap`
@@ -298,7 +298,7 @@ The Router MAY contain the following functionality for a Transceiver, if the imp
   - MUST check that the Transceiver is an enabled send Transceiver for the Integrator (`dstAddr`) and chain (`dstChain`).
   - MUST check that the Transceiver has NOT already picked up the message.
   - Marks the Transceiver as having picked up the message.
-  - In order to reduce integrator / user costs, upon the last enabled sending Transceiver’s pickup, any outgoing message state MUST be cleared.
+  - In order to reduce integrator / user costs, upon the last enabled sending Transceiver's pickup, any outgoing message state MUST be cleared.
 
 The Router MUST contain the following functionality for an Admin
 
@@ -308,6 +308,7 @@ The Router MUST contain the following functionality for an Admin
   - Immediately sets `newAdmin` as the admin of the integrator.
 - `transferAdmin(integratorAddr, newAdmin)`
   - MUST check that the caller is the current admin and there is not a pending transfer.
+  - If possible, MUST NOT allow the admin to discard admin via this command (e.g. `newAdmin != address(0)` on EVM).
   - Initiates the first step of a two-step process in which the current admin (to cancel) or new admin must claim.
 - `claimAdmin(integratorAddr)`
   - MUST check that the caller is the current admin OR the pending admin.
@@ -320,26 +321,26 @@ The Router MUST contain the following functionality for an Admin
   - MUST check that the caller is the current admin and there is not a pending transfer.
   - MUST check that `transceiverAddr` is not already in the array.
   - MUST check that the array would not surpass 128 entries.
-  - Appends the `transceiverAddr` to the Integrator’s array of Transceivers. THIS IS NOT REVERSIBLE. Once a transceiver is added for an Integrator, it cannot be removed.
+  - Appends the `transceiverAddr` to the Integrator's array of Transceivers. THIS IS NOT REVERSIBLE. Once a transceiver is added for an Integrator, it cannot be removed.
   - Note: When a Transceiver is added, it is not enabled for sending or receiving on any chain.
 - `enableSendTransceiver(integratorAddr, chain, transceiverAddr)`
   - MUST check that the caller is the current admin and there is not a pending transfer.
-  - MUST check that the `transceiverAddr` is in the Integrator’s array of Transceivers.
+  - MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
   - MUST check that the `transceiverAddr` is currently disabled for sending to the given chain.
   - Enables the Transceiver for sending to the given chain.
 - `disableSendTransceiver(integratorAddr, chain, transceiverAddr)`
   - MUST check that the caller is the current admin and there is not a pending transfer.
-  - MUST check that the `transceiverAddr` is in the Integrator’s array of Transceivers.
+  - MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
   - MUST check that the `transceiverAddr` is currently enabled for sending to the given chain.
   - Disables the Transceiver for sending to the given chain.
 - `enableRecvTransceiver(integratorAddr, chain, transceiverAddr)`
   - MUST check that the caller is the current admin and there is not a pending transfer.
-  - MUST check that the `transceiverAddr` is in the Integrator’s array of Transceivers.
+  - MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
   - MUST check that the `transceiverAddr` is currently disabled for receiving from the given chain.
   - Enables the Transceiver for receiving from the given chain.
 - `disableRecvTransceiver(integratorAddr, chain, transceiverAddr)`
   - MUST check that the caller is the current admin and there is not a pending transfer.
-  - MUST check that the `transceiverAddr` is in the Integrator’s array of Transceivers.
+  - MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
   - MUST check that the `transceiverAddr` is currently enabled for receiving from the given chain.
   - Disables the Transceiver for receiving from the given chain.
 
