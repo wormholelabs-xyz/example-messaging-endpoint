@@ -1,0 +1,16 @@
+[package]
+name = "Router"
+version = "0.0.1"
+authors = []
+
+[addresses]
+router = "_"
+
+[dev-addresses]
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "7ef01a26f8d8a38610e3d364b722df517c970749"
+subdir = "aptos-move/framework/aptos-framework"
+
+[dev-dependencies]
