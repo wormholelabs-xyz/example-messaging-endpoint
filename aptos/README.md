@@ -23,7 +23,7 @@ This module leverages Move 2.0 features and the `aptos` CLI requires the `--move
 - [x] `enableRecvTransceiver`
 - [x] `disableRecvTransceiver`
 
-- [ ] CI builds and enforces 100% coverage
+- [x] CI builds and enforces 100% coverage
 - [ ] Example transceiver
 - [ ] Example integrator
 
