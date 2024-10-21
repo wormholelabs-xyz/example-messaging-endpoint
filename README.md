@@ -298,7 +298,7 @@ The Router MUST contain the following functionality for a Transceiver
 The Router MAY contain the following functionality for a Transceiver, if the implementation cannot arbitrarily call `sendMessage` on a Transceiver (e.g. Solana, Sui, Aptos).
 
 - `pickUpMessage(srcAddr, sequence)` → `dstChain, dstAddr, payloadHash`
-  - MUST check that the Transceiver is an enabled send Transceiver for the Integrator (`dstAddr`) and chain (`dstChain`).
+  - MUST check that the Transceiver is an enabled send Transceiver for the Integrator (`srcAddr`) and chain (`dstChain`).
   - MUST check that the Transceiver has NOT already picked up the message.
   - Marks the Transceiver as having picked up the message.
   - In order to reduce integrator / user costs, upon the last enabled sending Transceiver's pickup, any outgoing message state MUST be cleared.
