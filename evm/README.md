@@ -2,7 +2,7 @@
 
 ## Design
 
-An Integrator is the on-chain contract which will call sendMessage on the Router. From the Router’s perspective, the Integrator is the msg.sender of sendMessage. Before an Integrator is able to send their first message, they MUST register with the Router in order to set their admin, and that admin then MUST subsequently register at least one Transceiver and enable it for sending on at least one chain. The Router MUST enforce that admin functions specify the Integrator address as a parameter and revert when msg.sender is NOT the provided Integrator’s admin.
+An Integrator is the on-chain contract which will call `sendMessage` on the Router. From the Router’s perspective, the Integrator is the `msg.sender` of `sendMessage`. Before an Integrator is able to send their first message, they MUST `register` with the Router in order to set their admin, and that admin then MUST subsequently register at least one Transceiver and enable it for sending on at least one chain. The Router MUST enforce that admin functions specify the Integrator address as a parameter and revert when `msg.sender` is NOT the provided Integrator’s admin.
 
 ### Contract Administration:
 
@@ -24,7 +24,7 @@ alt transceiver already registered
 Router-->>AdminContract:revert TransceiverAlreadyRegistered
 end
 alt numTransceivers >= MAX_TRANSCEIVERS
-Router-->>AdminContract:revert tooManytransceivers
+Router-->>AdminContract:revert tooManyTransceivers
 end
 note over Router:emit TransceiverAdded(integrator, chain, transceiver, numRegisteredTransceivers[integrator]);
 Router->>AdminContract:transceiver index
@@ -73,81 +73,6 @@ note over Router, NewAdmin:Second step to accept the transfer
 note over Router:emit AdminUpdated(integrator, admin, newAdmin)
 note over Router:is acceptable
 ```
-
-### Message Flow:
-
-The following outline describes the message flow related functions:
-
-```solidity
-/// @notice Send a message to another chain.
-/// @param dstChain The Wormhole chain ID of the recipient.
-/// @param dstAddr The universal address of the peer on the recipient chain.
-/// @param refundAddress The source chain refund address passed to the Transceiver.
-/// @param payloadHash keccak256 of a message to be sent to the recipient chain.
-/// @return uint64 The sequence number of the message.
-function sendMessage(
-  uint16 dstChain,
-  UniversalAddress dstAddr,
-  address refundAddress,
-  bytes32 payloadHash
-) external payable returns (uint64) {
-	// get the next sequence number for msg.sender
-	// get the enabled send transceivers for [msg.sender][dstChain]
-	// for each enabled transceiver
-	//   quote the delivery price
-	//     see https://github.com/wormhole-foundation/example-native-token-transfers/blob/68a7ca4132c74e838ac23e54752e8c0bc02bb4a2/evm/src/NttManager/ManagerBase.sol#L113
-	//   call sendMessage
-}
-
-/// @notice Called by a Transceiver contract to attest to a message.
-/// @param srcChain The Wormhole chain ID of the sender.
-/// @param srcAddr The universal address of the peer on the sending chain.
-/// @param sequence The sequence number of the message (per integrator).
-/// @param dstChain The Wormhole chain ID of the destination.
-/// @param dstAddr The destination address of the message.
-/// @param payloadHash The keccak256 of payload from the integrator.
-function attestMessage(
-  uint16 srcChain,
-  UniversalAddress srcAddr,
-  uint64 sequence,
-  uint16 dstChain,
-  UniversalAddress dstAddr,
-  bytes32 payloadHash
-) external {
-	// sanity check that destinationChainId is this chain
-	// get enabled recv transceivers for [dstAddr][srcChain]
-	// check that msg.sender is one of those transceivers
-	// compute the message digest
-	// do not revert if already attested or executed
-	// set the bit in perIntegratorAttestations[dstAddr][digest] corresponding to msg.sender
-}
-
-/// @notice Receive a message and mark it executed.
-/// @param srcChain The Wormhole chain ID of the sender.
-/// @param srcAddr The universal address of the peer on the sending chain.
-/// @param sequence The sequence number of the message (per integrator).
-/// @param dstChain The Wormhole chain ID of the destination.
-/// @param dstAddr The destination address of the message.
-/// @param payloadHash The keccak256 of payload from the integrator.
-/// @return (uint128, uint128) The enabled bitmap, and the attested bitmap, respectively.
-function recvMessage(
-  uint16 srcChain,
-  UniversalAddress srcAddr,
-  uint64 sequence,
-  uint16 dstChain,
-  UniversalAddress dstAddr,
-  bytes32 payloadHash
-) external returns (uint128 enabledBitmap, uint128 attestedBitmap) {
-	// sanity check that dstChain is this chain
-	// sanity check that msg.sender is integrator
-	// compute the message digest
-	// revert if not in perIntegratorAttestations map
-	// revert if already executed
-	// set the executed flag in perIntegratorAttestations[dstAddr][digest]
-}
-```
-
-The Router MUST emit events for every admin function, message send, message attestation, and message received. The message events MUST share an identifier and include enough information to track messages across the flow, starting from any event.
 
 ### EVM State Management Notes
 
