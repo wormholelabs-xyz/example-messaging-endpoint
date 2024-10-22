@@ -9,8 +9,8 @@ This module leverages Move 2.0 features and the `aptos` CLI requires the `--move
 - [x] `register`
 - [x] `sendMessage`
 - [x] `getMessageStatus`
-- [ ] `recvMessage`
-- [ ] `execMessage`
+- [x] `recvMessage`
+- [x] `execMessage`
 - [x] `attestMessage`
 - [x] `pickUpMessage`
 - [x] `updateAdmin`

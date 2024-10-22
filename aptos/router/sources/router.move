@@ -116,6 +116,9 @@ module router::router {
 
     #[view]
     public fun compute_message_hash(src_chain: u16, src_addr: vector<u8>, sequence: u64, dst_chain: u16, dst_addr: vector<u8>, payload_hash: vector<u8>): vector<u8> {
+        assert!(src_addr.length() == 32);
+        assert!(dst_addr.length() == 32);
+        assert!(payload_hash.length() == 32);
         // MUST calculate the message digest as keccak256(abi.encodePacked(sourceChain, sourceAddress, sequence, destinationChain, destinationAddress, payloadHash))
         // we reuse the native bcs serialiser -- it uses little-endian encoding, and
         // we need big-endian, so the results are reversed
@@ -162,17 +165,32 @@ module router::router {
         info.attested_transceivers = info.attested_transceivers | bitmask;
     }
 
-    // public fun recvMessage(integrator_acct: &signer, src_chain: u16, src_addr: vector<u8>, sequence: u64, dst_chain: u16, dst_addr: vector<u8>, payload_hash: vector<u8>) { // `enabledBitmap, attestedBitmap`
-    //     // MUST check that at least one Transceiver has attested.
-    //     // MUST revert if already executed.
-    //     // Marks the message as executed and returns the enabled receive Transceivers for that chain along with the attestations.
-    // }
+    public fun recvMessage(integrator_acct: &signer, src_chain: u16, src_addr: vector<u8>, sequence: u64, dst_chain: u16, payload_hash: vector<u8>): (u128, u128) acquires AttestationState {
+        // MUST check that at least one Transceiver has attested.
+        let integrator_addr = signer::address_of(integrator_acct);
+        let dst_addr = universal_address::from_address(integrator_addr).get_bytes();
+        let message_hash = compute_message_hash(src_chain, src_addr, sequence, dst_chain, dst_addr, payload_hash);
+        // This borrow will fail if no transceivers have attested.
+        let info = table::borrow_mut(&mut AttestationState[@router].attestation_infos, message_hash);
+        // MUST revert if already executed.
+        assert!(info.executed == false);
+        // Marks the message as executed and returns the enabled receive Transceivers for that chain along with the attestations.
+        info.executed = true;
+        let enabled_recv_transceivers = integrator::get_enabled_recv_transceivers(integrator_addr, src_chain);
+        (enabled_recv_transceivers, info.attested_transceivers)
+    }
 
-    // public fun execMessage(integrator_acct: &signer, src_chain: u16, src_addr: vector<u8>, sequence: u64, dst_chain: u16, dst_addr: vector<u8>, payload_hash: vector<u8>) {
-    //     // MUST revert if already executed.
-    //     // MUST NOT require any Transceivers to have attested
-    //     // Marks the message as executed.
-    // }
+    public fun execMessage(integrator_acct: &signer, src_chain: u16, src_addr: vector<u8>, sequence: u64, dst_chain: u16, payload_hash: vector<u8>) acquires AttestationState {
+        let integrator_addr = signer::address_of(integrator_acct);
+        let dst_addr = universal_address::from_address(integrator_addr).get_bytes();
+        let message_hash = compute_message_hash(src_chain, src_addr, sequence, dst_chain, dst_addr, payload_hash);
+        // MUST NOT require any Transceivers to have attested
+        let info = table::borrow_mut_with_default(&mut AttestationState[@router].attestation_infos, message_hash, AttestationInfo{executed: false, attested_transceivers: 0});
+        // MUST revert if already executed.
+        assert!(info.executed == false);
+        // Marks the message as executed.
+        info.executed = true;
+    }
 }
 
 #[test_only]
@@ -182,7 +200,7 @@ module router::router_test {
     use router::universal_address;
     use std::signer;
 
-    const DESTINATION_ADDR: vector<u8> = x"";
+    const DESTINATION_ADDR: vector<u8> = x"deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
     const PAYLOAD_HASH: vector<u8> = x"c3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5";
 
     #[test(integrator_acct = @0x123)]
@@ -365,6 +383,30 @@ module router::router_test {
         router::get_outbox_message(integrator_addr, sequence);
     }
 
+    #[test]
+    public fun compute_message_hash_test() {
+        // TODO: compute and compare known hash
+        router::compute_message_hash(1, DESTINATION_ADDR, 0, 22, universal_address::from_address(@0x123).get_bytes(), PAYLOAD_HASH);
+    }
+
+    #[test]
+    #[expected_failure]
+    public fun compute_message_hash_fails_with_bad_src_addr_length() {
+        router::compute_message_hash(1, x"1234", 0, 22, universal_address::from_address(@0x123).get_bytes(), PAYLOAD_HASH);
+    }
+
+    #[test]
+    #[expected_failure]
+    public fun compute_message_hash_fails_with_bad_dst_addr_length() {
+        router::compute_message_hash(1, DESTINATION_ADDR, 0, 22, x"1234", PAYLOAD_HASH);
+    }
+
+    #[test]
+    #[expected_failure]
+    public fun compute_message_hash_fails_with_bad_payload_hash_length() {
+        router::compute_message_hash(1, DESTINATION_ADDR, 0, 22, universal_address::from_address(@0x123).get_bytes(), x"1234");
+    }
+
     #[test(integrator_acct = @0x123, tx1 = @0x456)]
     public fun attest_message_test(integrator_acct: &signer, tx1: &signer) {
         router::init_module_test();
@@ -407,6 +449,44 @@ module router::router_test {
         let integrator_bytes = universal_address::from_address(integrator_addr).get_bytes();
         router::attest_message(tx1, 1, DESTINATION_ADDR, 0, 22, integrator_bytes, PAYLOAD_HASH);
         router::attest_message(tx1, 1, DESTINATION_ADDR, 0, 22, integrator_bytes, PAYLOAD_HASH);
+    }
+
+    #[test(integrator_acct = @0x123, tx1 = @0x456)]
+    public fun recv_message_test(integrator_acct: &signer, tx1: &signer) {
+        attest_message_test(integrator_acct, tx1);
+        router::recvMessage(integrator_acct, 1, DESTINATION_ADDR, 0, 22, PAYLOAD_HASH);
+        let integrator_bytes = universal_address::from_address(signer::address_of(integrator_acct)).get_bytes();
+        let (enabled, attested, executed) = router::get_message_status(1, DESTINATION_ADDR, 0, 22, integrator_bytes, PAYLOAD_HASH);
+        assert!(enabled == 1);
+        assert!(attested == 1);
+        assert!(executed == true);
+    }
+
+    #[test(integrator_acct = @0x123, tx1 = @0x456)]
+    #[expected_failure]
+    public fun recv_message_twice_fails(integrator_acct: &signer, tx1: &signer) {
+        recv_message_test(integrator_acct, tx1);
+        router::recvMessage(integrator_acct, 1, DESTINATION_ADDR, 0, 22, PAYLOAD_HASH);
+    }
+
+    #[test(integrator_acct = @0x123)]
+    public fun exec_message_test(integrator_acct: &signer) {
+        router::init_module_test();
+        let integrator_addr = signer::address_of(integrator_acct);
+        router::register(integrator_acct, integrator_addr);
+        router::execMessage(integrator_acct, 1, DESTINATION_ADDR, 0, 22, PAYLOAD_HASH);
+        let integrator_bytes = universal_address::from_address(signer::address_of(integrator_acct)).get_bytes();
+        let (enabled, attested, executed) = router::get_message_status(1, DESTINATION_ADDR, 0, 22, integrator_bytes, PAYLOAD_HASH);
+        assert!(enabled == 0);
+        assert!(attested == 0);
+        assert!(executed == true);
+    }
+
+    #[test(integrator_acct = @0x123)]
+    #[expected_failure]
+    public fun exec_message_twice_fails(integrator_acct: &signer) {
+        exec_message_test(integrator_acct);
+        router::execMessage(integrator_acct, 1, DESTINATION_ADDR, 0, 22, PAYLOAD_HASH);
     }
 
 }
