@@ -16,4 +16,3 @@ struct
 thresholding
 trustlessness
 upgradability
-tooManytransceivers
