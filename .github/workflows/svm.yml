@@ -22,7 +22,7 @@ jobs:
         run: |
           ANCHOR_VERSION="$(awk '/anchor_version =/ { print substr($3, 2, length($3)-2) }' Anchor.toml)"
           echo "::set-output name=version::${ANCHOR_VERSION}"
-      - uses: evan-gray/anchor-test@24c04ecece7b484fa1218bab4318818b36436005
+      - uses: evan-gray/anchor-test@06370fbca011ee48b176211b8f858789d6c33282
         with:
           anchor-version: "${{steps.anchor.outputs.version}}"
           solana-cli-version: "${{steps.solana.outputs.version}}"
