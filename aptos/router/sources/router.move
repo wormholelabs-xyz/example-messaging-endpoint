@@ -1,6 +1,8 @@
 module router::router {
+    use aptos_framework::aptos_hash;
     use router::integrator;
     use router::universal_address::{Self, UniversalAddress};
+    use std::bcs;
     use std::signer;
     use std::table::{Self, Table};
     use std::vector;
@@ -27,13 +29,27 @@ module router::router {
         outstanding_transceivers: u128
     }
 
-    struct RouterState has key {
+    struct OutboxState has key {
         outbox_messages: Table<OutboxMessageKey, OutboxMessage>
     }
 
+    struct AttestationInfo has copy, drop, store {
+        /// Replay protection flag
+        executed: bool,
+        /// The bitmap of receive-enabled transceivers for this source chain that have attested to the message
+        attested_transceivers: u128
+    }
+
+    struct AttestationState has key {
+        attestation_infos: Table<vector<u8>, AttestationInfo>
+    }
+
     fun init_module(resource_account: &signer) {
-        move_to(resource_account, RouterState {
+        move_to(resource_account, OutboxState {
             outbox_messages: table::new<OutboxMessageKey, OutboxMessage>(),
+        });
+        move_to(resource_account, AttestationState {
+            attestation_infos: table::new<vector<u8>, AttestationInfo>(),
         });
     }
 
@@ -52,7 +68,7 @@ module router::router {
         integrator::new_integrator(integrator_acct, admin_addr);
     }
 
-    public fun send_message(integrator_acct: &signer, dst_chain: u16, dst_addr: UniversalAddress, payload_hash: vector<u8>): u64 acquires RouterState {
+    public fun send_message(integrator_acct: &signer, dst_chain: u16, dst_addr: UniversalAddress, payload_hash: vector<u8>): u64 acquires OutboxState {
         assert!(vector::length(&payload_hash) == 32);
         let integrator_addr = signer::address_of(integrator_acct);
         // MUST have at least one enabled send Transceiver for `dstChain`.
@@ -62,21 +78,21 @@ module router::router {
         // MUST set the current enabled Send Transceivers as the Outstanding Transceivers for that message.
         let src_addr = universal_address::from_address(integrator_addr);
         let sequence = integrator::use_sequence(integrator_acct);
-        table::add(&mut RouterState[@router].outbox_messages, OutboxMessageKey{integrator_addr, sequence}, OutboxMessage {
+        table::add(&mut OutboxState[@router].outbox_messages, OutboxMessageKey{integrator_addr, sequence}, OutboxMessage {
             src_addr, sequence, dst_chain, dst_addr, payload_hash, outstanding_transceivers
         });
         sequence
     }
 
     #[view]
-    public fun get_outbox_message(integrator_addr: address, sequence: u64): (UniversalAddress, u64, u16, UniversalAddress, vector<u8>, u128) acquires RouterState {
-        let message = table::borrow(&RouterState[@router].outbox_messages, OutboxMessageKey{integrator_addr, sequence});
+    public fun get_outbox_message(integrator_addr: address, sequence: u64): (UniversalAddress, u64, u16, UniversalAddress, vector<u8>, u128) acquires OutboxState {
+        let message = table::borrow(&OutboxState[@router].outbox_messages, OutboxMessageKey{integrator_addr, sequence});
         (message.src_addr, message.sequence, message.dst_chain, message.dst_addr, message.payload_hash, message.outstanding_transceivers)
     }
 
-    public fun pick_up_message(transceiver_acct: &signer, integrator_addr: address, sequence: u64): (UniversalAddress, u64, u16, UniversalAddress, vector<u8>, u128) acquires RouterState {
+    public fun pick_up_message(transceiver_acct: &signer, integrator_addr: address, sequence: u64): (UniversalAddress, u64, u16, UniversalAddress, vector<u8>, u128) acquires OutboxState {
         let key = OutboxMessageKey{integrator_addr, sequence};
-        let message = table::borrow(&RouterState[@router].outbox_messages, key);
+        let message = table::borrow(&OutboxState[@router].outbox_messages, key);
         // MUST check that the Transceiver is an enabled send Transceiver for the Integrator (`srcAddr`) and chain (`dstChain`).
         // Since the enabled transceivers are copied to the outstanding transceivers field when the outbox message is generated,
         // this just needs the corresponding index to check against.
@@ -89,35 +105,70 @@ module router::router {
         let new_outstanding_transceivers = message.outstanding_transceivers & (bitmask ^ MAX_U128);
         // In order to reduce integrator / user costs, upon the last enabled sending Transceiver's pickup, any outgoing message state MUST be cleared.
         if (new_outstanding_transceivers == 0) {
-            let message = table::remove(&mut RouterState[@router].outbox_messages, key);
+            let message = table::remove(&mut OutboxState[@router].outbox_messages, key);
             (message.src_addr, message.sequence, message.dst_chain, message.dst_addr, message.payload_hash, new_outstanding_transceivers)
         } else {
-            let mut_message = table::borrow_mut(&mut RouterState[@router].outbox_messages, key);
+            let mut_message = table::borrow_mut(&mut OutboxState[@router].outbox_messages, key);
             mut_message.outstanding_transceivers = new_outstanding_transceivers;
             (mut_message.src_addr, mut_message.sequence, mut_message.dst_chain, mut_message.dst_addr, mut_message.payload_hash, new_outstanding_transceivers)
         }
     }
 
-    // #[view]
-    // public fun get_message_status(src_addr: address, sequence: u64): OutboxMessage acquires RouterState {
-    //     // Returns the enabled receive Transceivers for that chain along with the attestations and the executed flag.
-    //     *table::borrow(&RouterState[@router].outbox_messages, OutboxMessageKey{src_addr, sequence})
-    // }
+    #[view]
+    public fun compute_message_hash(src_chain: u16, src_addr: vector<u8>, sequence: u64, dst_chain: u16, dst_addr: vector<u8>, payload_hash: vector<u8>): vector<u8> {
+        // MUST calculate the message digest as keccak256(abi.encodePacked(sourceChain, sourceAddress, sequence, destinationChain, destinationAddress, payloadHash))
+        // we reuse the native bcs serialiser -- it uses little-endian encoding, and
+        // we need big-endian, so the results are reversed
+        let bytes = vector::empty();
+        let v = bcs::to_bytes(&src_chain);
+        v.reverse();
+        bytes.append(v);
+        bytes.append(src_addr);
+        v = bcs::to_bytes(&sequence);
+        v.reverse();
+        bytes.append(v);
+        v = bcs::to_bytes(&dst_chain);
+        v.reverse();
+        bytes.append(v);
+        bytes.append(dst_addr);
+        bytes.append(payload_hash);
+        aptos_hash::keccak256(bytes)
+    }
 
-    // public fun attest_message(src_chain, src_addr, sequence, dst_chain, dst_addr, payload_hash) {
-    //     // MUST check that the Transceiver is an enabled receive Transceiver for the Integrator (`dstAddr`) and chain (`dstChain`).
-    //     // MUST check that the Transceiver has NOT already attested.
-    //     // MUST allow a Transceiver to attest after message execution.
-    //     // Calculates the message hash and marks the Transceiver as having attested to the message.
-    // }
+    #[view]
+    public fun get_message_status(src_chain: u16, src_addr: vector<u8>, sequence: u64, dst_chain: u16, dst_addr: vector<u8>, payload_hash: vector<u8>): (u128, u128, bool) acquires AttestationState {
+        // Returns the enabled receive Transceivers for that chain along with the attestations and the executed flag.
+        let integrator_addr = universal_address::from_bytes(dst_addr).to_address();
+        let enabled_recv_transceivers = integrator::get_enabled_recv_transceivers(integrator_addr, src_chain);
+        let message_hash = compute_message_hash(src_chain, src_addr, sequence, dst_chain, dst_addr, payload_hash);
+        let info = table::borrow(&AttestationState[@router].attestation_infos, message_hash);
+        (enabled_recv_transceivers, info.attested_transceivers, info.executed)
+    }
 
-    // public fun recvMessage(src_chain, src_addr, sequence, dst_chain, dst_addr, payload_hash) { // `enabledBitmap, attestedBitmap`
+    public fun attest_message(transceiver_acct: &signer, src_chain: u16, src_addr: vector<u8>, sequence: u64, dst_chain: u16, dst_addr: vector<u8>, payload_hash: vector<u8>) acquires AttestationState {
+        // MUST check that the Transceiver is an enabled receive Transceiver for the Integrator (`dstAddr`) and chain (`dstChain`).
+        let integrator_addr = universal_address::from_bytes(dst_addr).to_address();
+        let transceiver_addr = signer::address_of(transceiver_acct);
+        let index = integrator::get_transceiver_index(integrator_addr, transceiver_addr);
+        let enabled_recv_transceivers = integrator::get_enabled_recv_transceivers(integrator_addr, src_chain);
+        let bitmask = 1 << index;
+        assert!(enabled_recv_transceivers & bitmask > 0);
+        // MUST check that the Transceiver has NOT already attested.
+        let message_hash = compute_message_hash(src_chain, src_addr, sequence, dst_chain, dst_addr, payload_hash);
+        let info = table::borrow_mut_with_default(&mut AttestationState[@router].attestation_infos, message_hash, AttestationInfo{executed: false, attested_transceivers: 0});
+        assert!(info.attested_transceivers & bitmask == 0);
+        // MUST allow a Transceiver to attest after message execution.
+        // Calculates the message hash and marks the Transceiver as having attested to the message.
+        info.attested_transceivers = info.attested_transceivers | bitmask;
+    }
+
+    // public fun recvMessage(integrator_acct: &signer, src_chain: u16, src_addr: vector<u8>, sequence: u64, dst_chain: u16, dst_addr: vector<u8>, payload_hash: vector<u8>) { // `enabledBitmap, attestedBitmap`
     //     // MUST check that at least one Transceiver has attested.
     //     // MUST revert if already executed.
     //     // Marks the message as executed and returns the enabled receive Transceivers for that chain along with the attestations.
     // }
 
-    // public fun execMessage(src_chain, src_addr, sequence, dst_chain, dst_addr, payload_hash) {
+    // public fun execMessage(integrator_acct: &signer, src_chain: u16, src_addr: vector<u8>, sequence: u64, dst_chain: u16, dst_addr: vector<u8>, payload_hash: vector<u8>) {
     //     // MUST revert if already executed.
     //     // MUST NOT require any Transceivers to have attested
     //     // Marks the message as executed.
@@ -312,6 +363,50 @@ module router::router_test {
         router::get_outbox_message(integrator_addr, sequence);
         router::pick_up_message(tx1, integrator_addr, sequence);
         router::get_outbox_message(integrator_addr, sequence);
+    }
+
+    #[test(integrator_acct = @0x123, tx1 = @0x456)]
+    public fun attest_message_test(integrator_acct: &signer, tx1: &signer) {
+        router::init_module_test();
+        let integrator_addr = signer::address_of(integrator_acct);
+        let tx1_addr = signer::address_of(tx1);
+        router::register(integrator_acct, integrator_addr);
+        integrator::add_transceiver(integrator_acct, integrator_addr, tx1_addr);
+        integrator::enable_recv_transceiver(integrator_acct, integrator_addr, 1, tx1_addr);
+        let integrator_bytes = universal_address::from_address(integrator_addr).get_bytes();
+        router::attest_message(tx1, 1, DESTINATION_ADDR, 0, 22, integrator_bytes, PAYLOAD_HASH);
+        let (enabled, attested, executed) = router::get_message_status(1, DESTINATION_ADDR, 0, 22, integrator_bytes, PAYLOAD_HASH);
+        assert!(enabled == 1);
+        assert!(attested == 1);
+        assert!(executed == false);
+    }
+
+    #[test(integrator_acct = @0x123, tx1 = @0x456)]
+    #[expected_failure]
+    public fun attest_message_fails_with_disabled_transceiver(integrator_acct: &signer, tx1: &signer) {
+        router::init_module_test();
+        let integrator_addr = signer::address_of(integrator_acct);
+        let tx1_addr = signer::address_of(tx1);
+        router::register(integrator_acct, integrator_addr);
+        integrator::add_transceiver(integrator_acct, integrator_addr, tx1_addr);
+        integrator::enable_recv_transceiver(integrator_acct, integrator_addr, 1, tx1_addr);
+        integrator::disable_recv_transceiver(integrator_acct, integrator_addr, 1, tx1_addr);
+        let integrator_bytes = universal_address::from_address(integrator_addr).get_bytes();
+        router::attest_message(tx1, 1, DESTINATION_ADDR, 0, 22, integrator_bytes, PAYLOAD_HASH);
+    }
+
+    #[test(integrator_acct = @0x123, tx1 = @0x456)]
+    #[expected_failure]
+    public fun attest_message_twice_fails(integrator_acct: &signer, tx1: &signer) {
+        router::init_module_test();
+        let integrator_addr = signer::address_of(integrator_acct);
+        let tx1_addr = signer::address_of(tx1);
+        router::register(integrator_acct, integrator_addr);
+        integrator::add_transceiver(integrator_acct, integrator_addr, tx1_addr);
+        integrator::enable_recv_transceiver(integrator_acct, integrator_addr, 1, tx1_addr);
+        let integrator_bytes = universal_address::from_address(integrator_addr).get_bytes();
+        router::attest_message(tx1, 1, DESTINATION_ADDR, 0, 22, integrator_bytes, PAYLOAD_HASH);
+        router::attest_message(tx1, 1, DESTINATION_ADDR, 0, 22, integrator_bytes, PAYLOAD_HASH);
     }
 
 }

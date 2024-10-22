@@ -1,6 +1,7 @@
 /// 32 byte, left-padded address representing an arbitrary address, to be used to refer to addresses across chains.
 /// from https://github.com/wormhole-foundation/wormhole/blob/a0dd60f8a0e4b9cfe26593c379d25eaf9f73c43c/aptos/wormhole/sources/external_address.move
 module router::universal_address {
+    use aptos_std::from_bcs;
     use std::bcs;
     use std::vector;
 
@@ -10,8 +11,8 @@ module router::universal_address {
         universal_address: vector<u8>,
     }
 
-    public fun get_bytes(e: &UniversalAddress): vector<u8> {
-        e.universal_address
+    public fun get_bytes(self: &UniversalAddress): vector<u8> {
+        self.universal_address
     }
 
     public fun pad_left_32(input: &vector<u8>): vector<u8> {
@@ -38,6 +39,10 @@ module router::universal_address {
 
     public fun from_address(addr: address): UniversalAddress {
         from_bytes(bcs::to_bytes(&addr))
+    }
+
+    public fun to_address(self: &UniversalAddress): address {
+        from_bcs::to_address(self.universal_address)
     }
 
 }
@@ -120,5 +125,13 @@ module router::universal_address_test {
         let res = from_address(addr);
         let bytes = get_bytes(&res);
         assert!(bytes == v);
+    }
+
+    #[test(addr = @0x000000000000000000000000000000000000000000000000000000000000cafe)]
+    public fun test_to_address(addr: address) {
+        let v = x"000000000000000000000000000000000000000000000000000000000000cafe";
+        let ua = from_bytes(v);
+        let res = ua.to_address();
+        assert!(res == addr);
     }
 }
