@@ -24,7 +24,7 @@ This module leverages Move 2.0 features and the `aptos` CLI requires the `--move
 - [x] `disableRecvTransceiver`
 - [ ] Events
 - [x] CI builds and enforces 100% coverage
-- [ ] Unit test compute_message_hash matches known output
+- [x] Unit test for compute_message_hash matches known output
 - [ ] Example transceiver
 - [ ] Example integrator
 
