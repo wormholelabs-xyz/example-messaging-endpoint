@@ -8,10 +8,10 @@ This module leverages Move 2.0 features and the `aptos` CLI requires the `--move
 
 - [x] `register`
 - [x] `sendMessage`
-- [ ] `getMessageStatus`
+- [x] `getMessageStatus`
 - [ ] `recvMessage`
 - [ ] `execMessage`
-- [ ] `attestMessage`
+- [x] `attestMessage`
 - [x] `pickUpMessage`
 - [x] `updateAdmin`
 - [x] `transferAdmin`
@@ -24,6 +24,7 @@ This module leverages Move 2.0 features and the `aptos` CLI requires the `--move
 - [x] `disableRecvTransceiver`
 - [ ] Events
 - [x] CI builds and enforces 100% coverage
+- [ ] Unit test compute_message_hash matches known output
 - [ ] Example transceiver
 - [ ] Example integrator
 
@@ -45,7 +46,7 @@ Transceivers must be associated with exactly one Router instance and must expose
 
 ## Development
 
-Style note: this code intentionally avoids the [dot (receiver) function call style](https://aptos.dev/en/build/smart-contracts/book/functions#dot-receiver-function-call-style) as it obscures the mutability of the reference used.
+Style note: this code generally, intentionally avoids the [dot (receiver) function call style](https://aptos.dev/en/build/smart-contracts/book/functions#dot-receiver-function-call-style) as it obscures the mutability of the reference used.
 
 [Move IDE Plugins](https://aptos.dev/en/build/smart-contracts#move-ide-plugins)
 
