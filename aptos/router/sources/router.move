@@ -195,6 +195,7 @@ module router::router {
 
 #[test_only]
 module router::router_test {
+    use aptos_framework::aptos_hash;
     use router::integrator;
     use router::router;
     use router::universal_address;
@@ -385,8 +386,20 @@ module router::router_test {
 
     #[test]
     public fun compute_message_hash_test() {
-        // TODO: compute and compare known hash
         router::compute_message_hash(1, DESTINATION_ADDR, 0, 22, universal_address::from_address(@0x123).get_bytes(), PAYLOAD_HASH);
+    }
+
+    #[test]
+    public fun compute_message_hash_test_known_hash() {
+        let src_addr = universal_address::from_address(@0x123).get_bytes();
+        let dst_addr = universal_address::from_address(@0x456).get_bytes();
+        let src_chain = 2;
+        let dst_chain = 42;
+        let sequence = 3;
+        let payload_hash = aptos_hash::keccak256(b"hello, world");
+        let known_hash = x"f589999616054a74b876390c4eb6e067da272da5cd313a9657d33ec3cab06760";
+        let message_hash = router::compute_message_hash(src_chain, src_addr, sequence, dst_chain, dst_addr, payload_hash);
+        assert!(known_hash == message_hash);
     }
 
     #[test]
