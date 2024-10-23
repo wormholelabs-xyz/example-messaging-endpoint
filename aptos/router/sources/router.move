@@ -209,7 +209,7 @@ module router::router_test {
         let integrator_addr = signer::address_of(integrator_acct);
         router::register(integrator_acct, integrator_addr);
         let admin_addr = integrator::get_admin(integrator_addr);
-        assert!(admin_addr == integrator_addr);
+        assert!(admin_addr.contains(&integrator_addr));
     }
 
     #[test(integrator_acct = @0x123)]
@@ -537,7 +537,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
         // ensure the admin was set to the addess defined in the init
         let resource_addr = signer::address_of(resource_account);
         let admin_addr = integrator::get_admin(resource_addr);
-        assert!(admin_addr == DEPLOYER);
+        assert!(admin_addr.contains(&DEPLOYER));
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
@@ -546,7 +546,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
         let new_admin: address = @0xdeadbeef;
         let resource_addr = signer::address_of(resource_account);
         integrator::update_admin(origin_account, resource_addr, new_admin);
-        assert!(integrator::get_admin(resource_addr) == new_admin);
+        assert!(integrator::get_admin(resource_addr).contains(&new_admin));
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, wrong_admin = @0xdeadbeef)]
@@ -580,8 +580,8 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
         let new_admin: address = @0xdeadbeef;
         let resource_addr = signer::address_of(resource_account);
         integrator::transfer_admin(origin_account, resource_addr, new_admin);
-        assert!(integrator::get_admin(resource_addr) == signer::address_of(origin_account));
-        assert!(integrator::get_pending_admin(resource_addr) == new_admin);
+        assert!(integrator::get_admin(resource_addr).contains(&signer::address_of(origin_account)));
+        assert!(integrator::get_pending_admin(resource_addr).contains(&new_admin));
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, wrong_admin = @0xdeadbeef)]
@@ -614,8 +614,8 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
         transfer_admin_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
         integrator::claim_admin(origin_account, resource_addr);
-        assert!(integrator::get_admin(resource_addr) == signer::address_of(origin_account));
-        assert!(integrator::get_pending_admin(resource_addr) == @0x0);
+        assert!(integrator::get_admin(resource_addr).contains(&signer::address_of(origin_account)));
+        assert!(integrator::get_pending_admin(resource_addr).is_none());
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, new_admin = @0xdeadbeef)]
@@ -623,8 +623,8 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
         transfer_admin_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
         integrator::claim_admin(new_admin, resource_addr);
-        assert!(integrator::get_admin(resource_addr) == signer::address_of(new_admin));
-        assert!(integrator::get_pending_admin(resource_addr) == @0x0);
+        assert!(integrator::get_admin(resource_addr).contains(&signer::address_of(new_admin)));
+        assert!(integrator::get_pending_admin(resource_addr).is_none());
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
@@ -648,8 +648,8 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
         integrator::discard_admin(origin_account, resource_addr);
-        assert!(integrator::get_admin(resource_addr) == @0x0);
-        assert!(integrator::get_pending_admin(resource_addr) == @0x0);
+        assert!(integrator::get_admin(resource_addr).is_none());
+        assert!(integrator::get_pending_admin(resource_addr).is_none());
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, wrong_admin = @0xdeadbeef)]
