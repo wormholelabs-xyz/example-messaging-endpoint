@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-import {TestIntegrator} from "./TestIntegrator.sol";
+import {TestIntegrator} from "./TestIntegrator.s.sol";
 import "forge-std/Script.sol";
 
 // DeployTestIntegrator is a forge script to deploy the TestIntegrator contract. Use ./sh/deployTestIntegrator.sh to invoke this.
