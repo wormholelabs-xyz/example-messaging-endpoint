@@ -23,4 +23,7 @@ pub enum RouterError {
 
     #[msg("No admin transfer is in progress")]
     NoAdminTransferInProgress,
+
+    #[msg("Invalid Chain Id")]
+    InvalidChainId,
 }

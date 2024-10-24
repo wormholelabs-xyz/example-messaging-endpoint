@@ -43,18 +43,13 @@ impl IntegratorConfig {
 
     pub fn check_admin(&self, signer: &Signer) -> Result<()> {
         require!(
-            self.admin.is_some() && self.admin == Some(signer.key()),
+            self.admin == Some(signer.key()),
             RouterError::CallerNotAuthorized
         );
         require!(
             self.pending_admin.is_none(),
             RouterError::AdminTransferInProgress
         );
-        Ok(())
-    }
-
-    pub fn update_admin(&mut self, new_admin: Pubkey) -> Result<()> {
-        self.admin = Some(new_admin);
         Ok(())
     }
 

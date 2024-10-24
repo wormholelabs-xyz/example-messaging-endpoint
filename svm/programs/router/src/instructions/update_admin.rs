@@ -57,9 +57,7 @@ pub fn update_admin(ctx: Context<UpdateAdmin>, args: UpdateAdminArgs) -> Result<
         return Err(RouterError::AdminTransferInProgress.into());
     }
 
-    ctx.accounts
-        .integrator_config
-        .update_admin(args.new_admin)?;
+    ctx.accounts.integrator_config.admin = Some(args.new_admin);
 
     Ok(())
 }

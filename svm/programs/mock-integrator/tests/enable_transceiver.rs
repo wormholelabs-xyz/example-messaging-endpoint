@@ -79,6 +79,8 @@ async fn verify_transceiver_state(
     integrator_chain_config_pda: Pubkey,
     expected_recv_bitmap: u128,
     expected_send_bitmap: u128,
+    expected_chain_id: u16,
+    expected_integrator_id: Pubkey,
 ) {
     let integrator_chain_config: IntegratorChainConfig =
         get_account(&mut context.banks_client, integrator_chain_config_pda).await;
@@ -90,6 +92,11 @@ async fn verify_transceiver_state(
     assert_eq!(
         integrator_chain_config.send_transceiver_bitmap,
         Bitmap::from_value(expected_send_bitmap)
+    );
+    assert_eq!(integrator_chain_config.chain_id, expected_chain_id);
+    assert_eq!(
+        integrator_chain_config.integrator_program_id,
+        expected_integrator_id
     );
 }
 
@@ -122,7 +129,15 @@ async fn test_enable_in_transceivers_success() {
     .await;
     assert!(result.is_ok());
 
-    verify_transceiver_state(&mut context, integrator_chain_config_pda, 1, 0).await;
+    verify_transceiver_state(
+        &mut context,
+        integrator_chain_config_pda,
+        1,
+        0,
+        chain_id,
+        integrator_program_id,
+    )
+    .await;
 }
 
 #[tokio::test]
@@ -187,7 +202,16 @@ async fn test_enable_in_transceivers_multiple_sets_success() {
     assert!(result.is_ok());
 
     // Verify that both transceivers are set
-    verify_transceiver_state(&mut context, integrator_chain_config_pda, 0b11, 0).await;
+
+    verify_transceiver_state(
+        &mut context,
+        integrator_chain_config_pda,
+        3,
+        0,
+        chain_id,
+        integrator_program_id,
+    )
+    .await;
 }
 
 #[tokio::test]
@@ -220,7 +244,15 @@ async fn test_enable_out_transceivers_success() {
 
     assert!(result.is_ok());
 
-    verify_transceiver_state(&mut context, integrator_chain_config_pda, 0, 1).await;
+    verify_transceiver_state(
+        &mut context,
+        integrator_chain_config_pda,
+        0,
+        1,
+        chain_id,
+        integrator_program_id,
+    )
+    .await;
 }
 
 #[tokio::test]
@@ -335,7 +367,15 @@ async fn test_enable_already_enabled_transceiver() {
     .await;
     assert!(result.is_ok());
 
-    verify_transceiver_state(&mut context, integrator_chain_config_pda, 1, 0).await;
+    verify_transceiver_state(
+        &mut context,
+        integrator_chain_config_pda,
+        1,
+        0,
+        chain_id,
+        integrator_program_id,
+    )
+    .await;
 
     // Second attempt: should fail with TransceiverAlreadyEnabled
     let result = enable_recv_transceiver(
@@ -362,7 +402,15 @@ async fn test_enable_already_enabled_transceiver() {
     );
 
     // Verify that the state hasn't changed
-    verify_transceiver_state(&mut context, integrator_chain_config_pda, 1, 0).await;
+    verify_transceiver_state(
+        &mut context,
+        integrator_chain_config_pda,
+        1,
+        0,
+        chain_id,
+        integrator_program_id,
+    )
+    .await;
 }
 
 #[tokio::test]

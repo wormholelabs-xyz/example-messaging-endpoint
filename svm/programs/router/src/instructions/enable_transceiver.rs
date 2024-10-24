@@ -1,6 +1,7 @@
 use crate::error::RouterError;
 use crate::instructions::common::TransceiverInfoArgs;
 use crate::state::{IntegratorChainConfig, IntegratorConfig, TransceiverInfo};
+use crate::utils::bitmap::Bitmap;
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
@@ -56,8 +57,13 @@ pub struct EnableTransceiver<'info> {
 }
 
 impl<'info> EnableTransceiver<'info> {
-    pub fn validate(&self) -> Result<()> {
-        self.integrator_config.check_admin(&self.admin)
+    pub fn validate(&self, args: &TransceiverInfoArgs) -> Result<()> {
+        self.integrator_config.check_admin(&self.admin)?;
+
+        // Ensure chain_id is not zero
+        require!(args.chain_id != 0, RouterError::InvalidChainId);
+
+        Ok(())
     }
 }
 
@@ -74,13 +80,24 @@ impl<'info> EnableTransceiver<'info> {
 /// # Returns
 ///
 /// * `Result<()>` - The result of the operation
-#[access_control(EnableTransceiver::validate(&ctx.accounts))]
+#[access_control(EnableTransceiver::validate(&ctx.accounts, &args))]
 pub fn enable_recv_transceiver(
     ctx: Context<EnableTransceiver>,
-    _args: TransceiverInfoArgs,
+    args: TransceiverInfoArgs,
 ) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
+
+    // If chain_id is 0, this is initial setup
+    if integrator_chain_config.chain_id == 0 {
+        integrator_chain_config.set_inner(IntegratorChainConfig {
+            chain_id: args.chain_id,
+            bump: ctx.bumps.integrator_chain_config,
+            integrator_program_id: args.integrator_program_id,
+            send_transceiver_bitmap: Bitmap::new(),
+            recv_transceiver_bitmap: Bitmap::new(),
+        });
+    }
 
     if integrator_chain_config
         .recv_transceiver_bitmap
@@ -109,13 +126,24 @@ pub fn enable_recv_transceiver(
 /// # Returns
 ///
 /// * `Result<()>` - The result of the operation
-#[access_control(EnableTransceiver::validate(&ctx.accounts))]
+#[access_control(EnableTransceiver::validate(&ctx.accounts, &args))]
 pub fn enable_send_transceiver(
     ctx: Context<EnableTransceiver>,
-    _args: TransceiverInfoArgs,
+    args: TransceiverInfoArgs,
 ) -> Result<()> {
     let registered_transceiver = &ctx.accounts.registered_transceiver;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
+
+    // If chain_id is 0, this is initial setup
+    if integrator_chain_config.chain_id == 0 {
+        integrator_chain_config.set_inner(IntegratorChainConfig {
+            chain_id: args.chain_id,
+            bump: ctx.bumps.integrator_chain_config,
+            integrator_program_id: args.integrator_program_id,
+            send_transceiver_bitmap: Bitmap::new(),
+            recv_transceiver_bitmap: Bitmap::new(),
+        });
+    }
 
     if integrator_chain_config
         .send_transceiver_bitmap
