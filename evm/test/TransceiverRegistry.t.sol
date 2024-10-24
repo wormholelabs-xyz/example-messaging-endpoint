@@ -5,8 +5,8 @@ import {Test, console} from "forge-std/Test.sol";
 import "../src/TransceiverRegistry.sol";
 
 contract ConcreteTransceiverRegistry is TransceiverRegistry {
-    function addTransceiver(address integrator, uint16 chain, address transceiver) public returns (uint8 index) {
-        return _addTransceiver(integrator, chain, transceiver);
+    function addTransceiver(address integrator, address transceiver) public returns (uint8 index) {
+        return _addTransceiver(integrator, transceiver);
     }
 
     function disableSendTransceiver(address integrator, uint16 chain, address transceiver) public {
@@ -19,10 +19,6 @@ contract ConcreteTransceiverRegistry is TransceiverRegistry {
 
     function getRegisteredTransceiversStorage(address integrator) public view returns (address[] memory $) {
         return _getRegisteredTransceiversStorage()[integrator];
-    }
-
-    function getNumTransceiversStorage(address integrator) public view returns (_NumTransceivers memory $) {
-        return _getNumTransceiversStorage()[integrator];
     }
 
     function getEnabledSendTransceiversBitmapForChain(address integrator, uint16 chain)
@@ -54,7 +50,7 @@ contract ConcreteTransceiverRegistry is TransceiverRegistry {
         view
         returns (bool)
     {
-        return _isSendTransceiverEnabledForChain(integrator, chainId, transceiver);
+        return _isSendTransceiverEnabledForChainWithCheck(integrator, chainId, transceiver);
     }
 
     function isRecvTransceiverEnabledForChain(address integrator, uint16 chainId, address transceiver)
@@ -62,7 +58,7 @@ contract ConcreteTransceiverRegistry is TransceiverRegistry {
         view
         returns (bool)
     {
-        return _isRecvTransceiverEnabledForChain(integrator, chainId, transceiver);
+        return _isRecvTransceiverEnabledForChainWithCheck(integrator, chainId, transceiver);
     }
 
     function getMaxTransceivers() public pure returns (uint8) {
@@ -94,16 +90,12 @@ contract TransceiverRegistryTest is Test {
         address me = address(this);
         // Send side
         assertEq(transceiverRegistry.getTransceivers(me).length, 0);
-        vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.InvalidChain.selector, zeroChain));
-        transceiverRegistry.addTransceiver(me, zeroChain, sendTransceiver);
-        transceiverRegistry.addTransceiver(me, chain, sendTransceiver);
+        transceiverRegistry.addTransceiver(me, sendTransceiver);
 
         // Recv side
         // A transceiver was registered on the send side
         assertEq(transceiverRegistry.getTransceivers(me).length, 1);
-        vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.InvalidChain.selector, zeroChain));
-        transceiverRegistry.addTransceiver(me, zeroChain, recvTransceiver);
-        transceiverRegistry.addTransceiver(me, chain, recvTransceiver);
+        transceiverRegistry.addTransceiver(me, recvTransceiver);
     }
 
     function test3() public {
@@ -113,24 +105,22 @@ contract TransceiverRegistryTest is Test {
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.NonRegisteredTransceiver.selector, sendTransceiver));
         transceiverRegistry.disableSendTransceiver(me, chain, sendTransceiver);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.InvalidTransceiverZeroAddress.selector));
-        transceiverRegistry.addTransceiver(me, chain, zeroTransceiver);
+        transceiverRegistry.addTransceiver(me, zeroTransceiver);
         require(transceiverRegistry.getRegisteredTransceiversStorage(me).length == 0, "S1");
-        require(transceiverRegistry.getNumTransceiversStorage(me).registered == 0, "S2");
-        transceiverRegistry.addTransceiver(me, chain, sendTransceiver);
+        transceiverRegistry.addTransceiver(me, sendTransceiver);
         require(transceiverRegistry.getRegisteredTransceiversStorage(me).length == 1, "S3");
-        require(transceiverRegistry.getNumTransceiversStorage(me).registered == 1, "S4");
         // assertEq(transceiverRegistry.getSendTransceiverInfos(integrator1).length, 1);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.InvalidChain.selector, zeroChain));
         transceiverRegistry.disableSendTransceiver(me, zeroChain, sendTransceiver);
         require(transceiverRegistry.getRegisteredTransceiversStorage(me).length == 1, "S5");
-        require(transceiverRegistry.getNumTransceiversStorage(me).registered == 1, "S6");
         vm.expectRevert(
             abi.encodeWithSelector(TransceiverRegistry.TransceiverAlreadyDisabled.selector, sendTransceiver)
         );
         transceiverRegistry.disableSendTransceiver(me, chain, sendTransceiver);
+        vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.InvalidChain.selector, zeroChain));
+        transceiverRegistry.enableSendTransceiver(me, zeroChain, sendTransceiver);
         transceiverRegistry.enableSendTransceiver(me, chain, sendTransceiver);
         require(transceiverRegistry.getRegisteredTransceiversStorage(me).length == 1, "S7");
-        require(transceiverRegistry.getNumTransceiversStorage(me).registered == 1, "S8");
         transceiverRegistry.disableSendTransceiver(me, chain, sendTransceiver);
         vm.expectRevert(
             abi.encodeWithSelector(TransceiverRegistry.TransceiverAlreadyDisabled.selector, sendTransceiver)
@@ -144,25 +134,21 @@ contract TransceiverRegistryTest is Test {
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.NonRegisteredTransceiver.selector, recvTransceiver));
         transceiverRegistry.disableRecvTransceiver(me, chain, recvTransceiver);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.InvalidTransceiverZeroAddress.selector));
-        transceiverRegistry.addTransceiver(me, chain, zeroTransceiver);
+        transceiverRegistry.addTransceiver(me, zeroTransceiver);
         // Carry over from send side test
         require(transceiverRegistry.getRegisteredTransceiversStorage(me).length == 1, "R1");
-        require(transceiverRegistry.getNumTransceiversStorage(me).registered == 1, "R2");
-        transceiverRegistry.addTransceiver(me, chain, recvTransceiver);
+        transceiverRegistry.addTransceiver(me, recvTransceiver);
         require(transceiverRegistry.getRegisteredTransceiversStorage(me).length == 2, "R3");
-        require(transceiverRegistry.getNumTransceiversStorage(me).registered == 2, "R4");
         // assertEq(transceiverRegistry.getRecvTransceiverInfos(integrator1).length, 1);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.InvalidChain.selector, zeroChain));
         transceiverRegistry.disableRecvTransceiver(me, zeroChain, recvTransceiver);
         require(transceiverRegistry.getRegisteredTransceiversStorage(me).length == 2, "R5");
-        require(transceiverRegistry.getNumTransceiversStorage(me).registered == 2, "R6");
         vm.expectRevert(
             abi.encodeWithSelector(TransceiverRegistry.TransceiverAlreadyDisabled.selector, recvTransceiver)
         );
         transceiverRegistry.disableRecvTransceiver(me, chain, recvTransceiver);
         transceiverRegistry.enableRecvTransceiver(me, chain, recvTransceiver);
         require(transceiverRegistry.getRegisteredTransceiversStorage(me).length == 2, "R7");
-        require(transceiverRegistry.getNumTransceiversStorage(me).registered == 2, "R8");
         transceiverRegistry.disableRecvTransceiver(me, chain, recvTransceiver);
         vm.expectRevert(
             abi.encodeWithSelector(TransceiverRegistry.TransceiverAlreadyDisabled.selector, recvTransceiver)
@@ -194,19 +180,6 @@ contract TransceiverRegistryTest is Test {
 
         // Recv side
         assertEq(transceiverRegistry.getRegisteredTransceiversStorage(integrator1).length, 0);
-    }
-
-    // This is a redudant test, as the previous tests already cover this
-    function test6() public view {
-        // Send side
-        TransceiverRegistry._NumTransceivers memory numSendTransceivers =
-            transceiverRegistry.getNumTransceiversStorage(integrator1);
-        assertEq(numSendTransceivers.registered, 0);
-
-        // Recv side
-        TransceiverRegistry._NumTransceivers memory numRecvTransceivers =
-            transceiverRegistry.getNumTransceiversStorage(integrator1);
-        assertEq(numRecvTransceivers.registered, 0);
     }
 
     function test7() public {
@@ -250,9 +223,8 @@ contract TransceiverRegistryTest is Test {
         address sTransceiver = address(0x345);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.NonRegisteredTransceiver.selector, sTransceiver));
         require(transceiverRegistry.isSendTransceiverEnabledForChain(me, chainId, sTransceiver) == false, "S1");
-        transceiverRegistry.addTransceiver(me, chain, sTransceiver);
+        transceiverRegistry.addTransceiver(me, sTransceiver);
         require(transceiverRegistry.getRegisteredTransceiversStorage(me).length == 1, "S2");
-        require(transceiverRegistry.getNumTransceiversStorage(me).registered == 1, "S3");
         transceiverRegistry.enableSendTransceiver(me, chainId, sTransceiver);
         bool enabled = transceiverRegistry.isSendTransceiverEnabledForChain(me, chainId, sTransceiver);
         require(enabled == true, "S4");
@@ -262,9 +234,8 @@ contract TransceiverRegistryTest is Test {
         address rTransceiver = address(0x453);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.NonRegisteredTransceiver.selector, rTransceiver));
         require(transceiverRegistry.isRecvTransceiverEnabledForChain(me, chainId, rTransceiver) == false, "R1");
-        transceiverRegistry.addTransceiver(me, chain, rTransceiver);
+        transceiverRegistry.addTransceiver(me, rTransceiver);
         require(transceiverRegistry.getRegisteredTransceiversStorage(me).length == 2, "R2");
-        require(transceiverRegistry.getNumTransceiversStorage(me).registered == 2, "R3");
         transceiverRegistry.enableRecvTransceiver(me, chainId, rTransceiver);
         enabled = transceiverRegistry.isRecvTransceiverEnabledForChain(me, chainId, rTransceiver);
         require(enabled == true, "R4");
@@ -277,16 +248,13 @@ contract TransceiverRegistryTest is Test {
 
         // Send side
         for (uint8 i = 0; i < maxTransceivers; i++) {
-            transceiverRegistry.addTransceiver(me, chain, address(uint160(i + 1)));
+            transceiverRegistry.addTransceiver(me, address(uint160(i + 1)));
         }
         assertEq(transceiverRegistry.getRegisteredTransceiversStorage(me).length, maxTransceivers);
-        assertEq(transceiverRegistry.getNumTransceiversStorage(me).registered, maxTransceivers);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.TooManyTransceivers.selector));
-        transceiverRegistry.addTransceiver(me, chain, address(0x111));
+        transceiverRegistry.addTransceiver(me, address(0x111));
         assertEq(transceiverRegistry.getRegisteredTransceiversStorage(me).length, maxTransceivers);
-        assertEq(transceiverRegistry.getNumTransceiversStorage(me).registered, maxTransceivers);
         assertEq(transceiverRegistry.getRegisteredTransceiversStorage(me).length, maxTransceivers);
-        assertEq(transceiverRegistry.getNumTransceiversStorage(me).registered, maxTransceivers);
         for (uint8 i = 0; i < maxTransceivers; i++) {
             transceiverRegistry.enableSendTransceiver(me, chain, address(uint160(i + 1)));
         }
@@ -304,14 +272,12 @@ contract TransceiverRegistryTest is Test {
 
         // Recv side
         for (uint8 i = 0; i < maxTransceivers; i++) {
-            transceiverRegistry.addTransceiver(me, chain, address(uint160(i + 1)));
+            transceiverRegistry.addTransceiver(me, address(uint160(i + 1)));
         }
         assertEq(transceiverRegistry.getRegisteredTransceiversStorage(me).length, maxTransceivers);
-        assertEq(transceiverRegistry.getNumTransceiversStorage(me).registered, maxTransceivers);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.TooManyTransceivers.selector));
-        transceiverRegistry.addTransceiver(me, chain, address(0x111));
+        transceiverRegistry.addTransceiver(me, address(0x111));
         assertEq(transceiverRegistry.getRegisteredTransceiversStorage(me).length, maxTransceivers);
-        assertEq(transceiverRegistry.getNumTransceiversStorage(me).registered, maxTransceivers);
         transceiverRegistry.enableRecvTransceiver(me, chain, address(0x1));
         transceiverRegistry.enableRecvTransceiver(me, chain, address(0x2));
         transceiverRegistry.disableRecvTransceiver(me, chain, address(0x2));
@@ -319,9 +285,8 @@ contract TransceiverRegistryTest is Test {
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.TransceiverAlreadyDisabled.selector, address(0x1)));
         transceiverRegistry.disableSendTransceiver(me, chain, address(0x1));
         assertEq(transceiverRegistry.getRegisteredTransceiversStorage(me).length, maxTransceivers);
-        assertEq(transceiverRegistry.getNumTransceiversStorage(me).registered, maxTransceivers);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.TooManyTransceivers.selector));
-        transceiverRegistry.addTransceiver(me, chain, address(0x111));
+        transceiverRegistry.addTransceiver(me, address(0x111));
     }
 
     function test_getSendTransceiversByChain() public {
@@ -333,13 +298,13 @@ contract TransceiverRegistryTest is Test {
         address transceiver3 = address(0x3); // enabled, chain 2
         address transceiver4 = address(0x4); // disabled, chain 2
 
-        transceiverRegistry.addTransceiver(me, chain1, transceiver1);
+        transceiverRegistry.addTransceiver(me, transceiver1);
         transceiverRegistry.enableSendTransceiver(me, chain1, transceiver1);
-        transceiverRegistry.addTransceiver(me, chain1, transceiver2);
+        transceiverRegistry.addTransceiver(me, transceiver2);
         transceiverRegistry.enableSendTransceiver(me, chain1, transceiver2);
-        transceiverRegistry.addTransceiver(me, chain2, transceiver3);
+        transceiverRegistry.addTransceiver(me, transceiver3);
         transceiverRegistry.enableSendTransceiver(me, chain2, transceiver3);
-        transceiverRegistry.addTransceiver(me, chain2, transceiver4);
+        transceiverRegistry.addTransceiver(me, transceiver4);
         address[] memory chain1Addrs = transceiverRegistry.getSendTransceiversByChain(me, chain1);
         require(chain1Addrs.length == 2, "Wrong number of transceivers enabled on chain one");
         address[] memory chain2Addrs = transceiverRegistry.getSendTransceiversByChain(me, chain2);
@@ -358,13 +323,13 @@ contract TransceiverRegistryTest is Test {
         address transceiver3 = address(0x3); // enabled, chain 2
         address transceiver4 = address(0x4); // disabled, chain 2
 
-        transceiverRegistry.addTransceiver(me, chain1, transceiver1);
+        transceiverRegistry.addTransceiver(me, transceiver1);
         transceiverRegistry.enableRecvTransceiver(me, chain1, transceiver1);
-        transceiverRegistry.addTransceiver(me, chain1, transceiver2);
+        transceiverRegistry.addTransceiver(me, transceiver2);
         transceiverRegistry.enableRecvTransceiver(me, chain1, transceiver2);
-        transceiverRegistry.addTransceiver(me, chain2, transceiver3);
+        transceiverRegistry.addTransceiver(me, transceiver3);
         transceiverRegistry.enableRecvTransceiver(me, chain2, transceiver3);
-        transceiverRegistry.addTransceiver(me, chain2, transceiver4);
+        transceiverRegistry.addTransceiver(me, transceiver4);
         address[] memory chain1Addrs = transceiverRegistry.getRecvTransceiversByChain(me, chain1);
         require(chain1Addrs.length == 2, "Wrong number of transceivers enabled on chain one");
         address[] memory chain2Addrs = transceiverRegistry.getRecvTransceiversByChain(me, chain2);
@@ -372,5 +337,23 @@ contract TransceiverRegistryTest is Test {
         transceiverRegistry.enableRecvTransceiver(me, chain2, transceiver4);
         transceiverRegistry.disableRecvTransceiver(me, chain2, transceiver3);
         require(chain2Addrs.length == 1, "Wrong number of transceivers enabled on chain two");
+    }
+
+    function test_recvPerformance() public {
+        address me = address(this);
+        uint8 maxTransceivers = transceiverRegistry.getMaxTransceivers();
+
+        // Recv side
+        for (uint8 i = 0; i < maxTransceivers; i++) {
+            transceiverRegistry.addTransceiver(me, address(uint160(i + 1)));
+        }
+        assertEq(transceiverRegistry.getRegisteredTransceiversStorage(me).length, maxTransceivers);
+        for (uint8 i = 0; i < maxTransceivers; i++) {
+            transceiverRegistry.enableRecvTransceiver(me, chain, address(uint160(i + 1)));
+        }
+        address[] memory chainAddrs = transceiverRegistry.getRecvTransceiversByChain(me, chain);
+        require(chainAddrs.length == maxTransceivers, "Wrong number of transceivers enabled on chain one");
+        address[] memory chain2Addrs = transceiverRegistry.getRecvTransceiversByChain(me, wrongChain);
+        require(chain2Addrs.length == 0, "Wrong number of transceivers enabled on chain two");
     }
 }

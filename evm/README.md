@@ -122,6 +122,16 @@ struct AttestationInfo {
 
 // Integrator (message recipient) => message digest -> attestation info
 mapping(address => mapping(bytes32 => AttestationInfo)) perIntegratorAttestations;
+
+struct IntegratorConfig {
+  bool isInitialized;
+  address admin;
+  address pending_admin;
+}
+
+// Integrator address => configuration information
+// Used by Router to maintain admin information
+mapping(address => IntegratorConfig) integratorConfigs
 ```
 
 ## Development

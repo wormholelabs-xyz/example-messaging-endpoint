@@ -61,11 +61,11 @@ contract TransceiverImpl is ITransceiver {
 
     function sendMessage(
         UniversalAddress, // sourceAddress,
+        uint64, // sequence,
         uint16, // recipientChain,
         UniversalAddress, // recipientAddress,
-        uint64, // sequence,
         bytes32, // payloadHash,
-        bytes32 // refundAddress
+        address // refundAddress
     ) public payable override {
         messagesSent += 1;
     }
@@ -139,6 +139,10 @@ contract RouterTest is Test {
         router.updateAdmin(integrator, address(newerAdmin));
         require(router.getAdmin(integrator) == address(newerAdmin), "failed to update admin address");
 
+		// Cannot claim if there is no transfer in progress.
+        vm.expectRevert(abi.encodeWithSelector(Router.NoAdminTransferInProgress.selector));
+        router.claimAdmin(integrator);
+
         vm.startPrank(address(newerAdmin));
         // Two step update to first admin.
         vm.expectRevert(abi.encodeWithSelector(Router.InvalidAdminZeroAddress.selector));
@@ -187,35 +191,35 @@ contract RouterTest is Test {
 
         // Can't enable a transceiver until we've set the admin.
         vm.expectRevert(abi.encodeWithSelector(Router.IntegratorNotRegistered.selector));
-        router.addTransceiver(integrator, 1, taddr1);
+        router.addTransceiver(integrator, taddr1);
 
         // Register the integrator and set the admin.
         router.register(admin);
 
         // The admin can add a transceiver.
         vm.startPrank(admin);
-        router.addTransceiver(integrator, 1, taddr1);
+        router.addTransceiver(integrator, taddr1);
 
         // Others cannot add a transceiver.
         vm.startPrank(imposter);
         vm.expectRevert(abi.encodeWithSelector(Router.CallerNotAuthorized.selector));
-        router.addTransceiver(integrator, 1, taddr1);
+        router.addTransceiver(integrator, taddr1);
 
         // Can't register the transceiver twice.
         vm.startPrank(admin);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.TransceiverAlreadyRegistered.selector, taddr1));
-        router.addTransceiver(integrator, 1, taddr1);
+        router.addTransceiver(integrator, taddr1);
         // Can't enable the transceiver twice.
         router.enableSendTransceiver(integrator, 1, taddr1);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.TransceiverAlreadyEnabled.selector, taddr1));
         router.enableSendTransceiver(integrator, 1, taddr1);
 
-        router.addTransceiver(integrator, 1, taddr2);
+        router.addTransceiver(integrator, taddr2);
         address[] memory transceivers = router.getSendTransceiversByChain(integrator, 1);
         require(transceivers.length == 1, "Wrong number of transceivers enabled on chain one, should be 1");
         // Enable another transceiver on chain one and one on chain two.
         router.enableSendTransceiver(integrator, 1, taddr2);
-        router.addTransceiver(integrator, 2, taddr3);
+        router.addTransceiver(integrator, taddr3);
         router.enableSendTransceiver(integrator, 2, taddr3);
 
         // And verify they got set properly.
@@ -244,35 +248,35 @@ contract RouterTest is Test {
 
         // Can't enable a transceiver until we've set the admin.
         vm.expectRevert(abi.encodeWithSelector(Router.IntegratorNotRegistered.selector));
-        router.addTransceiver(integrator, 1, taddr1);
+        router.addTransceiver(integrator, taddr1);
 
         // Register the integrator and set the admin.
         router.register(admin);
 
         // The admin can add a transceiver.
         vm.startPrank(admin);
-        router.addTransceiver(integrator, 1, taddr1);
+        router.addTransceiver(integrator, taddr1);
 
         // Others cannot add a transceiver.
         vm.startPrank(imposter);
         vm.expectRevert(abi.encodeWithSelector(Router.CallerNotAuthorized.selector));
-        router.addTransceiver(integrator, 1, taddr1);
+        router.addTransceiver(integrator, taddr1);
 
         // Can't register the transceiver twice.
         vm.startPrank(admin);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.TransceiverAlreadyRegistered.selector, taddr1));
-        router.addTransceiver(integrator, 1, taddr1);
+        router.addTransceiver(integrator, taddr1);
         // Can't enable the transceiver twice.
         router.enableRecvTransceiver(integrator, 1, taddr1);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.TransceiverAlreadyEnabled.selector, taddr1));
         router.enableRecvTransceiver(integrator, 1, taddr1);
 
-        router.addTransceiver(integrator, 1, taddr2);
+        router.addTransceiver(integrator, taddr2);
         address[] memory transceivers = router.getRecvTransceiversByChain(integrator, 1);
         require(transceivers.length == 1, "Wrong number of transceivers enabled on chain one, should be 1");
         // Enable another transceiver on chain one and one on chain two.
         router.enableRecvTransceiver(integrator, 1, taddr2);
-        router.addTransceiver(integrator, 2, taddr3);
+        router.addTransceiver(integrator, taddr3);
         router.enableRecvTransceiver(integrator, 2, taddr3);
 
         // And verify they got set properly.
@@ -299,41 +303,41 @@ contract RouterTest is Test {
         // Sending with no transceivers should revert.
         vm.startPrank(integrator);
         vm.expectRevert(abi.encodeWithSelector(Router.TransceiverNotEnabled.selector));
-        uint64 sequence = router.sendMessage(2, UniversalAddressLibrary.fromAddress(userA), refundAddr, messageHash);
+        uint64 sequence = router.sendMessage(2, UniversalAddressLibrary.fromAddress(userA), messageHash, refundAddr);
 
         // Now enable some transceivers.
         vm.startPrank(admin);
-        router.addTransceiver(integrator, 2, address(transceiver1));
+        router.addTransceiver(integrator, address(transceiver1));
         router.enableSendTransceiver(integrator, 2, address(transceiver1));
-        router.addTransceiver(integrator, 2, address(transceiver2));
+        router.addTransceiver(integrator, address(transceiver2));
         router.enableSendTransceiver(integrator, 2, address(transceiver2));
-        router.addTransceiver(integrator, 3, address(transceiver3));
+        router.addTransceiver(integrator, address(transceiver3));
         router.enableSendTransceiver(integrator, 3, address(transceiver3));
 
         // Only an integrator can call send.
         vm.startPrank(userA);
-        vm.expectRevert(abi.encodeWithSelector(Router.IntegratorNotRegistered.selector));
-        sequence = router.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), refundAddr, messageHash);
+        vm.expectRevert(abi.encodeWithSelector(Router.TransceiverNotEnabled.selector));
+        sequence = router.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), messageHash, refundAddr);
 
         // Send a message on chain two. It should go out on the first two transceivers, but not the third one.
         vm.startPrank(integrator);
-        sequence = router.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), refundAddr, messageHash);
+        sequence = router.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), messageHash, refundAddr);
         require(sequence == 0, "Sequence number is wrong");
         require(transceiver1.getMessagesSent() == 1, "Failed to send a message on transceiver 1");
         require(transceiver2.getMessagesSent() == 1, "Failed to send a message on transceiver 2");
         require(transceiver3.getMessagesSent() == 0, "Should not have sent a message on transceiver 3");
 
-        sequence = router.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), refundAddr, messageHash);
+        sequence = router.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), messageHash, refundAddr);
         require(sequence == 1, "Second sequence number is wrong");
         require(transceiver1.getMessagesSent() == 2, "Failed to send second message on transceiver 1");
         require(transceiver2.getMessagesSent() == 2, "Failed to send second message on transceiver 2");
         require(transceiver3.getMessagesSent() == 0, "Should not have sent second message on transceiver 3");
 
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.InvalidChain.selector, zeroChain));
-        sequence = router.sendMessage(zeroChain, UniversalAddressLibrary.fromAddress(userA), refundAddr, messageHash);
+        sequence = router.sendMessage(zeroChain, UniversalAddressLibrary.fromAddress(userA), messageHash, refundAddr);
         require(sequence == 0, "Failed sequence number is wrong"); // 0 because of the revert
 
-        sequence = router.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), refundAddr, messageHash);
+        sequence = router.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), messageHash, refundAddr);
         require(sequence == 2, "Third sequence number is wrong");
     }
 
@@ -357,11 +361,11 @@ contract RouterTest is Test {
 
         // Now enable some transceivers.
         vm.startPrank(admin);
-        router.addTransceiver(integrator, chain, address(transceiver1));
+        router.addTransceiver(integrator, address(transceiver1));
         router.enableRecvTransceiver(integrator, chain, address(transceiver1));
-        router.addTransceiver(integrator, chain, address(transceiver2));
+        router.addTransceiver(integrator, address(transceiver2));
         router.enableRecvTransceiver(integrator, chain, address(transceiver2));
-        router.addTransceiver(integrator, chain + 1, address(transceiver3));
+        router.addTransceiver(integrator, address(transceiver3));
         router.enableRecvTransceiver(integrator, chain + 1, address(transceiver3));
 
         // Only a transceiver can call attest.
@@ -378,12 +382,16 @@ contract RouterTest is Test {
         vm.startPrank(address(transceiver2));
         router.attestMessage(chain, sourceIntegrator, anotherChain, OurChainId, destIntegrator, messageHash);
 
+        // Multiple Attests from same transceiver should revert.
+        vm.expectRevert(abi.encodeWithSelector(Router.DuplicateMessageAttestation.selector));
+        router.attestMessage(chain, sourceIntegrator, anotherChain, OurChainId, destIntegrator, messageHash);
+
         // Receive what we just attested to mark it executed.
         vm.startPrank(integrator);
         router.recvMessage(chain, sourceIntegrator, anotherChain, OurChainId, destIntegrator, messageHash);
 
-        // Attesting after receive should still work.
-        vm.startPrank(address(transceiver2));
+        // Attesting after receive should still work on a different transceiver.
+        vm.startPrank(address(transceiver1));
         router.attestMessage(chain, sourceIntegrator, anotherChain, OurChainId, destIntegrator, messageHash);
 
         // Attesting on a disabled transceiver should revert.
@@ -412,16 +420,16 @@ contract RouterTest is Test {
 
         // Now enable some transceivers so we can attest. Receive doesn't use the transceivers.
         vm.startPrank(admin);
-        router.addTransceiver(integrator, 2, address(transceiver1));
+        router.addTransceiver(integrator, address(transceiver1));
         router.enableRecvTransceiver(integrator, 2, address(transceiver1));
-        router.addTransceiver(integrator, 2, address(transceiver2));
+        router.addTransceiver(integrator, address(transceiver2));
         router.enableRecvTransceiver(integrator, 2, address(transceiver2));
-        router.addTransceiver(integrator, 3, address(transceiver3));
+        router.addTransceiver(integrator, address(transceiver3));
         router.enableRecvTransceiver(integrator, 3, address(transceiver3));
 
         // Only an integrator can call receive.
         vm.startPrank(userB);
-        vm.expectRevert(abi.encodeWithSelector(Router.IntegratorNotRegistered.selector));
+        vm.expectRevert(abi.encodeWithSelector(Router.TransceiverNotEnabled.selector));
         router.recvMessage(2, sourceIntegrator, 1, OurChainId, destIntegrator, messageHash);
 
         // Receiving a message destine for the wrong chain should revert.
@@ -465,24 +473,22 @@ contract RouterTest is Test {
 
         // No transceivers should revert.
         vm.startPrank(integrator);
-        // vm.expectRevert(abi.encodeWithSelector(Router.TransceiverNotEnabled.selector));
         router.getMessageStatus(2, sourceIntegrator, 1, OurChainId, destIntegrator, messageHash);
 
         // Now enable some transceivers so we can attest. Receive doesn't use the transceivers.
         vm.startPrank(admin);
-        router.addTransceiver(integrator, 2, address(transceiver1));
+        router.addTransceiver(integrator, address(transceiver1));
         router.enableRecvTransceiver(integrator, 2, address(transceiver1));
-        router.addTransceiver(integrator, 2, address(transceiver2));
+        router.addTransceiver(integrator, address(transceiver2));
         router.enableRecvTransceiver(integrator, 2, address(transceiver2));
-        router.addTransceiver(integrator, 3, address(transceiver3));
+        router.addTransceiver(integrator, address(transceiver3));
         router.enableRecvTransceiver(integrator, 3, address(transceiver3));
 
         // Only an integrator can call receive.
         vm.startPrank(userB);
-        vm.expectRevert(abi.encodeWithSelector(Router.IntegratorNotRegistered.selector));
         router.getMessageStatus(2, sourceIntegrator, 1, OurChainId, destIntegrator, messageHash);
 
-        // Receiving a message destine for the wrong chain should revert.
+        // Receiving a message destined for the wrong chain should revert.
         vm.startPrank(integrator);
         vm.expectRevert(abi.encodeWithSelector(Router.InvalidDestinationChain.selector));
         router.getMessageStatus(2, sourceIntegrator, 1, OurChainId + 1, destIntegrator, messageHash);

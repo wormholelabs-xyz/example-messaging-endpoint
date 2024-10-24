@@ -20,17 +20,17 @@ interface ITransceiver {
 
     /// @dev Send a message to another chain.
     /// @param srcAddr The universal address of the sender.
+    /// @param sequence The per-integrator sequence number associated with the message.
     /// @param dstChain The Wormhole chain ID of the recipient.
     /// @param dstAddr The universal address of the recipient.
-    /// @param sequence The per-integrator sequence number associated with the message.
     /// @param payloadHash The hash of the message to be sent to the recipient chain.
-    /// @param refundAddr The address of the refund recipient
+    /// @param refundAddr The address of the refund recipient.
     function sendMessage(
         UniversalAddress srcAddr,
+        uint64 sequence,
         uint16 dstChain,
         UniversalAddress dstAddr,
-        uint64 sequence,
         bytes32 payloadHash,
-        bytes32 refundAddr
+        address refundAddr
     ) external payable;
 }

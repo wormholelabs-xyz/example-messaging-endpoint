@@ -3,11 +3,6 @@ pragma solidity ^0.8.13;
 
 /// @title TransceiverRegistry
 /// @notice This contract is responsible for handling the registration of Transceivers.
-/// @dev This contract checks that a few critical invariants hold when transceivers are added or removed,
-///      including:
-///         1. If a transceiver is not registered, it should be not enabled.
-///         2. The value set in the bitmap of transceivers
-///            should directly correspond to the whether the transceiver is enabled
 abstract contract TransceiverRegistry {
     /// @dev Information about registered transceivers.
     struct TransceiverInfo {
@@ -22,26 +17,17 @@ abstract contract TransceiverRegistry {
         uint128 bitmap; // MAX_TRANSCEIVERS = 128
     }
 
-    /// @dev Total number of registered transceivers. This number can only increase.
-    /// invariant: numRegisteredTransceivers <= MAX_TRANSCEIVERS
-    /// invariant: forall (i: uint8),
-    ///   i < numRegisteredTransceivers <=> exists (a: address), transceiverInfos[a].index == i
-    struct _NumTransceivers {
-        uint8 registered;
-    }
-
     uint8 constant MAX_TRANSCEIVERS = 128;
 
     // =============== Events ===============================================
 
     /// @notice Emitted when a transceiver is added.
     /// @dev Topic0
-    ///      0x11b137fe0ddc829607ddb73c998c8792af425d23c3d44235e97ba9d0ded66e58
+    ///      0x21bd18575f35e922dfe885784f1c36fe1c055f9a74fec0e9d113930f47e14bf2
     /// @param integrator The address of the integrator.
-    /// @param chain The Wormhole chain ID on which this transceiver is added.
     /// @param transceiver The address of the transceiver.
     /// @param transceiversNum The current number of transceivers.
-    event TransceiverAdded(address integrator, uint16 chain, address transceiver, uint8 transceiversNum);
+    event TransceiverAdded(address integrator, address transceiver, uint8 transceiversNum);
 
     /// @notice Emitted when a send side transceiver is enabled for a chain.
     /// @dev Topic0
@@ -127,11 +113,6 @@ abstract contract TransceiverRegistry {
     bytes32 private constant REGISTERED_TRANSCEIVERS_SLOT =
         bytes32(uint256(keccak256("registry.registeredTransceivers")) - 1);
 
-    /// @dev Holds send side Integrator address => NumTransceivers mapping.
-    ///      mapping(address => _NumTransceivers)
-    bytes32 private constant NUM_REGISTERED_TRANSCEIVERS_SLOT =
-        bytes32(uint256(keccak256("registry.numRegisteredTransceivers")) - 1);
-
     // =============== Send side =============================================
 
     /// @dev Holds integrator address => Chain ID => Enabled send side transceiver address[] mapping.
@@ -139,22 +120,12 @@ abstract contract TransceiverRegistry {
     bytes32 private constant ENABLED_SEND_TRANSCEIVER_ARRAY_SLOT =
         bytes32(uint256(keccak256("registry.sendTransceiverArray")) - 1);
 
-    /// @dev Holds send side Integrator address => Transceiver addresses mapping.
-    ///      mapping(address => address[]) across all chains
-    bytes32 private constant REGISTERED_SEND_TRANSCEIVERS_SLOT =
-        bytes32(uint256(keccak256("registry.registeredSendTransceivers")) - 1);
-
     // =============== Recv side =============================================
 
     /// @dev Holds integrator address => Chain ID => Enabled transceiver receive side bitmap mapping.
     ///      mapping(address => mapping(uint16 => uint128))
     bytes32 private constant ENABLED_RECV_TRANSCEIVER_BITMAP_SLOT =
         bytes32(uint256(keccak256("registry.recvTransceiverBitmap")) - 1);
-
-    /// @dev Holds receive side Integrator address => Transceiver addresses mapping.
-    ///      mapping(address => address[]) across all chains
-    bytes32 private constant REGISTERED_RECV_TRANSCEIVERS_SLOT =
-        bytes32(uint256(keccak256("registry.registeredRecvTransceivers")) - 1);
 
     // =============== Mappings ===============================================
 
@@ -203,30 +174,7 @@ abstract contract TransceiverRegistry {
         }
     }
 
-    /// @dev Integrator address => NumTransceivers mapping.
-    ///      Contains number of registered transceivers for this integrator.
-    ///      The transceivers may or may not be enabled.
-    function _getNumTransceiversStorage() internal pure returns (mapping(address => _NumTransceivers) storage $) {
-        uint256 slot = uint256(NUM_REGISTERED_TRANSCEIVERS_SLOT);
-        assembly ("memory-safe") {
-            $.slot := slot
-        }
-    }
-
     // =============== Modifiers ======================================================
-
-    /// @notice This modifier will revert if the transceiver is a zero address or the chain is invalid
-    /// @param transceiver The transceiver address
-    /// @param chain The Wormhole chain ID
-    modifier onlyValidTransceiverAndChain(address transceiver, uint16 chain) {
-        if (transceiver == address(0)) {
-            revert InvalidTransceiverZeroAddress();
-        }
-        if (chain == 0) {
-            revert InvalidChain(chain);
-        }
-        _;
-    }
 
     /// @notice This modifier will revert if the transceiver is an invalid address or not registered.
     ///         Or the chain is invalid
@@ -252,32 +200,29 @@ abstract contract TransceiverRegistry {
 
     /// @dev This function adds a transceiver.
     /// @param integrator The integrator address
-    /// @param chain The The Wormhole chain ID
     /// @param transceiver The transceiver address
     /// @return index The index of this newly enabled transceiver
-    function _addTransceiver(address integrator, uint16 chain, address transceiver)
-        internal
-        onlyValidTransceiverAndChain(transceiver, chain)
-        returns (uint8 index)
-    {
+    function _addTransceiver(address integrator, address transceiver) internal returns (uint8 index) {
+        if (transceiver == address(0)) {
+            revert InvalidTransceiverZeroAddress();
+        }
         mapping(address => mapping(address => TransceiverInfo)) storage transceiverInfos = _getTransceiverInfosStorage();
-        mapping(address => _NumTransceivers) storage _numTransceivers = _getNumTransceiversStorage();
+        mapping(address => address[]) storage registeredTransceivers = _getRegisteredTransceiversStorage();
 
         if (transceiverInfos[integrator][transceiver].registered) {
             revert TransceiverAlreadyRegistered(transceiver);
         }
-        if (_numTransceivers[integrator].registered >= MAX_TRANSCEIVERS) {
+        uint8 registeredTransceiversLength = uint8(registeredTransceivers[integrator].length);
+        if (registeredTransceiversLength >= MAX_TRANSCEIVERS) {
             revert TooManyTransceivers();
         }
         // Create the TransceiverInfo
         transceiverInfos[integrator][transceiver] =
-            TransceiverInfo({registered: true, index: _numTransceivers[integrator].registered});
+            TransceiverInfo({registered: true, index: registeredTransceiversLength});
         // Add this transceiver to the integrator => address[] mapping
         _getRegisteredTransceiversStorage()[integrator].push(transceiver);
-        // Increment count of transceivers
-        _numTransceivers[integrator].registered++;
         // Emit an event
-        emit TransceiverAdded(integrator, chain, transceiver, _numTransceivers[integrator].registered);
+        emit TransceiverAdded(integrator, transceiver, registeredTransceiversLength);
 
         return transceiverInfos[integrator][transceiver].index;
     }
@@ -327,7 +272,6 @@ abstract contract TransceiverRegistry {
         internal
         onlyRegisteredTransceiver(integrator, chain, transceiver)
     {
-        // mapping(address => mapping(address => TransceiverInfo)) storage transceiverInfos = _getTransceiverInfosStorage();
         mapping(address => mapping(uint16 => address[])) storage enabledSendTransceivers =
             _getPerChainSendTransceiverArrayStorage();
         address[] storage transceivers = enabledSendTransceivers[integrator][chain];
@@ -382,15 +326,24 @@ abstract contract TransceiverRegistry {
         emit RecvTransceiverDisabledForChain(integrator, chain, transceiver);
     }
 
-    /// @dev Returns if the send side transceiver is enabled for the given integrator and chain.
+    function _isSendTransceiverEnabledForChainWithCheck(address integrator, uint16 chain, address transceiver)
+        internal
+        view
+        onlyRegisteredTransceiver(integrator, chain, transceiver)
+        returns (bool)
+    {
+        return _isSendTransceiverEnabledForChain(integrator, chain, transceiver);
+    }
+
+    /// @notice Returns if the send side transceiver is enabled for the given integrator and chain.
+    /// @dev This function is private and should only be called by a function that checks the validity of chain and transceiver.
     /// @param integrator The integrator address
     /// @param chain The Wormhole chain ID
     /// @param transceiver The transceiver address
     /// @return true if the transceiver is enabled, false otherwise.
     function _isSendTransceiverEnabledForChain(address integrator, uint16 chain, address transceiver)
-        internal
+        private
         view
-        onlyRegisteredTransceiver(integrator, chain, transceiver)
         returns (bool)
     {
         address[] storage transceivers = _getPerChainSendTransceiverArrayStorage()[integrator][chain];
@@ -406,20 +359,29 @@ abstract contract TransceiverRegistry {
         return false;
     }
 
-    /// @dev Returns if the receive side transceiver is enabled for the given integrator and chain.
-    /// @param integrator The integrator address
-    /// @param chain The Wormhole chain ID
-    /// @param transceiver The transceiver address
-    /// @return true if the transceiver is enabled, false otherwise.
-    function _isRecvTransceiverEnabledForChain(address integrator, uint16 chain, address transceiver)
+    function _isRecvTransceiverEnabledForChainWithCheck(address integrator, uint16 chain, address transceiver)
         internal
         view
         onlyRegisteredTransceiver(integrator, chain, transceiver)
         returns (bool)
     {
+        return _isRecvTransceiverEnabledForChain(integrator, chain, transceiver);
+    }
+
+    /// @notice Returns if the receive side transceiver is enabled for the given integrator and chain.
+    /// @dev This function is private and should only be called by a function that checks the validity of chain and transceiver.
+    /// @param integrator The integrator address
+    /// @param chain The Wormhole chain ID
+    /// @param transceiver The transceiver address
+    /// @return true if the transceiver is enabled, false otherwise.
+    function _isRecvTransceiverEnabledForChain(address integrator, uint16 chain, address transceiver)
+        private
+        view
+        returns (bool)
+    {
         uint128 bitmap = _getEnabledRecvTransceiversBitmapForChain(integrator, chain);
         uint8 index = _getTransceiverInfosStorage()[integrator][transceiver].index;
-        return (bitmap & uint128(1 << index)) != 0;
+        return (bitmap & uint128(1 << index)) > 0;
     }
 
     /// @param integrator The integrator address
@@ -473,23 +435,7 @@ abstract contract TransceiverRegistry {
         if (chain == 0) {
             revert InvalidChain(chain);
         }
-        address[] memory allTransceivers = _getRegisteredTransceiversStorage()[integrator];
-        address[] memory tempResult = new address[](allTransceivers.length);
-        uint8 len = 0;
-        uint256 allTransceiversLength = allTransceivers.length;
-        for (uint256 i = 0; i < allTransceiversLength;) {
-            if (_isSendTransceiverEnabledForChain(integrator, chain, allTransceivers[i])) {
-                tempResult[len] = allTransceivers[i];
-                ++len;
-            }
-            unchecked {
-                ++i;
-            }
-        }
-        result = new address[](len);
-        for (uint8 i = 0; i < len; i++) {
-            result[i] = tempResult[i];
-        }
+        result = _getEnabledSendTransceiversArrayForChain(integrator, chain);
     }
 
     /// @notice Returns the enabled receive side transceiver addresses for the given integrator.

@@ -8,16 +8,16 @@ interface IRouterIntegrator is IMessageSequence {
     /// @notice This is the first thing an integrator should do. It registers the integrator with the router
     ///         and sets the administrator contract for that integrator. The admin address is used to manage the transceivers.
     /// @dev The msg.sender needs to be the integrator contract.
-    /// @param initialAdmin The address of the admin. Pass in msg.sender, if you want the integrator to be the admin.
+    /// @param initialAdmin The address of the admin.
     function register(address initialAdmin) external;
 
     /// @notice Send a message to another chain.
     /// @param dstChain The Wormhole chain ID of the recipient.
     /// @param dstAddr The universal address of the peer on the recipient chain.
-    /// @param refundAddress The source chain refund address passed to the Transceiver.
     /// @param payloadHash keccak256 of a message to be sent to the recipient chain.
     /// @return uint64 The sequence number of the message.
-    function sendMessage(uint16 dstChain, UniversalAddress dstAddr, address refundAddress, bytes32 payloadHash)
+    /// @param refundAddress The source chain refund address passed to the Transceiver.
+    function sendMessage(uint16 dstChain, UniversalAddress dstAddr, bytes32 payloadHash, address refundAddress)
         external
         payable
         returns (uint64);
