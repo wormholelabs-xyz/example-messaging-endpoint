@@ -65,7 +65,7 @@ async fn test_update_admin_success() {
     // Verify that the admin has been updated
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.admin, new_admin.pubkey());
+    assert_eq!(integrator_config.admin, Some(new_admin.pubkey()));
 }
 
 #[tokio::test]
@@ -98,7 +98,7 @@ async fn test_update_admin_non_authority() {
     // Verify that the admin has not been updated
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.admin, admin.pubkey());
+    assert_eq!(integrator_config.admin, Some(admin.pubkey()));
 }
 
 #[tokio::test]
@@ -121,7 +121,7 @@ async fn test_update_admin_same_address() {
     // Verify that the admin remains the same
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.admin, admin.pubkey());
+    assert_eq!(integrator_config.admin, Some(admin.pubkey()));
 }
 
 #[tokio::test]
@@ -176,7 +176,7 @@ async fn test_update_admin_with_transfer_in_progress() {
     // Verify that the admin and pending_admin remain unchanged
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.admin, admin.pubkey());
+    assert_eq!(integrator_config.admin, Some(admin.pubkey()));
     assert_eq!(
         integrator_config.pending_admin,
         Some(pending_admin.pubkey())
@@ -223,5 +223,5 @@ async fn test_update_admin_with_immutable_config() {
     // Verify that the integrator config is immutable
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.is_immutable, true);
+    assert_eq!(integrator_config.admin, None);
 }

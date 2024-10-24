@@ -20,7 +20,6 @@ pub struct EnableTransceiver<'info> {
     #[account(
         seeds = [IntegratorConfig::SEED_PREFIX, args.integrator_program_id.as_ref()],
         bump = integrator_config.bump,
-        has_one = admin @ RouterError::CallerNotAuthorized,
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 
@@ -55,11 +54,13 @@ pub struct EnableTransceiver<'info> {
     /// The System Program
     pub system_program: Program<'info, System>,
 }
+
 impl<'info> EnableTransceiver<'info> {
     pub fn validate(&self) -> Result<()> {
         self.integrator_config.check_admin(&self.admin)
     }
 }
+
 /// Sets a receive transceiver for the integrator chain configuration
 ///
 /// # Arguments

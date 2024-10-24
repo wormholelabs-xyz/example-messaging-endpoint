@@ -41,7 +41,7 @@ async fn test_invoke_register() {
     let integrator_config_data: router::state::IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config).await;
 
-    assert_eq!(integrator_config_data.admin, admin.pubkey());
+    assert_eq!(integrator_config_data.admin, Some(admin.pubkey()));
     assert_eq!(
         integrator_config_data.integrator_program_id,
         mock_integrator::id()

@@ -14,7 +14,7 @@ pub struct IntegratorConfig {
     pub integrator_program_id: Pubkey,
 
     /// Admin of the IntegratorConfig account
-    pub admin: Pubkey,
+    pub admin: Option<Pubkey>,
 
     /// Pending admin of the IntegratorConfig account
     /// If this exists, any other admin related functions will not be authorised
@@ -25,9 +25,6 @@ pub struct IntegratorConfig {
     /// Vector of registered transceiver addresses
     #[max_len(128)]
     pub registered_transceivers: Vec<Pubkey>,
-
-    /// A boolean to mark if config is immutable in other words admin is discarded
-    pub is_immutable: bool,
 }
 
 impl IntegratorConfig {
@@ -46,7 +43,7 @@ impl IntegratorConfig {
 
     pub fn check_admin(&self, signer: &Signer) -> Result<()> {
         require!(
-            !self.is_immutable && self.admin == signer.key(),
+            self.admin.is_some() && self.admin == Some(signer.key()),
             RouterError::CallerNotAuthorized
         );
         require!(
@@ -57,7 +54,7 @@ impl IntegratorConfig {
     }
 
     pub fn update_admin(&mut self, new_admin: Pubkey) -> Result<()> {
-        self.admin = new_admin;
+        self.admin = Some(new_admin);
         Ok(())
     }
 

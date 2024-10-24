@@ -16,9 +16,9 @@ classDiagram
     class IntegratorConfig {
         *bump: u8
         *integrator_program_id: Pubkey
-        admin: Pubkey
+        admin: Option<Pubkey>
+        pending_admin: Option<Pubkey>
         registered_transceivers: Vec<Pubkey>
-        is_immutable: boolean
     }
 
     class IntegratorChainConfig {
@@ -125,26 +125,29 @@ Manages the configuration for a specific integrator.
 
 - **bump**: Bump seed for PDA derivation
 - **integrator_program_id**: The program ID associated with this integrator
-- **admin**: The current admin of the IntegratorConfig account
+- **admin**: The current admin of the IntegratorConfig account (None if admin is discarded)
 - **pending_admin**: The pending admin of the IntegratorConfig account (if a transfer is in progress)
 - **registered_transceivers**: Vector of registered transceiver addresses
-- **is_immutable**: A boolean to mark that the program is immutable
 
 **PDA Derivation**:
 
 - Seeds: `[SEED_PREFIX, integrator_program_id]`
 - Unique for each integrator program
-- Initialization: Requires signer's signature
+- Initialization: Requires integrator_program's PDA seeded by "router_integrator"
+
+**Constraints**:
+
+- Maximum of 128 transceivers per integrator
 
 ### IntegratorChainConfig
 
 Manages transceivers enabled and config for a specific integrator on a particular chain.
 
 - **bump**: Bump seed for PDA derivation
-- **chain_id**: Identifier for the blockchain network
 - **integrator_program_id**: The program ID of the Integrator
-- **recv_transceiver_bitmap**: Bitmap tracking enabled receive transceivers
+- **chain_id**: Identifier for the blockchain network
 - **send_transceiver_bitmap**: Bitmap tracking enabled send transceivers
+- **recv_transceiver_bitmap**: Bitmap tracking enabled receive transceivers
 
 **PDA Derivation**:
 
@@ -157,7 +160,7 @@ Manages transceivers enabled and config for a specific integrator on a particula
 Represents a registered transceiver in the GMP Router.
 
 - **bump**: Bump seed for PDA derivation
-- **id**: Unique ID of the transceiver within the integrator's context
+- **index**: Unique index of the transceiver that corresponds to it's position in the registered_transceivers in IntegratorConfig account
 - **integrator_program_id**: The program ID of the Integrator
 - **address**: Public key of the transceiver's address
 
@@ -165,11 +168,6 @@ Represents a registered transceiver in the GMP Router.
 
 - Seeds: `[SEED_PREFIX, integrator_program_id, transceiver_program_id]`
 - Unique for each transceiver within an integrator context
-
-**Constraints**:
-
-- Maximum of 128 transceivers per integrator
-- Will return an error (MaxTransceiversReached) if this limit is exceeded
 
 ### Bitmap
 

@@ -26,6 +26,6 @@ impl<'info> DiscardAdmin<'info> {
 
 #[access_control(DiscardAdmin::validate(&ctx.accounts))]
 pub fn discard_admin(ctx: Context<DiscardAdmin>) -> Result<()> {
-    ctx.accounts.integrator_config.is_immutable = true;
+    ctx.accounts.integrator_config.admin = None;
     Ok(())
 }

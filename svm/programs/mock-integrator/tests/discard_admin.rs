@@ -52,7 +52,7 @@ async fn test_discard_admin_success() {
     // Verify that the admin has been discarded
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.is_immutable, true);
+    assert_eq!(integrator_config.admin, None);
 }
 
 #[tokio::test]

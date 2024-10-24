@@ -20,26 +20,16 @@ pub struct IntegratorChainConfig {
     /// This is used as a seed for PDA derivation
     pub chain_id: u16,
 
-    /// Bitmap tracking the status of receive transceivers
-    pub recv_transceiver_bitmap: Bitmap,
-
     /// Bitmap tracking the status of send transceivers
     pub send_transceiver_bitmap: Bitmap,
+
+    /// Bitmap tracking the status of receive transceivers
+    pub recv_transceiver_bitmap: Bitmap,
 }
 
 impl IntegratorChainConfig {
     /// Seed prefix for deriving IntegratorChainConfig PDAs
     pub const SEED_PREFIX: &'static [u8] = b"integrator_chain_config";
-
-    pub fn new(bump: u8, integrator_program_id: Pubkey, chain_id: u16) -> Self {
-        Self {
-            bump,
-            integrator_program_id,
-            chain_id,
-            recv_transceiver_bitmap: Bitmap::new(),
-            send_transceiver_bitmap: Bitmap::new(),
-        }
-    }
 
     pub fn pda(integrator_program: &Pubkey, chain_id: u16) -> (Pubkey, u8) {
         Pubkey::find_program_address(
@@ -50,29 +40,5 @@ impl IntegratorChainConfig {
             ],
             &crate::ID,
         )
-    }
-
-    pub fn enable_recv_transceiver(&mut self, index: u8, value: bool) -> Result<()> {
-        self.recv_transceiver_bitmap
-            .set(index, value)
-            .map_err(|e| error!(e))
-    }
-
-    pub fn enable_send_transceiver(&mut self, index: u8, value: bool) -> Result<()> {
-        self.send_transceiver_bitmap
-            .set(index, value)
-            .map_err(|e| error!(e))
-    }
-
-    pub fn get_recv_transceiver(&self, index: u8) -> Result<bool> {
-        self.recv_transceiver_bitmap
-            .get(index)
-            .map_err(|e| error!(e))
-    }
-
-    pub fn get_send_transceiver(&self, index: u8) -> Result<bool> {
-        self.send_transceiver_bitmap
-            .get(index)
-            .map_err(|e| error!(e))
     }
 }

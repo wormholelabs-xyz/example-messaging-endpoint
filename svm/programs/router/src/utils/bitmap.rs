@@ -1,4 +1,4 @@
-// This code is copied directly from `example-native-token-transfer` and updated to show NTTError instead of RouterError
+// This code is copied directly from `example-native-token-transfer` and updated to show RouterError instead of NTTError
 // Link: https://github.com/wormhole-foundation/example-native-token-transfers/blob/6cc8beee57e8a06dec96fffa02dd4ace7b22168d/solana/programs/example-native-token-transfers/src/bitmap.rs
 use crate::error::RouterError;
 use anchor_lang::prelude::*;

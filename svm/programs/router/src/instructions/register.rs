@@ -72,11 +72,10 @@ pub fn register(ctx: Context<Register>, args: RegisterArgs) -> Result<()> {
     // Initialize the IntegratorConfig account with the provided information
     ctx.accounts.integrator_config.set_inner(IntegratorConfig {
         bump: ctx.bumps.integrator_config,
-        admin: args.admin,
+        admin: Some(args.admin),
         pending_admin: None,
         integrator_program_id: args.integrator_program_id,
         registered_transceivers: Vec::new(),
-        is_immutable: false,
     });
 
     Ok(())

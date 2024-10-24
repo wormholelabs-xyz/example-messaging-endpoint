@@ -20,4 +20,7 @@ pub enum RouterError {
 
     #[msg("An admin transfer is in progress")]
     AdminTransferInProgress,
+
+    #[msg("No admin transfer is in progress")]
+    NoAdminTransferInProgress,
 }

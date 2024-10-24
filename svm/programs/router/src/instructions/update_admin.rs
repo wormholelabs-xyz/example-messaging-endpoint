@@ -26,7 +26,6 @@ pub struct UpdateAdmin<'info> {
             args.integrator_program_id.key().as_ref(),
         ],
         bump = integrator_config.bump,
-        has_one = admin @ RouterError::CallerNotAuthorized,
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 }

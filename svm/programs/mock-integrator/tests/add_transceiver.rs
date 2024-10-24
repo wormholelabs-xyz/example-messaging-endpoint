@@ -336,7 +336,7 @@ async fn test_add_transceiver_with_transfer_in_progress() {
     // Verify that the integrator config hasn't changed
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.admin, admin.pubkey());
+    assert_eq!(integrator_config.admin, Some(admin.pubkey()));
     assert_eq!(
         integrator_config.pending_admin,
         Some(pending_admin.pubkey())

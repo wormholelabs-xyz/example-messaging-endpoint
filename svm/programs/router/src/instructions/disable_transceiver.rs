@@ -15,7 +15,6 @@ pub struct DisableTransceiver<'info> {
     #[account(
         seeds = [IntegratorConfig::SEED_PREFIX, args.integrator_program_id.as_ref()],
         bump = integrator_config.bump,
-        has_one = admin @ RouterError::CallerNotAuthorized,
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 
@@ -45,11 +44,13 @@ pub struct DisableTransceiver<'info> {
     )]
     pub registered_transceiver: Account<'info, TransceiverInfo>,
 }
+
 impl<'info> DisableTransceiver<'info> {
     pub fn validate(&self) -> Result<()> {
         self.integrator_config.check_admin(&self.admin)
     }
 }
+
 /// Disables a receive transceiver
 ///
 /// # Arguments

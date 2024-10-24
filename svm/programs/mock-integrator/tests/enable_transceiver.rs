@@ -508,5 +508,5 @@ async fn test_enable_transceiver_with_immutable_config() {
     // Verify that the integrator config is immutable
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.is_immutable, true);
+    assert_eq!(integrator_config.admin, None);
 }

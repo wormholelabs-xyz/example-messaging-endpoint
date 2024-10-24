@@ -444,7 +444,7 @@ async fn test_disable_transceiver_with_transfer_in_progress() {
     // Verify that the integrator config hasn't changed
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.admin, admin.pubkey());
+    assert_eq!(integrator_config.admin, Some(admin.pubkey()));
     assert_eq!(
         integrator_config.pending_admin,
         Some(pending_admin.pubkey())
@@ -515,5 +515,5 @@ async fn test_disable_transceiver_with_immutable_config() {
     // Verify that the integrator config is immutable
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.is_immutable, true);
+    assert_eq!(integrator_config.admin, None);
 }

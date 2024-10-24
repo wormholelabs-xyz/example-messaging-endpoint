@@ -26,7 +26,6 @@ pub struct TransferAdmin<'info> {
             args.integrator_program_id.key().as_ref(),
         ],
         bump = integrator_config.bump,
-        has_one = admin @ RouterError::CallerNotAuthorized,
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 }
@@ -39,14 +38,17 @@ impl<'info> TransferAdmin<'info> {
 
 #[derive(Accounts)]
 pub struct ClaimAdmin<'info> {
-    /// The signer, which can be either the pending_admin or the current admin
+    /// The signer, which must be the pending_admin
     pub new_admin: Signer<'info>,
 
     /// The IntegratorConfig account being claimed
-    /// The constraint here checks that the signer is either the pending_admin or the current_admin
+    /// The constraint here checks that there is a pending admin transfer and the signer is the pending_admin
     #[account(
         mut,
-        constraint = (integrator_config.pending_admin == Some(new_admin.key()) || integrator_config.admin == new_admin.key()) @ RouterError::CallerNotAuthorized,
+        constraint = integrator_config.admin.is_some() @ RouterError::CallerNotAuthorized,
+        constraint = integrator_config.pending_admin.is_some() @ RouterError::NoAdminTransferInProgress,
+        constraint = integrator_config.pending_admin == Some(new_admin.key())
+        || integrator_config.admin == Some(new_admin.key()) @ RouterError::CallerNotAuthorized,
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 }
@@ -69,20 +71,14 @@ pub struct ClaimAdmin<'info> {
 /// Returns `Ok(())` if setting the pending admin is successful, otherwise returns an error.
 #[access_control(TransferAdmin::validate(&ctx.accounts))]
 pub fn transfer_admin(ctx: Context<TransferAdmin>, args: TransferAdminArgs) -> Result<()> {
-    // Checks that there is no pending transfer
-    if ctx.accounts.integrator_config.pending_admin.is_some() {
-        return Err(RouterError::AdminTransferInProgress.into());
-    }
-
     ctx.accounts.integrator_config.pending_admin = Some(args.new_admin);
     Ok(())
 }
 
 /// Claims the admin rights for an IntegratorConfig account.
 ///
-/// This function allows either the current admin or the pending admin to claim the admin rights,
-/// completing the two-step admin transfer process or cancelling the transfer by setting the admin
-/// back as the current admin
+/// This function allows only the pending admin to claim the admin rights,
+/// completing the two-step admin transfer process.
 ///
 /// # Arguments
 ///
@@ -92,7 +88,9 @@ pub fn transfer_admin(ctx: Context<TransferAdmin>, args: TransferAdminArgs) -> R
 ///
 /// Returns `Ok(())` if claiming admin rights is successful, otherwise returns an error.
 pub fn claim_admin(ctx: Context<ClaimAdmin>) -> Result<()> {
-    ctx.accounts.integrator_config.admin = ctx.accounts.new_admin.key();
+    // The constraints in ClaimAdmin struct ensure that pending_admin is Some and matches the signer
+    // or the admin matches the signer
+    ctx.accounts.integrator_config.admin = Some(ctx.accounts.new_admin.key());
     ctx.accounts.integrator_config.pending_admin = None;
     Ok(())
 }

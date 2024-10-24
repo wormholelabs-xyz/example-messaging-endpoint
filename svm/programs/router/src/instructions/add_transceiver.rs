@@ -1,5 +1,3 @@
-use crate::error::RouterError;
-use crate::error::RouterError::AdminTransferInProgress;
 use crate::state::{IntegratorConfig, TransceiverInfo};
 use anchor_lang::prelude::*;
 
@@ -13,12 +11,6 @@ pub struct AddTransceiverArgs {
     pub transceiver_program_id: Pubkey,
 }
 
-impl<'info> AddTransceiver<'info> {
-    pub fn validate(&self) -> Result<()> {
-        self.integrator_config.check_admin(&self.admin)
-    }
-}
-
 #[derive(Accounts)]
 #[instruction(args: AddTransceiverArgs)]
 pub struct AddTransceiver<'info> {
@@ -26,11 +18,10 @@ pub struct AddTransceiver<'info> {
     pub payer: Signer<'info>,
 
     /// The admin registered on IntegratorConfig
-    #[account(mut)]
     pub admin: Signer<'info>,
 
     /// The integrator config account
-    /// This makes sure that the admin signing this ix is the one registed in the IntegratorConfig
+    /// This makes sure that the admin signing this ix is the one registered in the IntegratorConfig
     /// The new registered transceiver will be pushed to the `registered_transceivers` field in
     /// this account
     /// `has_one` constraint checks if admin signer is the current admin of the config
@@ -38,7 +29,6 @@ pub struct AddTransceiver<'info> {
         mut,
         seeds = [IntegratorConfig::SEED_PREFIX, args.integrator_program_id.as_ref()],
         bump = integrator_config.bump,
-        has_one = admin @ RouterError::CallerNotAuthorized,
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 
@@ -62,6 +52,12 @@ pub struct AddTransceiver<'info> {
     pub system_program: Program<'info, System>,
 }
 
+impl<'info> AddTransceiver<'info> {
+    pub fn validate(&self) -> Result<()> {
+        self.integrator_config.check_admin(&self.admin)
+    }
+}
+
 /// Register a new transceiver for an integrator.
 ///
 /// This function performs the following steps:
@@ -81,12 +77,7 @@ pub struct AddTransceiver<'info> {
 /// Returns `Ok(())` if the transceiver is successfully registered, or an error otherwise.
 #[access_control(AddTransceiver::validate(&ctx.accounts))]
 pub fn add_transceiver(ctx: Context<AddTransceiver>, args: AddTransceiverArgs) -> Result<()> {
-    // Check if there's a pending_config
-    if ctx.accounts.integrator_config.pending_admin.is_some() {
-        return Err(AdminTransferInProgress.into());
-    }
-
-    let transceiver_id = ctx.accounts.integrator_config.registered_transceivers.len() as u8;
+    let index = ctx.accounts.integrator_config.registered_transceivers.len() as u8;
 
     // Add the new transceiver to the list
     // The vector length check is in `add_transceiver`
@@ -97,7 +88,7 @@ pub fn add_transceiver(ctx: Context<AddTransceiver>, args: AddTransceiverArgs) -
     // Initialize TransceiverInfo
     ctx.accounts.transceiver_info.set_inner(TransceiverInfo {
         bump: ctx.bumps.transceiver_info,
-        index: transceiver_id,
+        index,
         integrator_program_id: args.integrator_program_id,
         transceiver_program_id: args.transceiver_program_id,
     });
