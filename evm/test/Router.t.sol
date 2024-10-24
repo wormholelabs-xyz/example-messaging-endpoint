@@ -139,7 +139,7 @@ contract RouterTest is Test {
         router.updateAdmin(integrator, address(newerAdmin));
         require(router.getAdmin(integrator) == address(newerAdmin), "failed to update admin address");
 
-		// Cannot claim if there is no transfer in progress.
+        // Cannot claim if there is no transfer in progress.
         vm.expectRevert(abi.encodeWithSelector(Router.NoAdminTransferInProgress.selector));
         router.claimAdmin(integrator);
 
