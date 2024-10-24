@@ -37,7 +37,7 @@ anchor deploy --provider.cluster mainnet --provider.wallet ~/.config/solana/your
 ### Upgrading
 
 ```
-anchor upgrade --provider.cluster <network> --provider.wallet ~/.config/solana/your-key.json --program-id <PROGRAM_ID> target/deploy/svm.so
+anchor upgrade --provider.cluster <network> --provider.wallet ~/.config/solana/your-key.json --program-id <PROGRAM_ID> target/deploy/router.so
 ```
 
 If you get an error like this
