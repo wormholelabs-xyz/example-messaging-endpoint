@@ -213,6 +213,8 @@ contract TransceiverRegistryTest is Test {
         transceiverRegistry.enableRecvTransceiver(me, chainId, zeroTransceiver);
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.InvalidTransceiverZeroAddress.selector));
         transceiverRegistry.isRecvTransceiverEnabledForChain(me, chainId, zeroTransceiver);
+        vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.InvalidChain.selector, zeroChainId));
+        transceiverRegistry.isRecvTransceiverEnabledForChain(me, zeroChainId, me);
     }
 
     function test9() public {
