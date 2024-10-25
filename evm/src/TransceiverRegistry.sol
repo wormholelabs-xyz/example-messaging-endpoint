@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
 /// @title TransceiverRegistry
 /// @notice This contract is responsible for handling the registration of Transceivers.

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
 interface IMessageSequence {
     /// @notice Returns the next message sequence for a given sender.

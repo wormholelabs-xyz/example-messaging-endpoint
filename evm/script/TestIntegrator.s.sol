@@ -1,4 +1,4 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.19;
 
 import {IRouterIntegrator} from "../src/interfaces/IRouterIntegrator.sol";
 import {IRouterAdmin} from "../src/interfaces/IRouterAdmin.sol";
