@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.4;
 
-import {Router} from "../src/Router.sol";
+import {Router, routerVersion} from "../src/Router.sol";
 import "forge-std/Script.sol";
 
 // DeployRouter is a forge script to deploy the Router contract. Use ./sh/deployRouter.sh to invoke this.
@@ -19,7 +19,8 @@ contract DeployRouter is Script {
     }
 
     function _deploy(uint16 ourChain) internal returns (address deployedAddress) {
-        Router router = new Router(ourChain);
+        bytes32 salt = keccak256(abi.encodePacked(routerVersion));
+        Router router = new Router{salt: salt}(ourChain);
 
         return (address(router));
     }
