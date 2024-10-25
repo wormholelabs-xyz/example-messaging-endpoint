@@ -8,8 +8,10 @@ import "./MessageSequence.sol";
 import "./TransceiverRegistry.sol";
 import "./interfaces/ITransceiver.sol";
 
+string constant routerVersion = "Router-0.0.1";
+
 contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageSequence, TransceiverRegistry {
-    string public constant ROUTER_VERSION = "0.0.1";
+    string public constant ROUTER_VERSION = routerVersion;
 
     struct IntegratorConfig {
         bool isInitialized;

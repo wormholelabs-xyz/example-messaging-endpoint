@@ -3,6 +3,7 @@
 #
 # This script deploys the Router contract.
 # Usage: RPC_URL= MNEMONIC= OUR_CHAIN_ID= EVM_CHAIN_ID= ./sh/deployRouter.sh
+#  To verify the contract add: FORGE_ARGS="--verifier-url 'https://api.routescan.io/v2/network/testnet/evm/${EVM_CHAIN_ID}/etherscan' --etherscan-api-key 'verifyContract'"
 #  tilt: ./sh/deployRouter.sh
 #
 

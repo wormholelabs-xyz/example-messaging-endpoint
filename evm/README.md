@@ -134,6 +134,16 @@ struct IntegratorConfig {
 mapping(address => IntegratorConfig) integratorConfigs
 ```
 
+## Deploying the Router Contract
+
+The contract can be deployed using the following command.
+
+```shell
+evm$ RPC_URL= MNEMONIC= OUR_CHAIN_ID= EVM_CHAIN_ID= ./sh/deployRouter.sh
+```
+
+Note that the deploy script uses `create2` to generate a deterministic contract address.
+
 ## Development
 
 ### Foundry
