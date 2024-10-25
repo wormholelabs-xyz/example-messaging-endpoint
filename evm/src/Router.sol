@@ -210,6 +210,14 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         return integratorConfigs[integrator].admin;
     }
 
+    /// @notice Returns the pending_admin for a given integrator.
+    /// @param integrator The address of the integrator contract.
+    /// @return address The address of the pending administrator contract
+    function getPendingAdmin(address integrator) public view returns (address) {
+        mapping(address => IntegratorConfig) storage integratorConfigs = _getIntegratorConfigsStorage();
+        return integratorConfigs[integrator].pending_admin;
+    }
+
     // =============== External ==============================================================
 
     // =============== Admin functions =======================================================

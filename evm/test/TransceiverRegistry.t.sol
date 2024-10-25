@@ -95,7 +95,10 @@ contract TransceiverRegistryTest is Test {
         // Recv side
         // A transceiver was registered on the send side
         assertEq(transceiverRegistry.getTransceivers(me).length, 1);
-        transceiverRegistry.addTransceiver(me, recvTransceiver);
+        uint8 index = transceiverRegistry.addTransceiver(me, recvTransceiver);
+        require(index == 1, "Invalid index");
+        address transceiver = transceiverRegistry.getTransceiverByIndex(me, index);
+        require(transceiver == recvTransceiver, "Invalid transceiver");
     }
 
     function test3() public {
@@ -357,5 +360,19 @@ contract TransceiverRegistryTest is Test {
         require(chainAddrs.length == maxTransceivers, "Wrong number of transceivers enabled on chain one");
         address[] memory chain2Addrs = transceiverRegistry.getRecvTransceiversByChain(me, wrongChain);
         require(chain2Addrs.length == 0, "Wrong number of transceivers enabled on chain two");
+    }
+
+    function test_getTransceiverIndex() public {
+        address me = address(this);
+
+        // Add some transceivers
+        transceiverRegistry.addTransceiver(me, address(0x1));
+        transceiverRegistry.addTransceiver(me, address(0x2));
+        transceiverRegistry.addTransceiver(me, address(0x3));
+        require(transceiverRegistry.getTransceivers(me).length == 3, "Invalid number of transceivers");
+        require(transceiverRegistry.getTransceiverIndex(me, address(0x1)) == 0, "Invalid index");
+        require(transceiverRegistry.getTransceiverIndex(me, address(0x2)) == 1, "Invalid index");
+        vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.NonRegisteredTransceiver.selector, address(0x4)));
+        transceiverRegistry.getTransceiverIndex(me, address(0x4));
     }
 }
