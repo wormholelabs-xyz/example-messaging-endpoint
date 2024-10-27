@@ -116,9 +116,9 @@ async fn test_send_message_success() {
     let result = send_message(
         &mut context,
         &payer,
-        integrator_program_pda, // Create a new keypair for testing
+        integrator_program_pda,
         integrator_chain_config_pda,
-        outbox_message.pubkey(),
+        &outbox_message,
         outbox_message_key_pda,
         integrator_program_id,
         bump,
@@ -128,18 +128,18 @@ async fn test_send_message_success() {
     )
     .await;
 
-    //     assert!(result.is_ok());
+    assert!(result.is_ok());
 
-    //     // Verify outbox message was created correctly
-    //     let outbox_msg: OutboxMessage =
-    //         get_account(&mut context.banks_client, outbox_message.pubkey()).await;
-    //     assert_eq!(
-    //         outbox_msg.src_addr,
-    //         UniversalAddress::from(integrator_program_pda)
-    //     );
-    //     assert_eq!(outbox_msg.sequence, 0);
-    //     assert_eq!(outbox_msg.dst_chain, chain_id);
-    //     assert_eq!(outbox_msg.dst_addr, dst_addr);
-    //     assert_eq!(outbox_msg.payload_hash, payload_hash);
-    //     assert_eq!(outbox_msg.outstanding_transceivers, 1);
+    // Verify outbox message was created correctly
+    let outbox_msg: OutboxMessage =
+        get_account(&mut context.banks_client, outbox_message.pubkey()).await;
+    assert_eq!(
+        outbox_msg.src_addr,
+        UniversalAddress::from(integrator_program_pda)
+    );
+    assert_eq!(outbox_msg.sequence, 0);
+    assert_eq!(outbox_msg.dst_chain, chain_id);
+    assert_eq!(outbox_msg.dst_addr, dst_addr);
+    assert_eq!(outbox_msg.payload_hash, payload_hash);
+    assert_eq!(outbox_msg.outstanding_transceivers, 1);
 }

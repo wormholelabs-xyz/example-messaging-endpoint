@@ -44,6 +44,14 @@ pub mod mock_integrator {
         let bump_seed = &[ctx.bumps.integrator_program_pda][..];
         let signer_seeds: &[&[&[u8]]] = &[&[b"router_integrator", bump_seed]];
 
+        // Log the accounts involved in the transaction
+        msg!("Integrator Program PDA: {:?}", ctx.accounts.integrator_program_pda.key());
+        msg!("Payer: {:?}", ctx.accounts.payer.key());
+        msg!("Integrator Config: {:?}", ctx.accounts.integrator_chain_config.key());
+        msg!("Outbox Message Key: {:?}", ctx.accounts.outbox_message_key.key());
+        msg!("Outbox Message Key: {:?}", ctx.accounts.outbox_message.key());
+        msg!("Router Program: {:?}", ctx.accounts.router_program.key());
+
         router::cpi::send_message(
             ctx.accounts.invoke_send_message().with_signer(signer_seeds),
             SendMessageArgs {
@@ -127,7 +135,7 @@ pub struct InvokeSendMessage<'info> {
 
     #[account(mut)]
     /// CHECK: This account is initialized by the router program
-    pub outbox_message: UncheckedAccount<'info>,
+    pub outbox_message: Signer<'info>,
 
     #[account(mut)]
     /// CHECK: This account is checked by the router program

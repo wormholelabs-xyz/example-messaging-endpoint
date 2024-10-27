@@ -43,7 +43,7 @@ pub struct SendMessage<'info> {
     #[account(
         seeds = [
             IntegratorChainConfig::SEED_PREFIX,
-            integrator_program_pda.key().as_ref(),
+            args.integrator_program_id.as_ref(),
             args.dst_chain.to_be_bytes().as_ref()
         ],
         bump = integrator_chain_config.bump,
