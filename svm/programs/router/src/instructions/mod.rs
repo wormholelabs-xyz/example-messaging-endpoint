@@ -4,6 +4,7 @@ pub mod disable_transceiver;
 pub mod discard_admin;
 pub mod enable_transceiver;
 pub mod register;
+pub mod send_message;
 pub mod transfer_admin;
 pub mod update_admin;
 
@@ -13,5 +14,6 @@ pub use disable_transceiver::*;
 pub use discard_admin::*;
 pub use enable_transceiver::*;
 pub use register::*;
+pub use send_message::*;
 pub use transfer_admin::*;
 pub use update_admin::*;

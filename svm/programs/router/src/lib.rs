@@ -145,4 +145,19 @@ pub mod router {
     pub fn discard_admin(ctx: Context<DiscardAdmin>) -> Result<()> {
         instructions::discard_admin::discard_admin(ctx)
     }
+
+    /// Sends a message through the router
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `args` - The `SendMessageArgs` struct containing:
+    ///     * `integrator_program_id` - The program ID of the integrator
+    ///     * `integrator_program_pda_bump` - The bump for the integrator_program_pda derivation
+    ///     * `dst_chain` - The destination chain ID
+    ///     * `dst_addr` - The destination address
+    ///     * `payload_hash` - The hash of the message payload
+    pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<()> {
+        instructions::send_message::send_message(ctx, args)
+    }
 }

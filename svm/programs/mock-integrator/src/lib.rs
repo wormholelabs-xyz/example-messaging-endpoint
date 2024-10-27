@@ -1,7 +1,11 @@
 use anchor_lang::prelude::*;
 use router::program::Router;
 use router::{self};
-use router::{cpi::accounts::Register, instructions::RegisterArgs};
+use router::{
+    cpi::accounts::{Register, SendMessage},
+    instructions::RegisterArgs,
+};
+use universal_address::UniversalAddress;
 
 declare_id!("B86KSKnHBRiJeDcP7vwaXuxfkqfChZmYKBqh4dkLYEpj");
 
@@ -11,6 +15,8 @@ declare_id!("B86KSKnHBRiJeDcP7vwaXuxfkqfChZmYKBqh4dkLYEpj");
 
 #[program]
 pub mod mock_integrator {
+    use router::instructions::SendMessageArgs;
+
     use super::*;
 
     /// Invokes the register function in the router program via a CPI call.
@@ -26,6 +32,26 @@ pub mod mock_integrator {
                 integrator_program_pda_bump: ctx.bumps.integrator_program_pda,
                 integrator_program_id: crate::ID,
                 admin: args.admin,
+            },
+        )?;
+        Ok(())
+    }
+
+    pub fn invoke_send_message(
+        ctx: Context<InvokeSendMessage>,
+        args: InvokeSendMessageArgs,
+    ) -> Result<()> {
+        let bump_seed = &[ctx.bumps.integrator_program_pda][..];
+        let signer_seeds: &[&[&[u8]]] = &[&[b"router_integrator", bump_seed]];
+
+        router::cpi::send_message(
+            ctx.accounts.invoke_send_message().with_signer(signer_seeds),
+            SendMessageArgs {
+                integrator_program_id: crate::ID,
+                integrator_program_pda_bump: ctx.bumps.integrator_program_pda,
+                dst_chain: args.dst_chain,
+                dst_addr: args.dst_addr,
+                payload_hash: args.payload_hash,
             },
         )?;
         Ok(())
@@ -70,6 +96,56 @@ impl<'info> InvokeRegister<'info> {
             payer: self.payer.to_account_info(),
             integrator_config: self.integrator_config.to_account_info(),
             integrator_program_pda: self.integrator_program_pda.to_account_info(),
+            outbox_message_key: self.outbox_message_key.to_account_info(),
+            system_program: self.system_program.to_account_info(),
+        };
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct InvokeSendMessageArgs {
+    pub dst_chain: u16,
+    pub dst_addr: UniversalAddress,
+    pub payload_hash: [u8; 32],
+}
+
+#[derive(Accounts)]
+pub struct InvokeSendMessage<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    #[account(
+        seeds = [b"router_integrator"],
+        bump,
+    )]
+    pub integrator_program_pda: SystemAccount<'info>,
+
+    #[account(mut)]
+    /// CHECK: This account is checked by the router program
+    pub integrator_chain_config: UncheckedAccount<'info>,
+
+    #[account(mut)]
+    /// CHECK: This account is initialized by the router program
+    pub outbox_message: UncheckedAccount<'info>,
+
+    #[account(mut)]
+    /// CHECK: This account is checked by the router program
+    pub outbox_message_key: UncheckedAccount<'info>,
+
+    pub system_program: Program<'info, System>,
+
+    pub router_program: Program<'info, Router>,
+}
+
+impl<'info> InvokeSendMessage<'info> {
+    pub fn invoke_send_message(&self) -> CpiContext<'_, '_, '_, 'info, SendMessage<'info>> {
+        let cpi_program = self.router_program.to_account_info();
+        let cpi_accounts = SendMessage {
+            integrator_program_pda: self.integrator_program_pda.to_account_info(),
+            payer: self.payer.to_account_info(),
+            integrator_chain_config: self.integrator_chain_config.to_account_info(),
+            outbox_message: self.outbox_message.to_account_info(),
             outbox_message_key: self.outbox_message_key.to_account_info(),
             system_program: self.system_program.to_account_info(),
         };

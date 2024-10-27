@@ -26,4 +26,7 @@ pub enum RouterError {
 
     #[msg("Invalid Chain Id")]
     InvalidChainId,
+
+    #[msg("No Transceivers Enabled")]
+    TransceiverNotEnabled,
 }
