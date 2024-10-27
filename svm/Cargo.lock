@@ -2381,6 +2381,7 @@ dependencies = [
  "solana-program-test",
  "solana-sdk",
  "tokio",
+ "universal-address",
 ]
 
 [[package]]
@@ -3277,6 +3278,7 @@ dependencies = [
  "solana-program-test",
  "solana-sdk",
  "tokio",
+ "universal-address",
 ]
 
 [[package]]
@@ -5719,6 +5721,13 @@ name = "unicode-xid"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
+
+[[package]]
+name = "universal-address"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+]
 
 [[package]]
 name = "universal-hash"

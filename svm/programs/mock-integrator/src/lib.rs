@@ -46,6 +46,10 @@ pub struct InvokeRegister<'info> {
     /// CHECK: This account is to be checked and initialized by the router program
     pub integrator_config: UncheckedAccount<'info>,
 
+    #[account(mut)]
+    /// CHECK: This account is to be checked and initialized by the router program
+    pub outbox_message_key: UncheckedAccount<'info>,
+
     /// The integrator program's PDA
     #[account(
         seeds = [b"router_integrator"],
@@ -66,6 +70,7 @@ impl<'info> InvokeRegister<'info> {
             payer: self.payer.to_account_info(),
             integrator_config: self.integrator_config.to_account_info(),
             integrator_program_pda: self.integrator_program_pda.to_account_info(),
+            outbox_message_key: self.outbox_message_key.to_account_info(),
             system_program: self.system_program.to_account_info(),
         };
         CpiContext::new(cpi_program, cpi_accounts)
