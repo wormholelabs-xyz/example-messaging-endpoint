@@ -1,6 +1,6 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
 use mock_integrator::accounts::InvokeExecMessage;
-use router::instructions::{attest_message::AttestMessageArgs, ExecMessageArgs};
+use router::instructions::ExecMessageArgs;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,

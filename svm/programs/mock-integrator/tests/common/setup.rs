@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
 use router::id as router_id;
 use solana_program_test::{ProgramTest, ProgramTestContext};
-use solana_sdk::signature::{Keypair, Signer};
 
 pub async fn setup() -> ProgramTestContext {
     let mut program_test = ProgramTest::new("router", router_id(), None);

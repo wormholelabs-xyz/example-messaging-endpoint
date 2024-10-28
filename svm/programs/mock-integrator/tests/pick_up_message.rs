@@ -125,8 +125,6 @@ async fn create_and_send_message(
         integrator_chain_config_pda,
         &outbox_message,
         outbox_message_key_pda,
-        integrator_program_id,
-        bump,
         chain_id,
         dst_addr,
         payload_hash,

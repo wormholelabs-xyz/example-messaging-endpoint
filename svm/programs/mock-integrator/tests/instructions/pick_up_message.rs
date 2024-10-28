@@ -1,11 +1,7 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
 use mock_transceiver::accounts::InvokePickUpMessage;
 use solana_program_test::*;
-use solana_sdk::{
-    instruction::Instruction,
-    pubkey::Pubkey,
-    signer::{keypair::Keypair, Signer},
-};
+use solana_sdk::{instruction::Instruction, pubkey::Pubkey, signer::keypair::Keypair};
 
 use crate::common::execute_transaction::execute_transaction;
 

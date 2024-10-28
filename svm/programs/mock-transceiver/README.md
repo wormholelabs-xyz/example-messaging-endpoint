@@ -64,6 +64,6 @@ The main components of the program are:
 - `invoke_pick_up_message`: The instruction that demonstrates the CPI call to the router program's pick_up_message function.
 - `invoke_attest_message`: The instruction that demonstrates the CPI call to the router program's attest_message function.
 - `InvokePickUpMessage`: The struct that defines the accounts required for the invoke_pick_up_message instruction.
-- `InvokeAttest: The struct that defines the accounts required for both invoke_attest_message and invoke_exec_message instructions.
+- `InvokeAttest`: The struct that defines the accounts required for both invoke_attest_message and invoke_exec_message instructions.
 
 Each instruction uses a PDA signer to authorize the CPI call to the router program, demonstrating how a real transceiver would interact with the router.

@@ -3,7 +3,7 @@ use router::program::Router;
 use router::{self};
 use router::{
     cpi::accounts::{RecvMessage, Register, SendMessage},
-    instructions::RegisterArgs,
+    instructions::{RegisterArgs, SendMessageArgs},
 };
 use universal_address::UniversalAddress;
 
@@ -15,8 +15,6 @@ declare_id!("B86KSKnHBRiJeDcP7vwaXuxfkqfChZmYKBqh4dkLYEpj");
 
 #[program]
 pub mod mock_integrator {
-    use router::instructions::SendMessageArgs;
-
     use super::*;
 
     /// Invokes the register function in the router program via a CPI call.

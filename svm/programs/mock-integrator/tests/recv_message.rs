@@ -308,7 +308,7 @@ async fn test_recv_message_no_attestation() {
     .await;
 
     assert!(result.is_err());
-    // The error should be related to the account not being initialized
+    // Throws `AccountNotInitialized` since there are no attestations
     assert!(matches!(
         result.unwrap_err().unwrap(),
         TransactionError::InstructionError(_, InstructionError::Custom(3012))

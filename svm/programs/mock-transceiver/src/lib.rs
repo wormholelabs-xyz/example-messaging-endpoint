@@ -2,12 +2,14 @@ use anchor_lang::prelude::*;
 use router::cpi::accounts::{AttestMessage, PickUpMessage};
 use router::program::Router;
 use router::{self};
+use universal_address::UniversalAddress;
 
 // Declare the program ID for the mock transceiver
 declare_id!("4ZiURKmq17KrwY3K2KxxzqttzytxQsqAcMy374QUi7tx");
 
 #[program]
 pub mod mock_transceiver {
+    use router::instructions::{AttestMessageArgs, PickUpMessageArgs};
 
     use super::*;
 
@@ -25,6 +27,9 @@ pub mod mock_transceiver {
             ctx.accounts
                 .invoke_pick_up_message()
                 .with_signer(signer_seeds),
+            PickUpMessageArgs {
+                transceiver_pda_bump: ctx.bumps.transceiver_pda,
+            },
         )?;
 
         Ok(())
@@ -33,7 +38,7 @@ pub mod mock_transceiver {
     /// Invokes the attest_message instruction on the router program via CPI
     pub fn invoke_attest_message(
         ctx: Context<InvokeAttestMessage>,
-        args: router::instructions::AttestMessageArgs,
+        args: InvokeAttestMessageArgs,
     ) -> Result<()> {
         // Prepare the seeds for PDA signing
         let bump_seed = &[ctx.bumps.transceiver_pda][..];
@@ -44,7 +49,15 @@ pub mod mock_transceiver {
             ctx.accounts
                 .invoke_attest_message()
                 .with_signer(signer_seeds),
-            args,
+            AttestMessageArgs {
+                transceiver_pda_bump: ctx.bumps.transceiver_pda,
+                src_chain: args.src_chain,
+                src_addr: args.src_addr,
+                sequence: args.sequence,
+                dst_chain: args.dst_chain,
+                dst_addr: args.dst_addr,
+                payload_hash: args.payload_hash,
+            },
         )?;
 
         Ok(())
@@ -94,6 +107,16 @@ impl<'info> InvokePickUpMessage<'info> {
         };
         CpiContext::new(cpi_program, cpi_accounts)
     }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct InvokeAttestMessageArgs {
+    pub src_chain: u16,
+    pub src_addr: UniversalAddress,
+    pub sequence: u64,
+    pub dst_chain: u16,
+    pub dst_addr: UniversalAddress,
+    pub payload_hash: [u8; 32],
 }
 
 /// Accounts struct for the invoke_attest_message instruction

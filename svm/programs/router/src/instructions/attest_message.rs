@@ -8,6 +8,7 @@ use crate::{
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct AttestMessageArgs {
+    pub transceiver_pda_bump: u8,
     pub src_chain: u16,
     pub src_addr: UniversalAddress,
     pub sequence: u64,
@@ -25,10 +26,11 @@ pub struct AttestMessage<'info> {
     /// The transceiver info account
     pub transceiver_info: Account<'info, TransceiverInfo>,
 
-    /// The transceiver PDA account, used for signing
+    /// The transceiver PDA signing account.
+    /// This check makes sure that only the transceiver program is authorised to call this message
     #[account(
         seeds = ["transceiver_pda".as_bytes()],
-        bump,
+        bump = args.transceiver_pda_bump,
         seeds::program = transceiver_info.transceiver_program_id
     )]
     pub transceiver_pda: Signer<'info>,
@@ -78,8 +80,15 @@ pub struct AttestMessage<'info> {
 /// # Arguments
 ///
 /// * `ctx` - The context of the instruction, containing the accounts
-/// * `args` - The arguments for the instruction, containing message details
-///
+/// * `args` - The arguments for the instruction, containing message details:
+///   - `transceiver_pda_bump`: The bump seed for the transceiver's PDA
+///   - `src_chain`: The source chain ID
+///   - `src_addr`: The source address (UniversalAddress)
+///   - `sequence`: The sequence number of the message
+///   - `dst_chain`: The destination chain ID
+///   - `dst_addr`: The destination address (UniversalAddress)
+///   - `payload_hash`: The hash of the message payload
+/// 
 /// # Errors
 ///
 /// This function will return an error if:

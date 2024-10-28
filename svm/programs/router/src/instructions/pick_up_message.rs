@@ -4,7 +4,14 @@ use crate::{
 };
 use anchor_lang::prelude::*;
 
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct PickUpMessageArgs {
+    pub transceiver_pda_bump: u8,
+}
+
 #[derive(Accounts)]
+#[instruction(args: PickUpMessageArgs)]
+
 pub struct PickUpMessage<'info> {
     /// The outbox message account to be picked up
     /// This account is mutable so we can update the `outstanding_transceivers` state
@@ -19,7 +26,7 @@ pub struct PickUpMessage<'info> {
     /// This ensures that only the authorized transceiver can pick up the message
     #[account(
         seeds = ["transceiver_pda".as_bytes()],
-        bump,
+        bump = args.transceiver_pda_bump,
         seeds::program = transceiver_info.transceiver_program_id
     )]
     pub transceiver_pda: Signer<'info>,
@@ -50,18 +57,13 @@ pub struct PickUpMessage<'info> {
 /// * The message has already been picked up by this transceiver.
 /// * There's an issue updating the `outstanding_transceivers` bitmap.
 /// * There's an issue closing the outbox message account when all transceivers have picked up the message.
-pub fn pick_up_message(ctx: Context<PickUpMessage>) -> Result<()> {
+pub fn pick_up_message(ctx: Context<PickUpMessage>, _args: PickUpMessageArgs) -> Result<()> {
     let outbox_message = &mut ctx.accounts.outbox_message;
     let transceiver_info = &ctx.accounts.transceiver_info;
 
     // Get the index of the transceiver
     let transceiver_index = transceiver_info.index;
 
-    msg!("Transceiver Info: {:?}", transceiver_info);
-    msg!(
-        "Outstanding Transceivers: {:?}",
-        outbox_message.outstanding_transceivers
-    );
     // Check if the message is available for pick up by this transceiver
     require!(
         outbox_message
@@ -77,7 +79,7 @@ pub fn pick_up_message(ctx: Context<PickUpMessage>) -> Result<()> {
         .set(transceiver_index, false)
         .map_err(|_| RouterError::MessageAlreadyPickedUp)?;
 
-    // Check if all transceivers have picked up the message
+    // Close `outbox_message` account if all transceivers have picked up the message
     if outbox_message.outstanding_transceivers.as_value() == 0 {
         ctx.accounts
             .outbox_message

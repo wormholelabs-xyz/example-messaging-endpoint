@@ -50,8 +50,6 @@ pub async fn send_message(
     integrator_chain_config: Pubkey,
     outbox_message: &Keypair,
     outbox_message_key: Pubkey,
-    integrator_program_id: Pubkey,
-    integrator_program_pda_bump: u8,
     dst_chain: u16,
     dst_addr: UniversalAddress,
     payload_hash: [u8; 32],

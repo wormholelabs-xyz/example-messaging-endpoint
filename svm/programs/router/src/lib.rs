@@ -169,8 +169,8 @@ pub mod router {
     ///     * `outbox_message` - The outbox message to pick up
     ///     * `transceiver_info` - The transceiver info account
     ///     * `transceiver_pda` - The transceiver PDA signer
-    pub fn pick_up_message(ctx: Context<PickUpMessage>) -> Result<()> {
-        instructions::pick_up_message::pick_up_message(ctx)
+    pub fn pick_up_message(ctx: Context<PickUpMessage>, args: PickUpMessageArgs) -> Result<()> {
+        instructions::pick_up_message::pick_up_message(ctx, args)
     }
 
     /// Attests to a message

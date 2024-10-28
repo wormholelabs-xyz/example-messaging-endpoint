@@ -2391,6 +2391,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "router",
+ "universal-address",
 ]
 
 [[package]]

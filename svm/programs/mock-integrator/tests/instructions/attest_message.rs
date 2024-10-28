@@ -1,6 +1,5 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use mock_transceiver::accounts::InvokeAttestMessage;
-use router::instructions::attest_message::AttestMessageArgs;
+use mock_transceiver::{accounts::InvokeAttestMessage, InvokeAttestMessageArgs};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -16,6 +15,7 @@ pub async fn attest_message(
     payer: &Keypair,
     transceiver_info: Pubkey,
     transceiver_pda: Pubkey,
+
     integrator_chain_config: Pubkey,
     attestation_info: Pubkey,
     src_chain: u16,
@@ -35,7 +35,7 @@ pub async fn attest_message(
         router_program: router::id(),
     };
 
-    let args = AttestMessageArgs {
+    let args = InvokeAttestMessageArgs {
         src_chain,
         src_addr,
         sequence,
