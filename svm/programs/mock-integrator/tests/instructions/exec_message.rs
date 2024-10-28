@@ -1,6 +1,6 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use mock_transceiver::accounts::InvokeAttestMessage;
-use router::instructions::attest_message::AttestMessageArgs;
+use mock_integrator::accounts::InvokeExecMessage;
+use router::instructions::{attest_message::AttestMessageArgs, ExecMessageArgs};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -11,11 +11,9 @@ use universal_address::UniversalAddress;
 
 use crate::common::execute_transaction::execute_transaction;
 
-pub async fn attest_message(
+pub async fn exec_message(
     context: &mut ProgramTestContext,
     payer: &Keypair,
-    transceiver_info: Pubkey,
-    transceiver_pda: Pubkey,
     integrator_chain_config: Pubkey,
     attestation_info: Pubkey,
     src_chain: u16,
@@ -25,17 +23,20 @@ pub async fn attest_message(
     dst_addr: UniversalAddress,
     payload_hash: [u8; 32],
 ) -> Result<(), BanksClientError> {
-    let accounts = InvokeAttestMessage {
+    let (integrator_program_pda, integrator_program_pda_bump) =
+        Pubkey::find_program_address(&[b"router_integrator"], &mock_integrator::id());
+
+    let accounts = InvokeExecMessage {
         payer: payer.pubkey(),
-        transceiver_info,
-        transceiver_pda,
+        integrator_program_pda,
         integrator_chain_config,
         attestation_info,
         system_program: solana_sdk::system_program::id(),
         router_program: router::id(),
     };
 
-    let args = AttestMessageArgs {
+    let args = ExecMessageArgs {
+        integrator_program_pda_bump,
         src_chain,
         src_addr,
         sequence,
@@ -45,9 +46,9 @@ pub async fn attest_message(
     };
 
     let ix = Instruction {
-        program_id: mock_transceiver::id(),
+        program_id: mock_integrator::id(),
         accounts: accounts.to_account_metas(None),
-        data: mock_transceiver::instruction::InvokeAttestMessage { args }.data(),
+        data: mock_integrator::instruction::InvokeExecMessage { args }.data(),
     };
 
     execute_transaction(context, ix, &[payer], payer).await

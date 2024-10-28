@@ -74,6 +74,24 @@ pub mod mock_integrator {
 
         Ok(result.get())
     }
+
+    /// Invokes the exec_message instruction on the router program via CPI
+    pub fn invoke_exec_message(
+        ctx: Context<InvokeExecMessage>,
+        args: router::instructions::ExecMessageArgs,
+    ) -> Result<()> {
+        // Prepare the seeds for PDA signing
+        let bump_seed = &[ctx.bumps.integrator_program_pda][..];
+        let signer_seeds: &[&[&[u8]]] = &[&[b"router_integrator", bump_seed]];
+
+        // Perform the CPI call to the router program's exec_message instruction
+        router::cpi::exec_message(
+            ctx.accounts.invoke_exec_message().with_signer(signer_seeds),
+            args,
+        )?;
+
+        Ok(())
+    }
 }
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct InvokeRegisterArgs {
@@ -206,6 +224,50 @@ impl<'info> InvokeRecvMessage<'info> {
         let cpi_accounts = RecvMessage {
             integrator_program_pda: self.integrator_program_pda.to_account_info(),
             payer: self.payer.to_account_info(),
+            integrator_chain_config: self.integrator_chain_config.to_account_info(),
+            attestation_info: self.attestation_info.to_account_info(),
+            system_program: self.system_program.to_account_info(),
+        };
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+}
+
+#[derive(Accounts)]
+pub struct InvokeExecMessage<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    #[account(
+        seeds = [b"router_integrator"],
+        bump,
+    )]
+    pub integrator_program_pda: SystemAccount<'info>,
+
+    /// The integrator chain config account
+    /// CHECK: This account is checked by the router program
+    pub integrator_chain_config: UncheckedAccount<'info>,
+
+    /// The attestation info account
+    /// CHECK: This account is checked by the router program
+    #[account(mut)]
+    pub attestation_info: UncheckedAccount<'info>,
+
+    /// The system program
+    pub system_program: Program<'info, System>,
+
+    /// The router program
+    pub router_program: Program<'info, Router>,
+}
+
+impl<'info> InvokeExecMessage<'info> {
+    /// Helper function to create the CpiContext for the exec_message instruction
+    pub fn invoke_exec_message(
+        &self,
+    ) -> CpiContext<'_, '_, '_, 'info, router::cpi::accounts::ExecMessage<'info>> {
+        let cpi_program = self.router_program.to_account_info();
+        let cpi_accounts = router::cpi::accounts::ExecMessage {
+            payer: self.payer.to_account_info(),
+            integrator_program_pda: self.integrator_program_pda.to_account_info(),
             integrator_chain_config: self.integrator_chain_config.to_account_info(),
             attestation_info: self.attestation_info.to_account_info(),
             system_program: self.system_program.to_account_info(),

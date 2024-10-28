@@ -3,6 +3,7 @@ pub mod attest_message;
 pub mod disable_transceiver;
 pub mod discard_admin;
 pub mod enable_transceiver;
+pub mod exec_message;
 pub mod pick_up_message;
 pub mod recv_message;
 pub mod register;

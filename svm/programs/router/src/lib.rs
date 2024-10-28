@@ -202,10 +202,10 @@ pub mod router {
     ///     * `dst_addr` - The destination address
     ///     * `payload_hash` - The hash of the message payload
     pub fn exec_message(
-        ctx: Context<AttestMessage>,
-        args: attest_message::AttestMessageArgs,
+        ctx: Context<ExecMessage>,
+        args: exec_message::ExecMessageArgs,
     ) -> Result<()> {
-        attest_message::exec_message(ctx, args)
+        exec_message::exec_message(ctx, args)
     }
 
     /// Receives a message that has been attested to.
