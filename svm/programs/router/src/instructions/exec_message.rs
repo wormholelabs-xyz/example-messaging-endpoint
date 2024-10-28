@@ -3,7 +3,7 @@ use universal_address::UniversalAddress;
 
 use crate::{
     error::RouterError,
-    state::{AttestationInfo, IntegratorChainConfig, TransceiverInfo},
+    state::{AttestationInfo, IntegratorChainConfig},
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -44,6 +44,7 @@ pub struct ExecMessage<'info> {
     pub integrator_chain_config: Account<'info, IntegratorChainConfig>,
 
     /// The attestation info account
+    /// This account is initialized if it doesn't exist
     #[account(
         init_if_needed,
         payer = payer,
@@ -66,6 +67,20 @@ pub struct ExecMessage<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// Executes a message in the router program
+///
+/// This function is responsible for marking a message as executed. It checks if the message
+/// has already been executed, initializes the attestation info if it's newly created,
+/// and then marks the message as executed.
+///
+/// # Arguments
+///
+/// * `ctx` - The context of the instruction, containing the accounts
+/// * `args` - The arguments for the exec_message instruction
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the message is successfully executed, or an error if it fails
 pub fn exec_message(ctx: Context<ExecMessage>, args: ExecMessageArgs) -> Result<()> {
     let attestation_info = &mut ctx.accounts.attestation_info;
 

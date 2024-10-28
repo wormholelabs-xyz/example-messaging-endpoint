@@ -5,8 +5,8 @@ mod instructions;
 
 use crate::instructions::add_transceiver::add_transceiver;
 use crate::instructions::attest_message::attest_message;
-use crate::instructions::exec_message::exec_message;
 use crate::instructions::enable_transceiver::enable_recv_transceiver;
+use crate::instructions::exec_message::exec_message;
 use crate::instructions::register::register;
 
 use anchor_lang::prelude::*;

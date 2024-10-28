@@ -132,29 +132,3 @@ pub fn attest_message(ctx: Context<AttestMessage>, args: AttestMessageArgs) -> R
 
     Ok(())
 }
-
-pub fn exec_message(ctx: Context<AttestMessage>, args: AttestMessageArgs) -> Result<()> {
-    let attestation_info = &mut ctx.accounts.attestation_info;
-
-    // Check if the message has already been executed
-    require!(!attestation_info.executed, RouterError::AlreadyExecuted);
-
-    // If the attestation_info is newly created, initialize it
-    if attestation_info.message_hash == [0; 32] {
-        attestation_info.set_inner(AttestationInfo::new(
-            ctx.bumps.attestation_info,
-            args.src_chain,
-            args.src_addr,
-            args.sequence,
-            args.dst_chain,
-            args.dst_addr,
-            args.payload_hash,
-        )?);
-    }
-
-    // Mark the message as executed
-    attestation_info.executed = true;
-
-    Ok(())
-}
-
