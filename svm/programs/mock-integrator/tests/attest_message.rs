@@ -4,7 +4,7 @@ mod common;
 mod instructions;
 
 use crate::instructions::add_transceiver::add_transceiver;
-use crate::instructions::attest_message::attest_message;
+use crate::instructions::attest_message::{attest_message, exec_message};
 use crate::instructions::enable_transceiver::enable_recv_transceiver;
 use crate::instructions::register::register;
 
@@ -233,6 +233,223 @@ async fn test_attest_message_duplicate_attestation() {
         TransactionError::InstructionError(
             0,
             InstructionError::Custom(RouterError::DuplicateMessageAttestation.into())
+        )
+    );
+}
+
+#[tokio::test]
+async fn test_exec_message_success() {
+    let (
+        mut context,
+        payer,
+        _,
+        _,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        transceiver_pda,
+        chain_id,
+    ) = setup_test_environment().await;
+
+    let src_chain: u16 = chain_id;
+    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let sequence: u64 = 1;
+    let dst_chain = 1;
+    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let payload_hash = [3u8; 32];
+
+    let (attestation_info_pda, _) = AttestationInfo::pda(AttestationInfo::compute_message_hash(
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    ));
+
+    let result = exec_message(
+        &mut context,
+        &payer,
+        registered_transceiver_pda,
+        transceiver_pda,
+        integrator_chain_config_pda,
+        attestation_info_pda,
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    )
+    .await;
+
+    assert!(result.is_ok(), "exec_message failed: {:?}", result.err());
+
+    // Verify the attestation info account was created and initialized correctly
+    let attestation_info: AttestationInfo =
+        get_account(&mut context.banks_client, attestation_info_pda).await;
+    assert_eq!(attestation_info.src_chain, src_chain);
+    assert_eq!(attestation_info.src_addr, src_addr);
+    assert_eq!(attestation_info.sequence, sequence);
+    assert_eq!(attestation_info.dst_chain, dst_chain);
+    assert_eq!(attestation_info.dst_addr, dst_addr);
+    assert_eq!(attestation_info.payload_hash, payload_hash);
+    assert!(attestation_info.executed);
+}
+
+#[tokio::test]
+async fn test_attest_after_exec() {
+    let (
+        mut context,
+        payer,
+        _,
+        _,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        transceiver_pda,
+        chain_id,
+    ) = setup_test_environment().await;
+
+    let src_chain: u16 = chain_id;
+    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let sequence: u64 = 1;
+    let dst_chain = 1;
+    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let payload_hash = [3u8; 32];
+
+    let (attestation_info_pda, _) = AttestationInfo::pda(AttestationInfo::compute_message_hash(
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    ));
+
+    // First, execute the message
+    exec_message(
+        &mut context,
+        &payer,
+        registered_transceiver_pda,
+        transceiver_pda,
+        integrator_chain_config_pda,
+        attestation_info_pda,
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    )
+    .await
+    .unwrap();
+
+    // Now, try to attest the message
+    let result = attest_message(
+        &mut context,
+        &payer,
+        registered_transceiver_pda,
+        transceiver_pda,
+        integrator_chain_config_pda,
+        attestation_info_pda,
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    )
+    .await;
+
+    assert!(
+        result.is_ok(),
+        "attest_message after exec failed: {:?}",
+        result.err()
+    );
+
+    // Verify the attestation info account was updated correctly
+    let attestation_info: AttestationInfo =
+        get_account(&mut context.banks_client, attestation_info_pda).await;
+    assert!(attestation_info.executed);
+    assert!(attestation_info
+        .attested_transceivers
+        .get(
+            get_account::<TransceiverInfo>(&mut context.banks_client, registered_transceiver_pda)
+                .await
+                .index
+        )
+        .unwrap());
+}
+
+#[tokio::test]
+async fn test_exec_message_duplicate_execution() {
+    let (
+        mut context,
+        payer,
+        _,
+        _,
+        integrator_chain_config_pda,
+        registered_transceiver_pda,
+        transceiver_pda,
+        chain_id,
+    ) = setup_test_environment().await;
+
+    let src_chain: u16 = chain_id;
+    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let sequence: u64 = 1;
+    let dst_chain = 1;
+    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let payload_hash = [3u8; 32];
+
+    let (attestation_info_pda, _) = AttestationInfo::pda(AttestationInfo::compute_message_hash(
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    ));
+
+    // First execution (should succeed)
+    exec_message(
+        &mut context,
+        &payer,
+        registered_transceiver_pda,
+        transceiver_pda,
+        integrator_chain_config_pda,
+        attestation_info_pda,
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    )
+    .await
+    .unwrap();
+
+    // Second execution (should fail)
+    let result = exec_message(
+        &mut context,
+        &payer,
+        registered_transceiver_pda,
+        transceiver_pda,
+        integrator_chain_config_pda,
+        attestation_info_pda,
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    )
+    .await;
+
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err().unwrap(),
+        TransactionError::InstructionError(
+            0,
+            InstructionError::Custom(RouterError::AlreadyExecuted.into())
         )
     );
 }

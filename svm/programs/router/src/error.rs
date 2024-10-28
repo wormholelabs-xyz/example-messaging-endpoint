@@ -35,4 +35,7 @@ pub enum RouterError {
 
     #[msg("Message has already been picked up")]
     MessageAlreadyPickedUp,
+
+    #[msg("Message has already been executed")]
+    AlreadyExecuted,
 }

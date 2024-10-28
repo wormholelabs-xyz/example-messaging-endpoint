@@ -32,7 +32,7 @@ pub mod mock_transceiver {
 
     /// Invokes the attest_message instruction on the router program via CPI
     pub fn invoke_attest_message(
-        ctx: Context<InvokeAttestMessage>,
+        ctx: Context<InvokeAttestOrExecMessage>,
         args: router::instructions::AttestMessageArgs,
     ) -> Result<()> {
         // Prepare the seeds for PDA signing
@@ -41,6 +41,26 @@ pub mod mock_transceiver {
 
         // Perform the CPI call to the router program's attest_message instruction
         router::cpi::attest_message(
+            ctx.accounts
+                .invoke_attest_message()
+                .with_signer(signer_seeds),
+            args,
+        )?;
+
+        Ok(())
+    }
+
+    /// Invokes the exec_message instruction on the router program via CPI
+    pub fn invoke_exec_message(
+        ctx: Context<InvokeAttestOrExecMessage>,
+        args: router::instructions::AttestMessageArgs,
+    ) -> Result<()> {
+        // Prepare the seeds for PDA signing
+        let bump_seed = &[ctx.bumps.transceiver_pda][..];
+        let signer_seeds: &[&[&[u8]]] = &[&[b"transceiver_pda", bump_seed]];
+
+        // Perform the CPI call to the router program's exec_message instruction
+        router::cpi::exec_message(
             ctx.accounts
                 .invoke_attest_message()
                 .with_signer(signer_seeds),
@@ -98,7 +118,7 @@ impl<'info> InvokePickUpMessage<'info> {
 
 /// Accounts struct for the invoke_attest_message instruction
 #[derive(Accounts)]
-pub struct InvokeAttestMessage<'info> {
+pub struct InvokeAttestOrExecMessage<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
@@ -129,7 +149,7 @@ pub struct InvokeAttestMessage<'info> {
     pub router_program: Program<'info, Router>,
 }
 
-impl<'info> InvokeAttestMessage<'info> {
+impl<'info> InvokeAttestOrExecMessage<'info> {
     /// Helper function to create the CpiContext for the attest_message instruction
     pub fn invoke_attest_message(&self) -> CpiContext<'_, '_, '_, 'info, AttestMessage<'info>> {
         let cpi_program = self.router_program.to_account_info();

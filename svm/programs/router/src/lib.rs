@@ -188,4 +188,23 @@ pub mod router {
     pub fn attest_message(ctx: Context<AttestMessage>, args: AttestMessageArgs) -> Result<()> {
         instructions::attest_message::attest_message(ctx, args)
     }
+
+    /// Executes a message
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `args` - The `AttestMessageArgs` struct containing:
+    ///     * `src_chain` - The source chain ID
+    ///     * `src_addr` - The source address
+    ///     * `sequence` - The sequence number
+    ///     * `dst_chain` - The destination chain ID
+    ///     * `dst_addr` - The destination address
+    ///     * `payload_hash` - The hash of the message payload
+    pub fn exec_message(
+        ctx: Context<AttestMessage>,
+        args: attest_message::AttestMessageArgs,
+    ) -> Result<()> {
+        attest_message::exec_message(ctx, args)
+    }
 }
