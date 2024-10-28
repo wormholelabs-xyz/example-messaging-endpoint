@@ -18,13 +18,13 @@ idl-build = ["anchor-lang/idl-build"]
 test-sbf = []
 
 [dependencies]
-anchor-lang =  {version = "0.30.1", features = ["init-if-needed"]}
+anchor-lang = { workspace = true, features = ["init-if-needed"] }
 bitmaps = "3.2.1"
-universal-address = { path = "../../modules/universal-address" }
+universal-address = { workspace = true }
 
 [dev-dependencies]
-bincode = "1.3.3"
-tokio = { version = "1.14.1", features = ["full"] }
-solana-program-test = "1.18.17"
-solana-program-runtime = "1.18.17"
-solana-sdk = "1.18"
+bincode = { workspace = true }
+tokio = { workspace = true }
+solana-program-test = { workspace = true }
+solana-program-runtime = { workspace = true }
+solana-sdk = { workspace = true }
