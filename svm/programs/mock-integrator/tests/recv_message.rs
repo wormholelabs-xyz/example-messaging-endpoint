@@ -181,6 +181,7 @@ async fn test_recv_message_success() {
 
     // TODO: return data are assumed to be correct by checking the `recv_transceiver_bitmap`
     // and `attested_transceivers`. It is better to check the result of the transaction
+	// It is not checked here yet as it requires some other set up to execute transaction
 }
 
 #[tokio::test]

@@ -23,6 +23,8 @@ pub struct RecvMessage<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
+    /// The PDA of the integrator program.
+    /// This makes sure that the one calling this is the integrator program
     #[account(
         seeds = [b"router_integrator"],
         bump = args.integrator_program_pda_bump,
@@ -63,9 +65,39 @@ pub struct RecvMessage<'info> {
     pub system_program: Program<'info, System>,
 }
 
-// We won't double check for `no attestations here`. If it reaches here, it means the `AttestationInfo`
-// is already initialized. In other words, either `attest_message` or `exec_message` has been invoked.
-// In case of `exec_message`, `AlreadyExecuted` will be thrown
+/// This instruction is called to receive a message that has been attested to.
+/// It marks the message as executed and returns the enabled receive transceivers
+/// for the source chain along with the attestations.
+///
+/// # Arguments
+///
+/// * `ctx` - The context of the instruction, containing the accounts involved.
+/// * `args` - The arguments for the instruction, including:
+///   * `integrator_program_pda_bump`: The bump seed for the integrator program PDA.
+///   * `src_chain`: The source chain ID.
+///   * `src_addr`: The source address as a UniversalAddress.
+///   * `sequence`: The sequence number of the message.
+///   * `dst_chain`: The destination chain ID.
+///   * `dst_addr`: The destination address as a UniversalAddress.
+///   * `payload_hash`: The hash of the message payload.
+///
+/// # Returns
+///
+/// A tuple containing:
+/// * The bitmap of enabled receive transceivers for the source chain.
+/// * The bitmap of transceivers that have attested to the message.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * The message has already been executed (RouterError::AlreadyExecuted).
+///
+/// # Notes
+///
+/// We don't double-check for `no attestations here`. If it reaches this point,
+/// it means the `AttestationInfo` is already initialized. In other words,
+/// either `attest_message` or `exec_message` has been invoked previously.
+/// In the case of `exec_message`, `AlreadyExecuted` will be thrown.
 pub fn recv_message(ctx: Context<RecvMessage>, _args: RecvMessageArgs) -> Result<(u128, u128)> {
     let attestation_info = &mut ctx.accounts.attestation_info;
     let integrator_chain_config = &ctx.accounts.integrator_chain_config;

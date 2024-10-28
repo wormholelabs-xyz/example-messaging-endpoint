@@ -40,10 +40,41 @@ classDiagram
         map: u128
     }
 
-   IntegratorConfig "1" -- "" IntegratorChainConfig : manages
-   IntegratorChainConfig "1" -- "2" Bitmap : uses
-   IntegratorConfig "1" -- "*" TransceiverInfo : tracks
-   IntegratorChainConfig "1" -- "*" TransceiverInfo : corresponds to
+    class AttestationInfo {
+        *bump: u8
+        *message_hash: [u8; 32]
+        src_chain: u16
+        src_addr: UniversalAddress
+        sequence: u64
+        dst_chain: u16
+        dst_addr: UniversalAddress
+        payload_hash: [u8; 32]
+        executed: bool
+        attested_transceivers: Bitmap
+    }
+
+    class OutboxMessage {
+        src_addr: UniversalAddress
+        sequence: u64
+        dst_chain: u16
+        dst_addr: UniversalAddress
+        payload_hash: [u8; 32]
+        outstanding_transceivers: Bitmap
+    }
+
+    class OutboxMessageKey {
+        *bump: u8
+        *integrator_program_id: Pubkey
+        sequence: u64
+    }
+
+    IntegratorConfig "1" -- "" IntegratorChainConfig : manages
+    IntegratorChainConfig "1" -- "2" Bitmap : uses
+    IntegratorConfig "1" -- "*" TransceiverInfo : tracks
+    IntegratorChainConfig "1" -- "*" TransceiverInfo : corresponds to
+    AttestationInfo "1" -- "1" Bitmap : uses
+    OutboxMessage "1" -- "1" Bitmap : uses
+    IntegratorConfig "1" -- "1" OutboxMessageKey : has
 ```
 
 > **Note:** fields marked with an asterisk (\*) in the class diagrams are used as seeds for Program Derived Address (PDA) derivation.
@@ -130,13 +161,11 @@ Manages the configuration for a specific integrator.
 - **registered_transceivers**: Vector of registered transceiver addresses
 
 **PDA Derivation**:
-
 - Seeds: `[SEED_PREFIX, integrator_program_id]`
 - Unique for each integrator program
 - Initialization: Requires integrator_program's PDA seeded by "router_integrator"
 
 **Constraints**:
-
 - Maximum of 128 transceivers per integrator
 
 ### IntegratorChainConfig
@@ -150,7 +179,6 @@ Manages transceivers enabled and config for a specific integrator on a particula
 - **recv_transceiver_bitmap**: Bitmap tracking enabled receive transceivers
 
 **PDA Derivation**:
-
 - Seeds: `[SEED_PREFIX, integrator_program_id, chain_id]`
 - Unique for each integrator program and chain combination
 - Initialization: Requires admin's signature and existing IntegratorConfig account
@@ -160,12 +188,11 @@ Manages transceivers enabled and config for a specific integrator on a particula
 Represents a registered transceiver in the GMP Router.
 
 - **bump**: Bump seed for PDA derivation
-- **index**: Unique index of the transceiver that corresponds to it's position in the registered_transceivers in IntegratorConfig account
 - **integrator_program_id**: The program ID of the Integrator
-- **address**: Public key of the transceiver's address
+- **transceiver_program_id**: Public key of the transceiver's address
+- **index**: Unique index of the transceiver that corresponds to its position in the registered_transceivers in IntegratorConfig account
 
 **PDA Derivation**:
-
 - Seeds: `[SEED_PREFIX, integrator_program_id, transceiver_program_id]`
 - Unique for each transceiver within an integrator context
 
@@ -174,6 +201,46 @@ Represents a registered transceiver in the GMP Router.
 Utility struct for efficient storage and manipulation of boolean flags.
 
 - **map**: Stores the bitmap as a `u128`
+
+### AttestationInfo
+
+Stores information about message attestations.
+
+- **bump**: Bump seed for PDA derivation
+- **message_hash**: Hash of the message (used as a seed for PDA derivation)
+- **src_chain**: Source chain ID
+- **src_addr**: Source address
+- **sequence**: Sequence number
+- **dst_chain**: Destination chain ID
+- **dst_addr**: Destination address
+- **payload_hash**: Hash of the payload
+- **executed**: Flag indicating if the message has been executed
+- **attested_transceivers**: Bitmap of transceivers that have attested to the message
+
+**PDA Derivation**:
+- Seeds: `[SEED_PREFIX, message_hash]`
+
+### OutboxMessage
+
+Represents an outgoing message in the outbox.
+
+- **src_addr**: The sending integrator's address
+- **sequence**: The sequence number of the message
+- **dst_chain**: The destination chain's Wormhole Chain ID
+- **dst_addr**: The destination address
+- **payload_hash**: The hash of the message payload
+- **outstanding_transceivers**: Bitmap of send-enabled transceivers that have not picked up the message
+
+### OutboxMessageKey
+
+Tracks the sequence number for an integrator program.
+
+- **bump**: Bump seed for PDA derivation
+- **integrator_program_id**: The program ID of the integrator (used as a seed for PDA derivation)
+- **sequence**: The current sequence number for this integrator
+
+**PDA Derivation**:
+- Seeds: `[SEED_PREFIX, integrator_program_id]`
 
 ## Instructions
 
@@ -187,17 +254,27 @@ Utility struct for efficient storage and manipulation of boolean flags.
 8. `transfer_admin`: Initiates the transfer of admin rights for the IntegratorConfig to a new admin
 9. `claim_admin`: Completes the transfer of admin rights, allowing the new admin to claim authority
 10. `discard_admin`: Sets IntegratorConfig as immutable to emulate discarding admin on EVM. Action is irreversible
+11. `pick_up_message`: Allows a transceiver to pick up a message from the outbox, updating the outstanding transceivers bitmap
+12. `recv_message`: Receives a message that has been attested to, marking it as executed and returning enabled receive transceivers and attestations
+13. `send_message`: Creates a new outbox message for the specified destination chain and address, initializing it with provided information
 
 ## Error Handling
 
 The program uses a custom `RouterError` enum to handle various error cases, including:
 
-- `InvalidIntegratorAuthority`: Invalid integrator authority
+- `CallerNotAuthorized`: The caller is not authorized to perform the action
 - `BitmapIndexOutOfBounds`: Bitmap index is out of bounds
 - `MaxTransceiversReached`: Maximum number of transceivers reached
 - `TransceiverAlreadyEnabled`: Transceiver was already enabled
 - `TransceiverAlreadyDisabled`: Transceiver was already disabled
-- `AdminTransferInProgress`: An Admin transfer is in progress
+- `AdminTransferInProgress`: An admin transfer is in progress
+- `NoAdminTransferInProgress`: No admin transfer is currently in progress
+- `InvalidChainId`: The provided chain ID is invalid
+- `TransceiverNotEnabled`: No transceivers are enabled for the operation
+- `DuplicateMessageAttestation`: An attempt was made to attest to a message more than once
+- `MessageAlreadyPickedUp`: The message has already been picked up
+- `AlreadyExecuted`: The message has already been executed
+- `UnknownMessageAttestation`: The message attestation is unknown or invalid
 
 ## Testing
 

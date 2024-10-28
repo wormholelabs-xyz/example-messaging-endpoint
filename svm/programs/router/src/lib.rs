@@ -208,6 +208,19 @@ pub mod router {
         attest_message::exec_message(ctx, args)
     }
 
+    /// Receives a message that has been attested to.
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction, containing the accounts involved.
+    /// * `args` - The arguments for the instruction, including:
+    ///   * `integrator_program_pda_bump`: The bump seed for the integrator program PDA.
+    ///   * `src_chain`: The source chain ID.
+    ///   * `src_addr`: The source address as a UniversalAddress.
+    ///   * `sequence`: The sequence number of the message.
+    ///   * `dst_chain`: The destination chain ID.
+    ///   * `dst_addr`: The destination address as a UniversalAddress.
+    ///   * `payload_hash`: The hash of the message payload.
     pub fn recv_message(
         ctx: Context<RecvMessage>,
         args: recv_message::RecvMessageArgs,

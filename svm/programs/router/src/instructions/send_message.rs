@@ -22,22 +22,14 @@ pub struct SendMessage<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
+    /// The PDA of the integrator program.
+    /// This makes sure that only the integrator program is authorized to use this ix
     #[account(
         seeds = [b"router_integrator"],
         bump = args.integrator_program_pda_bump,
         seeds::program = args.integrator_program_id
     )]
     pub integrator_program_pda: Signer<'info>,
-
-    #[account(
-        mut,
-        seeds = [
-            OutboxMessageKey::SEED_PREFIX,
-            args.integrator_program_id.as_ref(),
-        ],
-        bump = outbox_message_key.bump,
-    )]
-    pub outbox_message_key: Account<'info, OutboxMessageKey>,
 
     #[account(
         seeds = [
@@ -50,6 +42,16 @@ pub struct SendMessage<'info> {
     pub integrator_chain_config: Account<'info, IntegratorChainConfig>,
 
     #[account(
+        mut,
+        seeds = [
+            OutboxMessageKey::SEED_PREFIX,
+            args.integrator_program_id.as_ref(),
+        ],
+        bump = outbox_message_key.bump,
+    )]
+    pub outbox_message_key: Account<'info, OutboxMessageKey>,
+
+    #[account(
         init,
         payer = payer,
         space = 8 + OutboxMessage::INIT_SPACE,
@@ -59,6 +61,29 @@ pub struct SendMessage<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// This instruction creates a new outbox message.
+/// It checks if there are any enabled send transceivers for the destination chain and initializes
+/// the outbox message with the provided information.
+///
+/// # Arguments
+///
+/// * `ctx` - The context of the instruction, containing the accounts involved.
+/// * `args` - The arguments for the instruction, including:
+///   * `integrator_program_id`: The program ID of the integrator.
+///   * `integrator_program_pda_bump`: The bump seed for the integrator program PDA.
+///   * `dst_chain`: The destination chain ID.
+///   * `dst_addr`: The destination address as a UniversalAddress.
+///   * `payload_hash`: The hash of the message payload.
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * There are no enabled send transceivers for the destination chain (RouterError::TransceiverNotEnabled).
+///
+/// # Side Effects
+///
+/// * Initializes a new `OutboxMessage` account.
+/// * Increments the sequence number in the `OutboxMessageKey` account.
 pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<()> {
     // Check if there are any enabled send transceivers for destination chain
     require!(
