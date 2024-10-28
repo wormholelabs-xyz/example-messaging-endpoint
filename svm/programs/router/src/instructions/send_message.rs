@@ -101,11 +101,7 @@ pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<
         dst_chain: args.dst_chain,
         dst_addr: args.dst_addr,
         payload_hash: args.payload_hash,
-        outstanding_transceivers: ctx
-            .accounts
-            .integrator_chain_config
-            .send_transceiver_bitmap
-            .clone(),
+        outstanding_transceivers: ctx.accounts.integrator_chain_config.send_transceiver_bitmap,
     });
 
     Ok(())
