@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "modules/*",
     "programs/*"
 ]
 resolver = "2"

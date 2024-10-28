@@ -20,7 +20,7 @@ test-sbf = []
 [dependencies]
 anchor-lang =  {version = "0.30.1", features = ["init-if-needed"]}
 bitmaps = "3.2.1"
-universal-address = { path = "../universal-address" }
+universal-address = { path = "../../modules/universal-address" }
 
 [dev-dependencies]
 bincode = "1.3.3"

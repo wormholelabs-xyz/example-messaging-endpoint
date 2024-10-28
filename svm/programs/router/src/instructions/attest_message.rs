@@ -88,7 +88,7 @@ pub struct AttestMessage<'info> {
 ///   - `dst_chain`: The destination chain ID
 ///   - `dst_addr`: The destination address (UniversalAddress)
 ///   - `payload_hash`: The hash of the message payload
-/// 
+///
 /// # Errors
 ///
 /// This function will return an error if:

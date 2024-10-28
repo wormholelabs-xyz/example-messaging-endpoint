@@ -20,7 +20,7 @@ test-sbf = []
 [dependencies]
 anchor-lang = "0.30.1"
 router = { path = "../router", features = ["cpi"]}
-universal-address = { path = "../universal-address" }
+universal-address = { path = "../../modules/universal-address" }
 
 [dev-dependencies]
 mock-transceiver = { path = "../mock-transceiver" }
