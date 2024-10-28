@@ -1,4 +1,5 @@
 pub mod add_transceiver;
+pub mod attest_message;
 pub mod common;
 pub mod disable_transceiver;
 pub mod discard_admin;
@@ -10,6 +11,7 @@ pub mod transfer_admin;
 pub mod update_admin;
 
 pub use add_transceiver::*;
+pub use attest_message::*;
 pub use common::*;
 pub use disable_transceiver::*;
 pub use discard_admin::*;

@@ -172,4 +172,20 @@ pub mod router {
     pub fn pick_up_message(ctx: Context<PickUpMessage>) -> Result<()> {
         instructions::pick_up_message::pick_up_message(ctx)
     }
+
+    /// Attests to a message
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `args` - The `AttestMessageArgs` struct containing:
+    ///     * `src_chain` - The source chain ID
+    ///     * `src_addr` - The source address
+    ///     * `sequence` - The sequence number
+    ///     * `dst_chain` - The destination chain ID
+    ///     * `dst_addr` - The destination address
+    ///     * `payload_hash` - The hash of the message payload
+    pub fn attest_message(ctx: Context<AttestMessage>, args: AttestMessageArgs) -> Result<()> {
+        instructions::attest_message::attest_message(ctx, args)
+    }
 }
