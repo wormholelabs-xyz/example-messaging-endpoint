@@ -141,7 +141,7 @@ async fn test_send_message_success() {
     assert_eq!(outbox_msg.dst_chain, chain_id);
     assert_eq!(outbox_msg.dst_addr, dst_addr);
     assert_eq!(outbox_msg.payload_hash, payload_hash);
-    assert_eq!(outbox_msg.outstanding_transceivers, 1);
+    assert_eq!(outbox_msg.outstanding_transceivers.as_value(), 1);
 }
 
 #[tokio::test]
@@ -310,7 +310,7 @@ async fn test_send_message_unregistered_chain() {
     )
     .await;
 
-	assert_eq!(
+    assert_eq!(
         result.unwrap_err().unwrap(),
         TransactionError::InstructionError(0, InstructionError::Custom(3012)) // AccountNotInitialized
     );

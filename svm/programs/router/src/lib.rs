@@ -160,4 +160,16 @@ pub mod router {
     pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<()> {
         instructions::send_message::send_message(ctx, args)
     }
+
+    /// Picks up a message from the outbox
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction containing:
+    ///     * `outbox_message` - The outbox message to pick up
+    ///     * `transceiver_info` - The transceiver info account
+    ///     * `transceiver_pda` - The transceiver PDA signer
+    pub fn pick_up_message(ctx: Context<PickUpMessage>) -> Result<()> {
+        instructions::pick_up_message::pick_up_message(ctx)
+    }
 }

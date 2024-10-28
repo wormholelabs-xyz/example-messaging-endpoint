@@ -4,7 +4,7 @@ use crate::error::RouterError;
 
 /// Manages the configuration for a specific integrator.
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace, Debug)]
 pub struct IntegratorConfig {
     /// Bump seed for PDA derivation
     pub bump: u8,

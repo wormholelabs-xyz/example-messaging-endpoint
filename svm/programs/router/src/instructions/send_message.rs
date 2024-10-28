@@ -4,7 +4,6 @@ use universal_address::UniversalAddress;
 use crate::{
     error::RouterError,
     state::{IntegratorChainConfig, OutboxMessage, OutboxMessageKey},
-    utils::bitmap::Bitmap,
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -81,7 +80,8 @@ pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<
             .accounts
             .integrator_chain_config
             .send_transceiver_bitmap
-            .count_enabled_bits(Bitmap::from_value(u128::MAX)),
+            .clone(),
     });
+
     Ok(())
 }

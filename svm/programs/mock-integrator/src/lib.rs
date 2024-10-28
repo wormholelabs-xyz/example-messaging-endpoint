@@ -141,9 +141,9 @@ pub struct InvokeSendMessage<'info> {
     /// CHECK: This account is checked by the router program
     pub outbox_message_key: UncheckedAccount<'info>,
 
-    pub system_program: Program<'info, System>,
-
     pub router_program: Program<'info, Router>,
+
+    pub system_program: Program<'info, System>,
 }
 
 impl<'info> InvokeSendMessage<'info> {

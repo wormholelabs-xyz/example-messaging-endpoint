@@ -2,7 +2,9 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::keccak;
 use universal_address::UniversalAddress;
 
-#[derive(Debug, InitSpace)]
+use crate::utils::bitmap::Bitmap;
+
+#[derive(InitSpace, Debug)]
 #[account]
 pub struct OutboxMessage {
     /// The sending integrator as a 32-byte universal address
@@ -21,7 +23,7 @@ pub struct OutboxMessage {
     pub payload_hash: [u8; 32],
 
     /// The bitmap of send-enabled transceivers for this destination chain that have not picked up the message
-    pub outstanding_transceivers: u8,
+    pub outstanding_transceivers: Bitmap,
 }
 
 impl OutboxMessage {

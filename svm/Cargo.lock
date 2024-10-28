@@ -2376,12 +2376,21 @@ name = "mock-integrator"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "mock-transceiver",
  "router",
  "solana-program-runtime",
  "solana-program-test",
  "solana-sdk",
  "tokio",
  "universal-address",
+]
+
+[[package]]
+name = "mock-transceiver"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "router",
 ]
 
 [[package]]

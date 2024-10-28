@@ -29,4 +29,10 @@ pub enum RouterError {
 
     #[msg("No Transceivers Enabled")]
     TransceiverNotEnabled,
+
+    #[msg("Duplicate Message Attestation")]
+    DuplicateMessageAttestation,
+
+    #[msg("Message has already been picked up")]
+    MessageAlreadyPickedUp,
 }

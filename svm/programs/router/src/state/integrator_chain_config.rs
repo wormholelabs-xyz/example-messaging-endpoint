@@ -7,7 +7,7 @@ use crate::utils::bitmap::Bitmap;
 /// This struct keeps track of both receive and send transceivers
 /// using bitmaps for efficient storage and lookup.
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace, Debug)]
 pub struct IntegratorChainConfig {
     /// Bump seed for PDA derivation
     pub bump: u8,
