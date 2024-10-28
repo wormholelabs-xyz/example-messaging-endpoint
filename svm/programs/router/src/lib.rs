@@ -207,4 +207,11 @@ pub mod router {
     ) -> Result<()> {
         attest_message::exec_message(ctx, args)
     }
+
+    pub fn recv_message(
+        ctx: Context<RecvMessage>,
+        args: recv_message::RecvMessageArgs,
+    ) -> Result<(u128, u128)> {
+        recv_message::recv_message(ctx, args)
+    }
 }

@@ -4,6 +4,7 @@ pub mod disable_transceiver;
 pub mod discard_admin;
 pub mod enable_transceiver;
 pub mod pick_up_message;
+pub mod recv_message;
 pub mod register;
 pub mod send_message;
 pub mod transfer_admin;

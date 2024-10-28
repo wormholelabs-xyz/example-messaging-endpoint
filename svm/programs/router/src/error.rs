@@ -38,4 +38,7 @@ pub enum RouterError {
 
     #[msg("Message has already been executed")]
     AlreadyExecuted,
+
+    #[msg("Unknown Message Attestation")]
+    UnknownMessageAttestation,
 }

@@ -18,16 +18,16 @@ pub struct SendMessageArgs {
 #[derive(Accounts)]
 #[instruction(args: SendMessageArgs)]
 pub struct SendMessage<'info> {
+    // Payer pays for the init of `outbox_message`
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
     #[account(
         seeds = [b"router_integrator"],
         bump = args.integrator_program_pda_bump,
         seeds::program = args.integrator_program_id
     )]
     pub integrator_program_pda: Signer<'info>,
-
-    // Payer pays for the init of `outbox_message`
-    #[account(mut)]
-    pub payer: Signer<'info>,
 
     #[account(
         mut,

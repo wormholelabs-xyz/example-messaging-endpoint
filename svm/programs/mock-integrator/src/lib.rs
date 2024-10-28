@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use router::program::Router;
 use router::{self};
 use router::{
-    cpi::accounts::{Register, SendMessage},
+    cpi::accounts::{RecvMessage, Register, SendMessage},
     instructions::RegisterArgs,
 };
 use universal_address::UniversalAddress;
@@ -44,14 +44,6 @@ pub mod mock_integrator {
         let bump_seed = &[ctx.bumps.integrator_program_pda][..];
         let signer_seeds: &[&[&[u8]]] = &[&[b"router_integrator", bump_seed]];
 
-        // Log the accounts involved in the transaction
-        msg!("Integrator Program PDA: {:?}", ctx.accounts.integrator_program_pda.key());
-        msg!("Payer: {:?}", ctx.accounts.payer.key());
-        msg!("Integrator Config: {:?}", ctx.accounts.integrator_chain_config.key());
-        msg!("Outbox Message Key: {:?}", ctx.accounts.outbox_message_key.key());
-        msg!("Outbox Message Key: {:?}", ctx.accounts.outbox_message.key());
-        msg!("Router Program: {:?}", ctx.accounts.router_program.key());
-
         router::cpi::send_message(
             ctx.accounts.invoke_send_message().with_signer(signer_seeds),
             SendMessageArgs {
@@ -63,6 +55,24 @@ pub mod mock_integrator {
             },
         )?;
         Ok(())
+    }
+
+    /// Invokes the recv_message instruction on the router program via CPI
+    pub fn invoke_recv_message(
+        ctx: Context<InvokeRecvMessage>,
+        args: router::instructions::RecvMessageArgs,
+    ) -> Result<(u128, u128)> {
+        // Prepare the seeds for PDA signing
+        let bump_seed = &[ctx.bumps.integrator_program_pda][..];
+        let signer_seeds: &[&[&[u8]]] = &[&[b"router_integrator", bump_seed]];
+
+        // Perform the CPI call to the router program's recv_message instruction
+        let result = router::cpi::recv_message(
+            ctx.accounts.invoke_recv_message().with_signer(signer_seeds),
+            args,
+        )?;
+
+        Ok(result.get())
     }
 }
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -155,6 +165,49 @@ impl<'info> InvokeSendMessage<'info> {
             integrator_chain_config: self.integrator_chain_config.to_account_info(),
             outbox_message: self.outbox_message.to_account_info(),
             outbox_message_key: self.outbox_message_key.to_account_info(),
+            system_program: self.system_program.to_account_info(),
+        };
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
+}
+
+/// Accounts struct for the invoke_recv_message instruction
+#[derive(Accounts)]
+pub struct InvokeRecvMessage<'info> {
+    #[account(mut)]
+    pub payer: Signer<'info>,
+
+    #[account(
+        seeds = [b"router_integrator"],
+        bump,
+    )]
+    pub integrator_program_pda: SystemAccount<'info>,
+
+    /// The integrator chain config account
+    /// CHECK: This account is checked by the router program
+    pub integrator_chain_config: UncheckedAccount<'info>,
+
+    /// The attestation info account
+    /// CHECK: This account is checked by the router program
+    #[account(mut)]
+    pub attestation_info: UncheckedAccount<'info>,
+
+    /// The system program
+    pub system_program: Program<'info, System>,
+
+    /// The router program
+    pub router_program: Program<'info, Router>,
+}
+
+impl<'info> InvokeRecvMessage<'info> {
+    /// Helper function to create the CpiContext for the recv_message instruction
+    pub fn invoke_recv_message(&self) -> CpiContext<'_, '_, '_, 'info, RecvMessage<'info>> {
+        let cpi_program = self.router_program.to_account_info();
+        let cpi_accounts = RecvMessage {
+            integrator_program_pda: self.integrator_program_pda.to_account_info(),
+            payer: self.payer.to_account_info(),
+            integrator_chain_config: self.integrator_chain_config.to_account_info(),
+            attestation_info: self.attestation_info.to_account_info(),
             system_program: self.system_program.to_account_info(),
         };
         CpiContext::new(cpi_program, cpi_accounts)
