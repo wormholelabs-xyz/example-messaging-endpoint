@@ -1,10 +1,10 @@
 module router::integrator {
+    use router::bitmap;
     use std::option::{Self, Option};
     use std::signer;
     use std::table::{Self, Table};
     use std::vector;
 
-    const MAX_U128: u128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
     const MAX_TRANSCEIVERS: u64 = 128;
 
     struct IntegratorCapability has key, store {
@@ -103,7 +103,7 @@ module router::integrator {
         // If possible, MUST NOT allow the admin to discard admin via this command.
         assert!(new_admin != @0x0);
         // Initiates the first step of a two-step process in which the current admin (to cancel) or new admin must claim.
-        // .fill will ensure there was not a pending transfer, as it muust be empty in order to fill
+        // .fill will ensure there was not a pending transfer, as it must be empty in order to fill
         admin_config.pending_admin_addr.fill(new_admin);
     }
     
@@ -153,12 +153,10 @@ module router::integrator {
         // MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
         // The borrow will fail if the Transceiver was never added.
         let index = table::borrow(&TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr);
-        // MUST check that the `transceiverAddr` is currently disabled for sending to the given chain.
         let bitmap = table::borrow_mut_with_default(&mut SendTransceiverStore[integrator_addr].per_chain_transceiver_bitmap, chain_id, 0);
-        let bitmask = 1 << *index;
-        assert!(*bitmap & bitmask == 0);
+        // MUST check that the `transceiverAddr` is currently disabled for sending to the given chain.
         // Enables the Transceiver for sending to the given chain.
-        *bitmap = *bitmap | bitmask;
+        *bitmap = bitmap::enable(*bitmap, *index);
     }
     
     public entry fun disable_send_transceiver(admin: &signer, integrator_addr: address, chain_id: u16, transceiver_addr: address) acquires AdminConfig, TransceiverToIndexStore, SendTransceiverStore {
@@ -169,12 +167,10 @@ module router::integrator {
         // MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
         // The borrow will fail if the Transceiver was never added.
         let index = table::borrow(&TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr);
-        // MUST check that the `transceiverAddr` is currently enabled for sending to the given chain.
         let bitmap = table::borrow_mut_with_default(&mut SendTransceiverStore[integrator_addr].per_chain_transceiver_bitmap, chain_id, 0);
-        let bitmask = 1 << *index;
-        assert!(*bitmap & bitmask > 0);
+        // MUST check that the `transceiverAddr` is currently enabled for sending to the given chain.
         // Disables the Transceiver for sending to the given chain.
-        *bitmap = *bitmap & (bitmask ^ MAX_U128);
+        *bitmap = bitmap::disable(*bitmap, *index);
     }
 
     public entry fun enable_recv_transceiver(admin: &signer, integrator_addr: address, chain_id: u16, transceiver_addr: address) acquires AdminConfig, TransceiverToIndexStore, RecvTransceiverStore {
@@ -184,12 +180,10 @@ module router::integrator {
         assert!(admin_config.pending_admin_addr.is_none());
         // MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
         let index = table::borrow(&TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr);
-        // MUST check that the `transceiverAddr` is currently disabled for receiving from the given chain.
         let bitmap = table::borrow_mut_with_default(&mut RecvTransceiverStore[integrator_addr].per_chain_transceiver_bitmap, chain_id, 0);
-        let bitmask = 1 << *index;
-        assert!(*bitmap & bitmask == 0);
+        // MUST check that the `transceiverAddr` is currently disabled for receiving from the given chain.
         // Enables the Transceiver for receiving from the given chain.
-        *bitmap = *bitmap | bitmask;
+        *bitmap = bitmap::enable(*bitmap, *index);
     }
     
     public entry fun disable_recv_transceiver(admin: &signer, integrator_addr: address, chain_id: u16, transceiver_addr: address) acquires AdminConfig, TransceiverToIndexStore, RecvTransceiverStore {
@@ -199,12 +193,10 @@ module router::integrator {
         assert!(admin_config.pending_admin_addr.is_none());
         // MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
         let index = table::borrow(&TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr);
-        // MUST check that the `transceiverAddr` is currently enabled for receiving from the given chain.
         let bitmap = table::borrow_mut_with_default(&mut RecvTransceiverStore[integrator_addr].per_chain_transceiver_bitmap, chain_id, 0);
-        let bitmask = 1 << *index;
-        assert!(*bitmap & bitmask > 0);
+        // MUST check that the `transceiverAddr` is currently enabled for receiving from the given chain.
         // Disables the Transceiver for receiving from the given chain.
-        *bitmap = *bitmap & (bitmask ^ MAX_U128);
+        *bitmap = bitmap::disable(*bitmap, *index);
     }
 
     package fun use_sequence(integrator_acct: &signer): u64 acquires IntegratorCapability{
