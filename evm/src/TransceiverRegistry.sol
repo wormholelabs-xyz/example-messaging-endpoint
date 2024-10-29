@@ -438,16 +438,11 @@ abstract contract TransceiverRegistry {
     /// @param transceiver The address of this transceiver
     /// @return result The registered transceiver index
     function getTransceiverIndex(address integrator, address transceiver) external view returns (uint8 result) {
-        uint256 length = _getRegisteredTransceiversStorage()[integrator].length;
-        for (uint256 i = 0; i < length;) {
-            if (_getRegisteredTransceiversStorage()[integrator][i] == transceiver) {
-                return uint8(i);
-            }
-            unchecked {
-                ++i;
-            }
+        TransceiverInfo storage info = _getTransceiverInfosStorage()[integrator][transceiver];
+        if (!info.registered) {
+            revert NonRegisteredTransceiver(transceiver);
         }
-        revert NonRegisteredTransceiver(transceiver);
+        return info.index;
     }
 
     /// @notice Returns the enabled send side transceiver addresses for the given integrator.
