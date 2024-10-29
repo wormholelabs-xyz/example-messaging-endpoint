@@ -7,6 +7,13 @@ module router::integrator {
 
     const MAX_TRANSCEIVERS: u64 = 128;
 
+    const E_ALREADY_REGISTERED: u64 = 0;
+    const E_INVALID_ADMIN: u64 = 1;
+    const E_NOT_AUTHORIZED: u64 = 2;
+    const E_ADMIN_TRANSFER_IN_PROGRESS: u64 = 3;
+    const E_NO_ADMIN_TRANSFER_IN_PROGRESS: u64 = 4;
+    const E_MAX_TRANSCEIVERS_REACHED: u64 = 5;
+
     struct IntegratorCapability has key, store {
         /// Sequence number of the next message
         sequence: u64
@@ -38,9 +45,9 @@ module router::integrator {
     package fun new_integrator(integrator_acct: &signer, admin_addr: address) {
         let integrator_addr = signer::address_of(integrator_acct);
         // MUST check that the caller (Integrator) is not already registered.
-        assert!(!exists<IntegratorCapability>(integrator_addr));
+        assert!(!exists<IntegratorCapability>(integrator_addr), E_ALREADY_REGISTERED);
         // If possible, MUST check that the admin is potentially valid / non-null.
-        assert!(admin_addr != @0x0);
+        assert!(admin_addr != @0x0, E_INVALID_ADMIN);
         // Initializes their registration and sets the initial admin.
         move_to(integrator_acct, IntegratorCapability { sequence: 0 });
         move_to(integrator_acct, AdminConfig{admin_addr: option::some(admin_addr), pending_admin_addr: option::none()});
@@ -88,10 +95,10 @@ module router::integrator {
     public entry fun update_admin(admin: &signer, integrator_addr: address, new_admin: address) acquires AdminConfig {
         // MUST check that the caller is the current admin and there is not a pending transfer.
         let admin_config = &mut AdminConfig[integrator_addr];
-        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)));
-        assert!(admin_config.pending_admin_addr.is_none());
+        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)), E_NOT_AUTHORIZED);
+        assert!(admin_config.pending_admin_addr.is_none(), E_ADMIN_TRANSFER_IN_PROGRESS);
         // If possible, MUST NOT allow the admin to discard admin via this command.
-        assert!(new_admin != @0x0);
+        assert!(new_admin != @0x0, E_INVALID_ADMIN);
         // Immediately sets `newAdmin` as the admin of the integrator.
         admin_config.admin_addr.swap(new_admin);
     }
@@ -99,22 +106,24 @@ module router::integrator {
     public entry fun transfer_admin(admin: &signer, integrator_addr: address, new_admin: address) acquires AdminConfig {
         // MUST check that the caller is the current admin and there is not a pending transfer.
         let admin_config = &mut AdminConfig[integrator_addr];
-        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)));
+        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)), E_NOT_AUTHORIZED);
+        assert!(admin_config.pending_admin_addr.is_none(), E_ADMIN_TRANSFER_IN_PROGRESS);
         // If possible, MUST NOT allow the admin to discard admin via this command.
-        assert!(new_admin != @0x0);
+        assert!(new_admin != @0x0, E_INVALID_ADMIN);
         // Initiates the first step of a two-step process in which the current admin (to cancel) or new admin must claim.
         // .fill will ensure there was not a pending transfer, as it must be empty in order to fill
         admin_config.pending_admin_addr.fill(new_admin);
     }
     
     public entry fun claim_admin(new_admin: &signer, integrator_addr: address) acquires AdminConfig {
-        // MUST check that the caller is the current admin OR the pending admin.
         let admin_config = &mut AdminConfig[integrator_addr];
+        // MUST check that there is an admin transfer pending.
+        assert!(admin_config.pending_admin_addr.is_some(), E_NO_ADMIN_TRANSFER_IN_PROGRESS);
+        // MUST check that the caller is the current admin OR the pending admin.
         let new_admin_addr = signer::address_of(new_admin);
-        assert!(admin_config.admin_addr.contains(&new_admin_addr) || admin_config.pending_admin_addr.contains(&new_admin_addr));
+        assert!(admin_config.admin_addr.contains(&new_admin_addr) || admin_config.pending_admin_addr.contains(&new_admin_addr), E_NOT_AUTHORIZED);
         // Cancels / Completes the second step of the two-step transfer. Sets the admin to the caller and clears the pending admin.
         admin_config.admin_addr.swap(new_admin_addr);
-        // MUST check that there is an admin transfer pending.
         // .extract requires that this contains a value
         admin_config.pending_admin_addr.extract();
     }
@@ -122,8 +131,8 @@ module router::integrator {
     public entry fun discard_admin(admin: &signer, integrator_addr: address) acquires AdminConfig {
         // MUST check that the caller is the current admin and there is not a pending transfer.
         let admin_config = &mut AdminConfig[integrator_addr];
-        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)));
-        assert!(admin_config.pending_admin_addr.is_none());
+        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)), E_NOT_AUTHORIZED);
+        assert!(admin_config.pending_admin_addr.is_none(), E_ADMIN_TRANSFER_IN_PROGRESS);
         // Clears the current admin. THIS IS NOT REVERSIBLE. This ensures that the Integrator configuration becomes immutable.
         admin_config.admin_addr.extract();
     }
@@ -131,14 +140,14 @@ module router::integrator {
     public entry fun add_transceiver(admin: &signer, integrator_addr: address, transceiver_addr: address) acquires AdminConfig, TransceiversStore, TransceiverToIndexStore {
         // MUST check that the caller is the current admin and there is not a pending transfer.
         let admin_config = &AdminConfig[integrator_addr];
-        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)));
-        assert!(admin_config.pending_admin_addr.is_none());
+        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)), E_NOT_AUTHORIZED);
+        assert!(admin_config.pending_admin_addr.is_none(), E_ADMIN_TRANSFER_IN_PROGRESS);
         let transceivers = &mut TransceiversStore[integrator_addr].transceivers;
         // MUST check that `transceiverAddr` is not already in the array.
-        assert!(!vector::contains(transceivers, &transceiver_addr));
+        assert!(!vector::contains(transceivers, &transceiver_addr), E_ALREADY_REGISTERED);
         // MUST check that the array would not surpass 128 entries.
         let len = vector::length(transceivers);
-        assert!(len < MAX_TRANSCEIVERS);
+        assert!(len < MAX_TRANSCEIVERS, E_MAX_TRANSCEIVERS_REACHED);
         // Appends the `transceiverAddr` to the Integrator's array of Transceivers. THIS IS NOT REVERSIBLE. Once a transceiver is added for an Integrator, it cannot be removed.
         // Note: When a Transceiver is added, it is not enabled for sending or receiving on any chain.
         vector::push_back(transceivers, transceiver_addr);
@@ -148,8 +157,8 @@ module router::integrator {
     public entry fun enable_send_transceiver(admin: &signer, integrator_addr: address, chain_id: u16, transceiver_addr: address) acquires AdminConfig, TransceiverToIndexStore, SendTransceiverStore {
         // MUST check that the caller is the current admin and there is not a pending transfer.
         let admin_config = &AdminConfig[integrator_addr];
-        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)));
-        assert!(admin_config.pending_admin_addr.is_none());
+        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)), E_NOT_AUTHORIZED);
+        assert!(admin_config.pending_admin_addr.is_none(), E_ADMIN_TRANSFER_IN_PROGRESS);
         // MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
         // The borrow will fail if the Transceiver was never added.
         let index = table::borrow(&TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr);
@@ -162,8 +171,8 @@ module router::integrator {
     public entry fun disable_send_transceiver(admin: &signer, integrator_addr: address, chain_id: u16, transceiver_addr: address) acquires AdminConfig, TransceiverToIndexStore, SendTransceiverStore {
         // MUST check that the caller is the current admin and there is not a pending transfer.
         let admin_config = &AdminConfig[integrator_addr];
-        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)));
-        assert!(admin_config.pending_admin_addr.is_none());
+        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)), E_NOT_AUTHORIZED);
+        assert!(admin_config.pending_admin_addr.is_none(), E_ADMIN_TRANSFER_IN_PROGRESS);
         // MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
         // The borrow will fail if the Transceiver was never added.
         let index = table::borrow(&TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr);
@@ -176,8 +185,8 @@ module router::integrator {
     public entry fun enable_recv_transceiver(admin: &signer, integrator_addr: address, chain_id: u16, transceiver_addr: address) acquires AdminConfig, TransceiverToIndexStore, RecvTransceiverStore {
         // MUST check that the caller is the current admin and there is not a pending transfer.
         let admin_config = &AdminConfig[integrator_addr];
-        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)));
-        assert!(admin_config.pending_admin_addr.is_none());
+        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)), E_NOT_AUTHORIZED);
+        assert!(admin_config.pending_admin_addr.is_none(), E_ADMIN_TRANSFER_IN_PROGRESS);
         // MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
         let index = table::borrow(&TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr);
         let bitmap = table::borrow_mut_with_default(&mut RecvTransceiverStore[integrator_addr].per_chain_transceiver_bitmap, chain_id, 0);
@@ -189,8 +198,8 @@ module router::integrator {
     public entry fun disable_recv_transceiver(admin: &signer, integrator_addr: address, chain_id: u16, transceiver_addr: address) acquires AdminConfig, TransceiverToIndexStore, RecvTransceiverStore {
         // MUST check that the caller is the current admin and there is not a pending transfer.
         let admin_config = &AdminConfig[integrator_addr];
-        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)));
-        assert!(admin_config.pending_admin_addr.is_none());
+        assert!(admin_config.admin_addr.contains(&signer::address_of(admin)), E_NOT_AUTHORIZED);
+        assert!(admin_config.pending_admin_addr.is_none(), E_ADMIN_TRANSFER_IN_PROGRESS);
         // MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
         let index = table::borrow(&TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr);
         let bitmap = table::borrow_mut_with_default(&mut RecvTransceiverStore[integrator_addr].per_chain_transceiver_bitmap, chain_id, 0);

@@ -8,6 +8,12 @@ module router::router {
     use std::table::{Self, Table};
     use std::vector;
 
+    const E_INVALID_PAYLOAD_HASH_LENGTH: u64 = 0;
+    const E_TRANSCEIVER_NOT_ENABLED: u64 = 1;
+    const E_INVALID_SOURCE_ADDRESS_LENGTH: u64 = 2;
+    const E_INVALID_DESTINATION_ADDRESS_LENGTH: u64 = 3;
+    const E_ALREADY_EXECUTED: u64 = 4;
+
     struct OutboxMessageKey has copy, drop {
         integrator_addr: address,
         sequence: u64
@@ -68,11 +74,11 @@ module router::router {
     }
 
     public fun send_message(integrator_acct: &signer, dst_chain: u16, dst_addr: UniversalAddress, payload_hash: vector<u8>): u64 acquires OutboxState {
-        assert!(vector::length(&payload_hash) == 32);
+        assert!(vector::length(&payload_hash) == 32, E_INVALID_PAYLOAD_HASH_LENGTH);
         let integrator_addr = signer::address_of(integrator_acct);
         // MUST have at least one enabled send Transceiver for `dstChain`.
         let outstanding_transceivers = integrator::get_enabled_send_transceivers(integrator_addr, dst_chain);
-        assert!(outstanding_transceivers != 0);
+        assert!(outstanding_transceivers != 0, E_TRANSCEIVER_NOT_ENABLED);
         // Increments the Integrator's sequence, creates and stores the outbox item.
         // MUST set the current enabled Send Transceivers as the Outstanding Transceivers for that message.
         let src_addr = universal_address::from_address(integrator_addr);
@@ -113,9 +119,9 @@ module router::router {
 
     #[view]
     public fun compute_message_hash(src_chain: u16, src_addr: vector<u8>, sequence: u64, dst_chain: u16, dst_addr: vector<u8>, payload_hash: vector<u8>): vector<u8> {
-        assert!(src_addr.length() == 32);
-        assert!(dst_addr.length() == 32);
-        assert!(payload_hash.length() == 32);
+        assert!(src_addr.length() == 32, E_INVALID_SOURCE_ADDRESS_LENGTH);
+        assert!(dst_addr.length() == 32, E_INVALID_DESTINATION_ADDRESS_LENGTH);
+        assert!(payload_hash.length() == 32, E_INVALID_PAYLOAD_HASH_LENGTH);
         // MUST calculate the message digest as keccak256(abi.encodePacked(sourceChain, sourceAddress, sequence, destinationChain, destinationAddress, payloadHash))
         // we reuse the native bcs serialiser -- it uses little-endian encoding, and
         // we need big-endian, so the results are reversed
@@ -151,15 +157,13 @@ module router::router {
         let transceiver_addr = signer::address_of(transceiver_acct);
         let index = integrator::get_transceiver_index(integrator_addr, transceiver_addr);
         let enabled_recv_transceivers = integrator::get_enabled_recv_transceivers(integrator_addr, src_chain);
-        let bitmask = 1 << index;
-        assert!(enabled_recv_transceivers & bitmask > 0);
-        // MUST check that the Transceiver has NOT already attested.
+        assert!(bitmap::get(enabled_recv_transceivers, index), E_TRANSCEIVER_NOT_ENABLED);
         let message_hash = compute_message_hash(src_chain, src_addr, sequence, dst_chain, dst_addr, payload_hash);
         let info = table::borrow_mut_with_default(&mut AttestationState[@router].attestation_infos, message_hash, AttestationInfo{executed: false, attested_transceivers: 0});
-        assert!(info.attested_transceivers & bitmask == 0);
+        // MUST check that the Transceiver has NOT already attested.
         // MUST allow a Transceiver to attest after message execution.
         // Calculates the message hash and marks the Transceiver as having attested to the message.
-        info.attested_transceivers = info.attested_transceivers | bitmask;
+        info.attested_transceivers = bitmap::enable(info.attested_transceivers, index);
     }
 
     public fun recvMessage(integrator_acct: &signer, src_chain: u16, src_addr: vector<u8>, sequence: u64, dst_chain: u16, payload_hash: vector<u8>): (u128, u128) acquires AttestationState {
@@ -170,7 +174,7 @@ module router::router {
         // This borrow will fail if no transceivers have attested.
         let info = table::borrow_mut(&mut AttestationState[@router].attestation_infos, message_hash);
         // MUST revert if already executed.
-        assert!(info.executed == false);
+        assert!(info.executed == false, E_ALREADY_EXECUTED);
         // Marks the message as executed and returns the enabled receive Transceivers for that chain along with the attestations.
         info.executed = true;
         let enabled_recv_transceivers = integrator::get_enabled_recv_transceivers(integrator_addr, src_chain);
@@ -184,7 +188,7 @@ module router::router {
         // MUST NOT require any Transceivers to have attested
         let info = table::borrow_mut_with_default(&mut AttestationState[@router].attestation_infos, message_hash, AttestationInfo{executed: false, attested_transceivers: 0});
         // MUST revert if already executed.
-        assert!(info.executed == false);
+        assert!(info.executed == false, E_ALREADY_EXECUTED);
         // Marks the message as executed.
         info.executed = true;
     }
@@ -193,8 +197,10 @@ module router::router {
 #[test_only]
 module router::router_test {
     use aptos_framework::aptos_hash;
+    use aptos_framework::table;
+    use router::bitmap;
     use router::integrator;
-    use router::router;
+    use router::router::{Self, E_INVALID_PAYLOAD_HASH_LENGTH, E_TRANSCEIVER_NOT_ENABLED, E_INVALID_SOURCE_ADDRESS_LENGTH, E_INVALID_DESTINATION_ADDRESS_LENGTH, E_ALREADY_EXECUTED};
     use router::universal_address;
     use std::signer;
 
@@ -210,7 +216,7 @@ module router::router_test {
     }
 
     #[test(integrator_acct = @0x123)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_ALREADY_REGISTERED, location = integrator)]
     public fun register_twice_fails(integrator_acct: &signer) {
         let integrator_addr = signer::address_of(integrator_acct);
         router::register(integrator_acct, integrator_addr);
@@ -218,7 +224,7 @@ module router::router_test {
     }
 
     #[test(integrator_acct = @0x123)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_INVALID_ADMIN, location = integrator)]
     public fun register_with_zero_admin_fails(integrator_acct: &signer) {
         router::register(integrator_acct, @0x0);
     }
@@ -266,21 +272,21 @@ module router::router_test {
     }
 
     #[test(integrator_acct = @0x123)]
-    #[expected_failure]
+    #[expected_failure(abort_code = E_INVALID_PAYLOAD_HASH_LENGTH, location = router)]
     public fun send_message_fails_with_bad_hash_length_33(integrator_acct: &signer) {
         router::init_module_test();
         router::send_message(integrator_acct, 1, universal_address::from_bytes(DESTINATION_ADDR), x"c3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5ff");
     }
 
     #[test(integrator_acct = @0x123)]
-    #[expected_failure]
+    #[expected_failure(major_status = 4008, location = integrator)]
     public fun send_message_fails_without_register(integrator_acct: &signer) {
         router::init_module_test();
         router::send_message(integrator_acct, 1, universal_address::from_bytes(DESTINATION_ADDR), PAYLOAD_HASH);
     }
 
     #[test(integrator_acct = @0x123)]
-    #[expected_failure]
+    #[expected_failure(abort_code = E_TRANSCEIVER_NOT_ENABLED, location = router)]
     public fun send_message_fails_without_enable(integrator_acct: &signer) {
         router::init_module_test();
         let integrator_addr = signer::address_of(integrator_acct);
@@ -289,7 +295,7 @@ module router::router_test {
     }
 
     #[test(integrator_addr = @0x123)]
-    #[expected_failure]
+    #[expected_failure(major_status = 4008, location = integrator)]
     public fun get_next_sequence_fails_without_register(integrator_addr: address) {
         integrator::get_next_sequence(integrator_addr);
     }
@@ -331,7 +337,7 @@ module router::router_test {
     }
 
     #[test(integrator_acct = @0x123, tx1 = @0x456, tx2 = @0x789)]
-    #[expected_failure]
+    #[expected_failure(abort_code = 25863, location = table)]
     public fun pick_up_message_fails_for_disabled_transceiver(integrator_acct: &signer, tx1: &signer, tx2: &signer) {
         router::init_module_test();
         let integrator_addr = signer::address_of(integrator_acct);
@@ -347,7 +353,7 @@ module router::router_test {
     }
     
     #[test(integrator_acct = @0x123, tx1 = @0x456, tx2 = @0x789)]
-    #[expected_failure]
+    #[expected_failure(abort_code = bitmap::E_ALREADY_DISABLED, location = bitmap)]
     public fun pick_up_message_twice_fails(integrator_acct: &signer, tx1: &signer, tx2: &signer) {
         router::init_module_test();
         let integrator_addr = signer::address_of(integrator_acct);
@@ -367,7 +373,7 @@ module router::router_test {
     }
 
     #[test(integrator_acct = @0x123, tx1 = @0x456)]
-    #[expected_failure]
+    #[expected_failure(abort_code = 25863, location = table)]
     public fun get_outbox_message_fails_after_last_pickup(integrator_acct: &signer, tx1: &signer) {
         router::init_module_test();
         let integrator_addr = signer::address_of(integrator_acct);
@@ -400,19 +406,19 @@ module router::router_test {
     }
 
     #[test]
-    #[expected_failure]
+    #[expected_failure(abort_code = E_INVALID_SOURCE_ADDRESS_LENGTH, location = router)]
     public fun compute_message_hash_fails_with_bad_src_addr_length() {
         router::compute_message_hash(1, x"1234", 0, 22, universal_address::from_address(@0x123).get_bytes(), PAYLOAD_HASH);
     }
 
     #[test]
-    #[expected_failure]
+    #[expected_failure(abort_code = E_INVALID_DESTINATION_ADDRESS_LENGTH, location = router)]
     public fun compute_message_hash_fails_with_bad_dst_addr_length() {
         router::compute_message_hash(1, DESTINATION_ADDR, 0, 22, x"1234", PAYLOAD_HASH);
     }
 
     #[test]
-    #[expected_failure]
+    #[expected_failure(abort_code = E_INVALID_PAYLOAD_HASH_LENGTH, location = router)]
     public fun compute_message_hash_fails_with_bad_payload_hash_length() {
         router::compute_message_hash(1, DESTINATION_ADDR, 0, 22, universal_address::from_address(@0x123).get_bytes(), x"1234");
     }
@@ -434,7 +440,7 @@ module router::router_test {
     }
 
     #[test(integrator_acct = @0x123, tx1 = @0x456)]
-    #[expected_failure]
+    #[expected_failure(abort_code = E_TRANSCEIVER_NOT_ENABLED, location = router)]
     public fun attest_message_fails_with_disabled_transceiver(integrator_acct: &signer, tx1: &signer) {
         router::init_module_test();
         let integrator_addr = signer::address_of(integrator_acct);
@@ -448,7 +454,7 @@ module router::router_test {
     }
 
     #[test(integrator_acct = @0x123, tx1 = @0x456)]
-    #[expected_failure]
+    #[expected_failure(abort_code = bitmap::E_ALREADY_ENABLED, location = bitmap)]
     public fun attest_message_twice_fails(integrator_acct: &signer, tx1: &signer) {
         router::init_module_test();
         let integrator_addr = signer::address_of(integrator_acct);
@@ -473,7 +479,7 @@ module router::router_test {
     }
 
     #[test(integrator_acct = @0x123, tx1 = @0x456)]
-    #[expected_failure]
+    #[expected_failure(abort_code = E_ALREADY_EXECUTED, location = router)]
     public fun recv_message_twice_fails(integrator_acct: &signer, tx1: &signer) {
         recv_message_test(integrator_acct, tx1);
         router::recvMessage(integrator_acct, 1, DESTINATION_ADDR, 0, 22, PAYLOAD_HASH);
@@ -493,7 +499,7 @@ module router::router_test {
     }
 
     #[test(integrator_acct = @0x123)]
-    #[expected_failure]
+    #[expected_failure(abort_code = E_ALREADY_EXECUTED, location = router)]
     public fun exec_message_twice_fails(integrator_acct: &signer) {
         exec_message_test(integrator_acct);
         router::execMessage(integrator_acct, 1, DESTINATION_ADDR, 0, 22, PAYLOAD_HASH);
@@ -508,6 +514,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     use aptos_framework::account;
     use aptos_framework::resource_account;
     use aptos_std::from_bcs;
+    use router::bitmap;
     use router::integrator;
     use router::router;
     const DEPLOYER: address = @0xcafe;
@@ -547,7 +554,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, wrong_admin = @0xdeadbeef)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_NOT_AUTHORIZED, location = integrator)]
     fun update_admin_fails_with_wrong_admin(origin_account: &signer, resource_account: &signer, wrong_admin: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -555,7 +562,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_ADMIN_TRANSFER_IN_PROGRESS, location = integrator)]
     fun update_admin_fails_with_pending_transfer(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -564,7 +571,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_INVALID_ADMIN, location = integrator)]
     fun update_admin_fails_with_zero_address(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -582,7 +589,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, wrong_admin = @0xdeadbeef)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_NOT_AUTHORIZED, location = integrator)]
     fun transfer_admin_fails_with_wrong_admin(origin_account: &signer, resource_account: &signer, wrong_admin: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -590,7 +597,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_ADMIN_TRANSFER_IN_PROGRESS, location = integrator)]
     fun transfer_admin_fails_with_pending_transfer(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -599,7 +606,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_INVALID_ADMIN, location = integrator)]
     fun transfer_admin_fails_with_zero_address(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -625,7 +632,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_NO_ADMIN_TRANSFER_IN_PROGRESS, location = integrator)]
     fun claim_admin_fails_without_pending_transfer(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -633,7 +640,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, wrong_admin = @0xbeef5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_NOT_AUTHORIZED, location = integrator)]
     fun claim_admin_fails_with_wrong_admin(origin_account: &signer, resource_account: &signer, wrong_admin: &signer) {
         transfer_admin_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -650,7 +657,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, wrong_admin = @0xdeadbeef)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_NOT_AUTHORIZED, location = integrator)]
     fun discard_admin_fails_with_wrong_admin(origin_account: &signer, resource_account: &signer, wrong_admin: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -658,7 +665,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_ADMIN_TRANSFER_IN_PROGRESS, location = integrator)]
     fun discard_admin_fails_with_pending_transfer(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -679,7 +686,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, wrong_admin = @0xdeadbeef)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_NOT_AUTHORIZED, location = integrator)]
     fun add_transceiver_fails_with_wrong_admin(origin_account: &signer, resource_account: &signer, wrong_admin: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -687,7 +694,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_ADMIN_TRANSFER_IN_PROGRESS, location = integrator)]
     fun add_transceiver_fails_with_pending_admin(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -696,7 +703,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_ALREADY_REGISTERED, location = integrator)]
     fun add_transceiver_fails_with_duplicate(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -718,7 +725,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_MAX_TRANSCEIVERS_REACHED, location = integrator)]
     fun add_transceiver_129_test(origin_account: &signer, resource_account: &signer) {
         add_transceiver_128_test(origin_account, resource_account);
         let integrator_addr = signer::address_of(resource_account);
@@ -745,7 +752,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, wrong_admin = @0xdeadbeef)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_NOT_AUTHORIZED, location = integrator)]
     fun enable_send_transceiver_fails_with_wrong_admin(origin_account: &signer, resource_account: &signer, wrong_admin: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -753,7 +760,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_ADMIN_TRANSFER_IN_PROGRESS, location = integrator)]
     fun enable_send_transceiver_fails_with_pending_admin(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -762,7 +769,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = bitmap::E_ALREADY_ENABLED, location = bitmap)]
     fun enable_send_transceiver_fails_with_enabled_transceiver(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -772,7 +779,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, wrong_admin = @0xdeadbeef)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_NOT_AUTHORIZED, location = integrator)]
     fun disable_send_transceiver_fails_with_wrong_admin(origin_account: &signer, resource_account: &signer, wrong_admin: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -780,7 +787,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_ADMIN_TRANSFER_IN_PROGRESS, location = integrator)]
     fun disable_send_transceiver_fails_with_pending_admin(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -789,7 +796,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = bitmap::E_ALREADY_DISABLED, location = bitmap)]
     fun disable_send_transceiver_fails_with_disabled_transceiver(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -816,7 +823,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, wrong_admin = @0xdeadbeef)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_NOT_AUTHORIZED, location = integrator)]
     fun enable_recv_transceiver_fails_with_wrong_admin(origin_account: &signer, resource_account: &signer, wrong_admin: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -824,7 +831,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_ADMIN_TRANSFER_IN_PROGRESS, location = integrator)]
     fun enable_recv_transceiver_fails_with_pending_admin(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -833,7 +840,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = bitmap::E_ALREADY_ENABLED, location = bitmap)]
     fun enable_recv_transceiver_fails_with_enabled_transceiver(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -843,7 +850,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5, wrong_admin = @0xdeadbeef)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_NOT_AUTHORIZED, location = integrator)]
     fun disable_recv_transceiver_fails_with_wrong_admin(origin_account: &signer, resource_account: &signer, wrong_admin: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -851,7 +858,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = integrator::E_ADMIN_TRANSFER_IN_PROGRESS, location = integrator)]
     fun disable_recv_transceiver_fails_with_pending_admin(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
@@ -860,7 +867,7 @@ module 0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5::integ
     }
 
     #[test(origin_account = @0xcafe, resource_account = @0xc3bb8488ab1a5815a9d543d7e41b0e0df46a7396f89b22821f07a4362f75ddc5)]
-    #[expected_failure]
+    #[expected_failure(abort_code = bitmap::E_ALREADY_DISABLED, location = bitmap)]
     fun disable_recv_transceiver_fails_with_disabled_transceiver(origin_account: &signer, resource_account: &signer) {
         set_up_test(origin_account, resource_account);
         let resource_addr = signer::address_of(resource_account);
