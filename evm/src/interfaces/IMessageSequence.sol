@@ -3,6 +3,6 @@ pragma solidity ^0.8.19;
 
 interface IMessageSequence {
     /// @notice Returns the next message sequence for a given sender.
-    /// @param sender The address of the sender,
+    /// @param sender The address of the sender.
     function nextMessageSequence(address sender) external view returns (uint64);
 }

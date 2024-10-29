@@ -12,7 +12,6 @@ abstract contract TransceiverRegistry {
     }
 
     /// @dev Bitmap encoding the enabled transceivers.
-    /// invariant: forall (i: uint8), enabledTransceiverBitmap & i == 1 <=> transceiverInfos[i].enabled
     struct _EnabledTransceiverBitmap {
         uint128 bitmap; // MAX_TRANSCEIVERS = 128
     }
@@ -23,7 +22,7 @@ abstract contract TransceiverRegistry {
 
     /// @notice Emitted when a transceiver is added.
     /// @dev Topic0
-    ///      0x21bd18575f35e922dfe885784f1c36fe1c055f9a74fec0e9d113930f47e14bf2
+    ///      0x21bd18575f35e922dfe885784f1c36fe1c055f9a74fec0e9d113930f47e14bf2.
     /// @param integrator The address of the integrator.
     /// @param transceiver The address of the transceiver.
     /// @param transceiversNum The current number of transceivers.
@@ -31,7 +30,7 @@ abstract contract TransceiverRegistry {
 
     /// @notice Emitted when a send side transceiver is enabled for a chain.
     /// @dev Topic0
-    ///      0x1e8617217e121e5aee2e06d784ac4dab35309adecb2a18f98eaf8c430e19a5c3
+    ///      0x1e8617217e121e5aee2e06d784ac4dab35309adecb2a18f98eaf8c430e19a5c3.
     /// @param integrator The address of the integrator.
     /// @param chain The Wormhole chain ID on which this transceiver is enabled.
     /// @param transceiver The address of the transceiver.
@@ -39,7 +38,7 @@ abstract contract TransceiverRegistry {
 
     /// @notice Emitted when a receive side transceiver is enabled for a chain.
     /// @dev Topic0
-    ///      0x3e9ae7f2b6957091d9e99a42a88cf2e8da98b142a61811ac0e9e41f2f9778fbc
+    ///      0x3e9ae7f2b6957091d9e99a42a88cf2e8da98b142a61811ac0e9e41f2f9778fbc.
     /// @param integrator The address of the integrator.
     /// @param chain The Wormhole chain ID on which this transceiver is enabled.
     /// @param transceiver The address of the transceiver.
@@ -47,7 +46,7 @@ abstract contract TransceiverRegistry {
 
     /// @notice Emitted when a send side transceiver is removed from the router.
     /// @dev Topic0
-    ///      0xb8844d856d7b255f06b1c28ae0324984a00923b2e98616302766622c20e37fac
+    ///      0xb8844d856d7b255f06b1c28ae0324984a00923b2e98616302766622c20e37fac.
     /// @param integrator The address of the integrator.
     /// @param chain The Wormhole chain ID on which this transceiver is disabled.
     /// @param transceiver The address of the transceiver.
@@ -55,7 +54,7 @@ abstract contract TransceiverRegistry {
 
     /// @notice Emitted when a receive side transceiver is removed from the router.
     /// @dev Topic0
-    ///      0x205d0d0e655937210435fc177252accf5845b3c05787d7374023e44970730d33
+    ///      0x205d0d0e655937210435fc177252accf5845b3c05787d7374023e44970730d33.
     /// @param integrator The address of the integrator.
     /// @param chain The Wormhole chain ID on which this transceiver is disabled.
     /// @param transceiver The address of the transceiver.
@@ -87,9 +86,9 @@ abstract contract TransceiverRegistry {
     /// @param transceiver The address of the transceiver.
     error NonRegisteredTransceiver(address transceiver);
 
-    /// @notice Error when attempting to use an incorrect chain
+    /// @notice Error when attempting to use an incorrect chain.
     /// @dev Selector: 0x587c94c3.
-    /// @param chain The id of the incorrect chain
+    /// @param chain The id of the incorrect chain.
     error InvalidChain(uint16 chain);
 
     /// @notice Error when attempting to register a transceiver that is already register.
@@ -105,25 +104,25 @@ abstract contract TransceiverRegistry {
     // =============== Storage ===============================================
 
     /// @dev Holds the integrator address to transceiver address to TransceiverInfo mapping.
-    ///      mapping(address => mapping(address => TransceiverInfo))
+    ///      mapping(address => mapping(address => TransceiverInfo)).
     bytes32 private constant TRANSCEIVER_INFOS_SLOT = bytes32(uint256(keccak256("registry.transceiverInfos")) - 1);
 
     /// @dev Holds send side Integrator address => Transceiver addresses mapping.
-    ///      mapping(address => address[]) across all chains
+    ///      mapping(address => address[]) across all chains.
     bytes32 private constant REGISTERED_TRANSCEIVERS_SLOT =
         bytes32(uint256(keccak256("registry.registeredTransceivers")) - 1);
 
     // =============== Send side =============================================
 
     /// @dev Holds integrator address => Chain ID => Enabled send side transceiver address[] mapping.
-    ///      mapping(address => mapping(uint16 => address[]))
+    ///      mapping(address => mapping(uint16 => address[])).
     bytes32 private constant ENABLED_SEND_TRANSCEIVER_ARRAY_SLOT =
         bytes32(uint256(keccak256("registry.sendTransceiverArray")) - 1);
 
     // =============== Recv side =============================================
 
     /// @dev Holds integrator address => Chain ID => Enabled transceiver receive side bitmap mapping.
-    ///      mapping(address => mapping(uint16 => uint128))
+    ///      mapping(address => mapping(uint16 => uint128)).
     bytes32 private constant ENABLED_RECV_TRANSCEIVER_BITMAP_SLOT =
         bytes32(uint256(keccak256("registry.recvTransceiverBitmap")) - 1);
 
@@ -176,11 +175,10 @@ abstract contract TransceiverRegistry {
 
     // =============== Modifiers ======================================================
 
-    /// @notice This modifier will revert if the transceiver is an invalid address or not registered.
-    ///         Or the chain is invalid
-    /// @param integrator The integrator address
-    /// @param chain The Wormhole chain ID
-    /// @param transceiver The transceiver address
+    /// @notice This modifier will revert if the transceiver is an invalid address, not registered, or the chain is invalid.
+    /// @param integrator The integrator address.
+    /// @param chain The Wormhole chain ID.
+    /// @param transceiver The transceiver address.
     modifier onlyRegisteredTransceiver(address integrator, uint16 chain, address transceiver) {
         if (transceiver == address(0)) {
             revert InvalidTransceiverZeroAddress();
@@ -198,10 +196,10 @@ abstract contract TransceiverRegistry {
 
     // =============== Storage Getters/Setters ========================================
 
-    /// @dev This function adds a transceiver.
-    /// @param integrator The integrator address
-    /// @param transceiver The transceiver address
-    /// @return index The index of this newly enabled transceiver
+    /// @dev Adds a transceiver.
+    /// @param integrator The integrator address.
+    /// @param transceiver The transceiver address.
+    /// @return index The index of this newly enabled transceiver.
     function _addTransceiver(address integrator, address transceiver) internal returns (uint8 index) {
         if (transceiver == address(0)) {
             revert InvalidTransceiverZeroAddress();
@@ -229,9 +227,9 @@ abstract contract TransceiverRegistry {
 
     /// @dev It is assumed that the integrator address is already validated (and not 0).
     ///      This just enables the send side transceiver.  It does not register it.
-    /// @param integrator The integrator address
-    /// @param chain The Wormhole chain ID
-    /// @param transceiver The transceiver address
+    /// @param integrator The integrator address.
+    /// @param chain The Wormhole chain ID.
+    /// @param transceiver The transceiver address.
     function _enableSendTransceiver(address integrator, uint16 chain, address transceiver)
         internal
         onlyRegisteredTransceiver(integrator, chain, transceiver)
@@ -247,9 +245,9 @@ abstract contract TransceiverRegistry {
 
     /// @dev It is assumed that the integrator address is already validated (and not 0).
     ///      This just enables the receive side transceiver.  It does not register it.
-    /// @param integrator The integrator address
-    /// @param chain The Wormhole chain ID
-    /// @param transceiver The transceiver address
+    /// @param integrator The integrator address.
+    /// @param chain The Wormhole chain ID.
+    /// @param transceiver The transceiver address.
     function _enableRecvTransceiver(address integrator, uint16 chain, address transceiver)
         internal
         onlyRegisteredTransceiver(integrator, chain, transceiver)
@@ -264,10 +262,10 @@ abstract contract TransceiverRegistry {
         emit RecvTransceiverEnabledForChain(integrator, chain, transceiver);
     }
 
-    /// @notice This function disables a send side transceiver by chain.
-    /// @param integrator The integrator address
-    /// @param chain The chain ID
-    /// @param transceiver The transceiver address
+    /// @notice Disables a send side transceiver by chain.
+    /// @param integrator The integrator address.
+    /// @param chain The chain ID.
+    /// @param transceiver The transceiver address.
     function _disableSendTransceiver(address integrator, uint16 chain, address transceiver)
         internal
         onlyRegisteredTransceiver(integrator, chain, transceiver)
@@ -300,13 +298,13 @@ abstract contract TransceiverRegistry {
         emit SendTransceiverDisabledForChain(integrator, chain, transceiver);
     }
 
-    /// @dev This function disables a receive side transceiver by chain.
-    /// @notice This function will revert under the following conditions:
-    ///         - The transceiver is the zero address
-    ///         - The transceiver is not registered
-    /// @param integrator The integrator address
-    /// @param chain The Wormhole chain ID
-    /// @param transceiver The transceiver address
+    /// @notice Disables a receive side transceiver by chain.
+    /// @dev Will revert under the following conditions:
+    ///         - The transceiver is the zero address.
+    ///         - The transceiver is not registered.
+    /// @param integrator The integrator address.
+    /// @param chain The Wormhole chain ID.
+    /// @param transceiver The transceiver address.
     function _disableRecvTransceiver(address integrator, uint16 chain, address transceiver)
         internal
         onlyRegisteredTransceiver(integrator, chain, transceiver)
@@ -335,12 +333,12 @@ abstract contract TransceiverRegistry {
         return _isSendTransceiverEnabledForChain(integrator, chain, transceiver);
     }
 
-    /// @notice Returns if the send side transceiver is enabled for the given integrator and chain.
+    /// @notice Returns whether or not the send side transceiver is enabled for the given integrator and chain.
     /// @dev This function is private and should only be called by a function that checks the validity of chain and transceiver.
-    /// @param integrator The integrator address
-    /// @param chain The Wormhole chain ID
-    /// @param transceiver The transceiver address
-    /// @return true if the transceiver is enabled, false otherwise
+    /// @param integrator The integrator address.
+    /// @param chain The Wormhole chain ID.
+    /// @param transceiver The transceiver address.
+    /// @return true if the transceiver is enabled, false otherwise.
     function _isSendTransceiverEnabledForChain(address integrator, uint16 chain, address transceiver)
         private
         view
@@ -368,12 +366,12 @@ abstract contract TransceiverRegistry {
         return _isRecvTransceiverEnabledForChain(integrator, chain, transceiver);
     }
 
-    /// @notice Returns if the receive side transceiver is enabled for the given integrator and chain.
+    /// @notice Returns whether or not the receive side transceiver is enabled for the given integrator and chain.
     /// @dev This function is private and should only be called by a function that checks the validity of chain and transceiver.
-    /// @param integrator The integrator address
-    /// @param chain The Wormhole chain ID
-    /// @param transceiver The transceiver address
-    /// @return true if the transceiver is enabled, false otherwise
+    /// @param integrator The integrator address.
+    /// @param chain The Wormhole chain ID.
+    /// @param transceiver The transceiver address.
+    /// @return true if the transceiver is enabled, false otherwise.
     function _isRecvTransceiverEnabledForChain(address integrator, uint16 chain, address transceiver)
         private
         view
@@ -384,9 +382,10 @@ abstract contract TransceiverRegistry {
         return (bitmap & uint128(1 << index)) > 0;
     }
 
-    /// @param integrator The integrator address
-    /// @param chain The Wormhole chain ID
-    /// @return array The array of the send side transceivers enabled for this integrator and chain
+    /// @notice Returns the array of send side transceivers enabled for this integrator and chain.
+    /// @param integrator The integrator address.
+    /// @param chain The Wormhole chain ID.
+    /// @return array The array of the send side transceivers enabled for this integrator and chain.
     function _getEnabledSendTransceiversArrayForChain(address integrator, uint16 chain)
         internal
         view
@@ -399,9 +398,10 @@ abstract contract TransceiverRegistry {
         array = _getPerChainSendTransceiverArrayStorage()[integrator][chain];
     }
 
-    /// @param integrator The integrator address
-    /// @param chain The Wormhole chain ID
-    /// @return bitmap The bitmap of the send side transceivers enabled for this integrator and chain
+    /// @notice Returns the bitmap of the receive side transceivers enabled for this integrator and chain.
+    /// @param integrator The integrator address.
+    /// @param chain The Wormhole chain ID.
+    /// @return bitmap The bitmap of the send side transceivers enabled for this integrator and chain.
     function _getEnabledRecvTransceiversBitmapForChain(address integrator, uint16 chain)
         internal
         view
@@ -417,16 +417,16 @@ abstract contract TransceiverRegistry {
     // =============== EXTERNAL FUNCTIONS ========================================
 
     /// @notice Returns all the registered transceiver addresses for the given integrator.
-    /// @param integrator The integrator address
-    /// @return result The registered transceivers for the given integrator
+    /// @param integrator The integrator address.
+    /// @return result The registered transceivers for the given integrator.
     function getTransceivers(address integrator) external view returns (address[] memory result) {
         result = _getRegisteredTransceiversStorage()[integrator];
     }
 
     /// @notice Returns the queried transceiver addresses.
-    /// @param integrator The integrator address
-    /// @param index The index into the integrator's transceivers array
-    /// @return result The registered transceiver address
+    /// @param integrator The integrator address.
+    /// @param index The index into the integrator's transceivers array.
+    /// @return result The registered transceiver address.
     function getTransceiverByIndex(address integrator, uint8 index) external view returns (address result) {
         result = _getRegisteredTransceiversStorage()[integrator][index];
     }
@@ -434,9 +434,9 @@ abstract contract TransceiverRegistry {
     // =============== PUBLIC GETTERS ========================================
 
     /// @notice Returns the queried transceiver's index.
-    /// @param integrator The integrator address
-    /// @param transceiver The address of this transceiver
-    /// @return result The registered transceiver index
+    /// @param integrator The integrator address.
+    /// @param transceiver The address of this transceiver.
+    /// @return result The registered transceiver index.
     function getTransceiverIndex(address integrator, address transceiver) external view returns (uint8 result) {
         TransceiverInfo storage info = _getTransceiverInfosStorage()[integrator][transceiver];
         if (!info.registered) {
@@ -446,9 +446,9 @@ abstract contract TransceiverRegistry {
     }
 
     /// @notice Returns the enabled send side transceiver addresses for the given integrator.
-    /// @param integrator The integrator address
-    /// @param chain The Wormhole chain ID for the desired transceivers
-    /// @return result The enabled send side transceivers for the given integrator and chain
+    /// @param integrator The integrator address.
+    /// @param chain The Wormhole chain ID for the desired transceivers.
+    /// @return result The enabled send side transceivers for the given integrator and chain.
     function getSendTransceiversByChain(address integrator, uint16 chain)
         public
         view
@@ -461,9 +461,9 @@ abstract contract TransceiverRegistry {
     }
 
     /// @notice Returns the enabled receive side transceiver addresses for the given integrator.
-    /// @param integrator The integrator address
-    /// @param chain The Wormhole chain ID for the desired transceivers
-    /// @return result The enabled receive side transceivers for the given integrator
+    /// @param integrator The integrator address.
+    /// @param chain The Wormhole chain ID for the desired transceivers.
+    /// @return result The enabled receive side transceivers for the given integrator.
     function getRecvTransceiversByChain(address integrator, uint16 chain)
         public
         view
