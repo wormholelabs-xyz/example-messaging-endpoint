@@ -149,6 +149,7 @@ contract RouterTest is Test {
         router.transferAdmin(integrator, address(0));
         router.transferAdmin(integrator, address(admin));
         require(router.getAdmin(integrator) == address(newerAdmin), "updated admin address too early");
+        require(router.getPendingAdmin(integrator) == address(admin), "incorrect pending address");
         vm.expectRevert(abi.encodeWithSelector(Router.AdminTransferInProgress.selector));
         router.transferAdmin(integrator, address(admin));
         vm.expectRevert(abi.encodeWithSelector(Router.AdminTransferInProgress.selector));
