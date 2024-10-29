@@ -1,13 +1,12 @@
 module router::router {
     use aptos_framework::aptos_hash;
+    use router::bitmap;
     use router::integrator;
     use router::universal_address::{Self, UniversalAddress};
     use std::bcs;
     use std::signer;
     use std::table::{Self, Table};
     use std::vector;
-
-    const MAX_U128: u128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
     struct OutboxMessageKey has copy, drop {
         integrator_addr: address,
@@ -99,10 +98,8 @@ module router::router {
         let transceiver_addr = signer::address_of(transceiver_acct);
         let index = integrator::get_transceiver_index(integrator_addr, transceiver_addr);
         // MUST check that the Transceiver has NOT already picked up the message.
-        let bitmask = 1 << index;
-        assert!(message.outstanding_transceivers & bitmask > 0);
         // Marks the Transceiver as having picked up the message.
-        let new_outstanding_transceivers = message.outstanding_transceivers & (bitmask ^ MAX_U128);
+        let new_outstanding_transceivers = bitmap::disable(message.outstanding_transceivers, index);
         // In order to reduce integrator / user costs, upon the last enabled sending Transceiver's pickup, any outgoing message state MUST be cleared.
         if (new_outstanding_transceivers == 0) {
             let message = table::remove(&mut OutboxState[@router].outbox_messages, key);
