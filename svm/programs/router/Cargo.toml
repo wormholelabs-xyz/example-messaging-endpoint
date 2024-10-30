@@ -28,4 +28,3 @@ tokio = { workspace = true }
 solana-program-test = { workspace = true }
 solana-program-runtime = { workspace = true }
 solana-sdk = { workspace = true }
-criterion = "0.5"

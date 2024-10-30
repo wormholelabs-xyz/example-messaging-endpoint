@@ -169,6 +169,9 @@ pub mod router {
     ///     * `outbox_message` - The outbox message to pick up
     ///     * `transceiver_info` - The transceiver info account
     ///     * `transceiver_pda` - The transceiver PDA signer
+    /// * `args` - The `PickUpMessageArgs` struct containing:
+    ///     * `transceiver_program_id` - The program ID of the transceiver
+    ///     * `transceiver_pda_bump` - The bump for the transceiver PDA
     pub fn pick_up_message(ctx: Context<PickUpMessage>, args: PickUpMessageArgs) -> Result<()> {
         instructions::pick_up_message::pick_up_message(ctx, args)
     }
@@ -179,11 +182,13 @@ pub mod router {
     ///
     /// * `ctx` - The context of the instruction
     /// * `args` - The `AttestMessageArgs` struct containing:
+    ///     * `transceiver_program_id` - The program ID of the transceiver
+    ///     * `transceiver_pda_bump` - The bump for the transceiver PDA
     ///     * `src_chain` - The source chain ID
     ///     * `src_addr` - The source address
     ///     * `sequence` - The sequence number
     ///     * `dst_chain` - The destination chain ID
-    ///     * `dst_addr` - The destination address
+    ///     * `integrator_program_id` - The program ID of the integrator, aka dst_addr
     ///     * `payload_hash` - The hash of the message payload
     pub fn attest_message(ctx: Context<AttestMessage>, args: AttestMessageArgs) -> Result<()> {
         instructions::attest_message::attest_message(ctx, args)
@@ -194,12 +199,13 @@ pub mod router {
     /// # Arguments
     ///
     /// * `ctx` - The context of the instruction
-    /// * `args` - The `AttestMessageArgs` struct containing:
+    /// * `args` - The `ExecMessageArgs` struct containing:
+    ///     * `integrator_program_pda_bump` - The bump for the integrator program PDA
     ///     * `src_chain` - The source chain ID
     ///     * `src_addr` - The source address
     ///     * `sequence` - The sequence number
     ///     * `dst_chain` - The destination chain ID
-    ///     * `dst_addr` - The destination address
+    ///     * `integrator_program_id` - The program ID of the integrator, aka dst_addr
     ///     * `payload_hash` - The hash of the message payload
     pub fn exec_message(
         ctx: Context<ExecMessage>,
@@ -212,15 +218,15 @@ pub mod router {
     ///
     /// # Arguments
     ///
-    /// * `ctx` - The context of the instruction, containing the accounts involved.
-    /// * `args` - The arguments for the instruction, including:
-    ///   * `integrator_program_pda_bump`: The bump seed for the integrator program PDA.
-    ///   * `src_chain`: The source chain ID.
-    ///   * `src_addr`: The source address as a UniversalAddress.
-    ///   * `sequence`: The sequence number of the message.
-    ///   * `dst_chain`: The destination chain ID.
-    ///   * `dst_addr`: The destination address as a UniversalAddress.
-    ///   * `payload_hash`: The hash of the message payload.
+    /// * `ctx` - The context of the instruction, containing the accounts involved
+    /// * `args` - The `RecvMessageArgs` struct containing:
+    ///     * `integrator_program_pda_bump` - The bump seed for the integrator program PDA
+    ///     * `src_chain` - The source chain ID
+    ///     * `src_addr` - The source address as a UniversalAddress
+    ///     * `sequence` - The sequence number of the message
+    ///     * `dst_chain` - The destination chain ID
+    ///     * `integrator_program_id` - The program ID of the integrator, aka dst_addr
+    ///     * `payload_hash` - The hash of the message payload
     pub fn recv_message(
         ctx: Context<RecvMessage>,
         args: recv_message::RecvMessageArgs,
