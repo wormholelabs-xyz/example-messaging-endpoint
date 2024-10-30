@@ -108,7 +108,7 @@ pub struct InvokeRegister<'info> {
 
     #[account(mut)]
     /// CHECK: This account is to be checked and initialized by the router program
-    pub outbox_message_key: UncheckedAccount<'info>,
+    pub sequence_tracker: UncheckedAccount<'info>,
 
     /// The integrator program's PDA
     #[account(
@@ -130,7 +130,7 @@ impl<'info> InvokeRegister<'info> {
             payer: self.payer.to_account_info(),
             integrator_config: self.integrator_config.to_account_info(),
             integrator_program_pda: self.integrator_program_pda.to_account_info(),
-            outbox_message_key: self.outbox_message_key.to_account_info(),
+            sequence_tracker: self.sequence_tracker.to_account_info(),
             system_program: self.system_program.to_account_info(),
         };
         CpiContext::new(cpi_program, cpi_accounts)
@@ -165,7 +165,7 @@ pub struct InvokeSendMessage<'info> {
 
     #[account(mut)]
     /// CHECK: This account is checked by the router program
-    pub outbox_message_key: UncheckedAccount<'info>,
+    pub sequence_tracker: UncheckedAccount<'info>,
 
     pub router_program: Program<'info, Router>,
 
@@ -180,7 +180,7 @@ impl<'info> InvokeSendMessage<'info> {
             payer: self.payer.to_account_info(),
             integrator_chain_config: self.integrator_chain_config.to_account_info(),
             outbox_message: self.outbox_message.to_account_info(),
-            outbox_message_key: self.outbox_message_key.to_account_info(),
+            sequence_tracker: self.sequence_tracker.to_account_info(),
             system_program: self.system_program.to_account_info(),
         };
         CpiContext::new(cpi_program, cpi_accounts)
@@ -241,10 +241,6 @@ pub struct InvokeExecMessage<'info> {
     )]
     pub integrator_program_pda: SystemAccount<'info>,
 
-    /// The integrator chain config account
-    /// CHECK: This account is checked by the router program
-    pub integrator_chain_config: UncheckedAccount<'info>,
-
     /// The attestation info account
     /// CHECK: This account is checked by the router program
     #[account(mut)]
@@ -266,7 +262,6 @@ impl<'info> InvokeExecMessage<'info> {
         let cpi_accounts = router::cpi::accounts::ExecMessage {
             payer: self.payer.to_account_info(),
             integrator_program_pda: self.integrator_program_pda.to_account_info(),
-            integrator_chain_config: self.integrator_chain_config.to_account_info(),
             attestation_info: self.attestation_info.to_account_info(),
             system_program: self.system_program.to_account_info(),
         };

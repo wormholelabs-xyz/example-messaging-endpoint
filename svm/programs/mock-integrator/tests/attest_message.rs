@@ -53,7 +53,7 @@ async fn setup_test_environment() -> (
 
     // Setup transceiver
     let transceiver_program_id = mock_transceiver::id();
-    let (registered_transceiver_pda, _) =
+    let (transceiver_info_pda, _) =
         TransceiverInfo::pda(&integrator_program_id, &transceiver_program_id);
     let (transceiver_pda, _) =
         Pubkey::find_program_address(&[b"transceiver_pda"], &transceiver_program_id);
@@ -64,7 +64,7 @@ async fn setup_test_environment() -> (
         &admin,
         &payer,
         integrator_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         integrator_program_id,
         transceiver_program_id,
     )
@@ -77,7 +77,7 @@ async fn setup_test_environment() -> (
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         transceiver_program_id,
         integrator_program_id,
@@ -91,7 +91,7 @@ async fn setup_test_environment() -> (
         admin,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         chain_id,
     )
@@ -105,7 +105,7 @@ async fn test_attest_message_success() {
         _,
         _,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         chain_id,
     ) = setup_test_environment().await;
@@ -117,22 +117,12 @@ async fn test_attest_message_success() {
     let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
     let payload_hash = [3u8; 32];
 
-    let (attestation_info_pda, _) = AttestationInfo::pda(AttestationInfo::compute_message_hash(
-        src_chain,
-        src_addr,
-        sequence,
-        dst_chain,
-        dst_addr,
-        payload_hash,
-    ));
-
     let result = attest_message(
         &mut context,
         &payer,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         integrator_chain_config_pda,
-        attestation_info_pda,
         src_chain,
         src_addr,
         sequence,
@@ -145,6 +135,14 @@ async fn test_attest_message_success() {
     assert!(result.is_ok(), "attest_message failed: {:?}", result.err());
 
     // Verify the attestation info account was created and initialized correctly
+    let (attestation_info_pda, _) = AttestationInfo::pda(AttestationInfo::compute_message_hash(
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    ));
     let attestation_info: AttestationInfo =
         get_account(&mut context.banks_client, attestation_info_pda).await;
     assert_eq!(attestation_info.src_chain, src_chain);
@@ -156,7 +154,7 @@ async fn test_attest_message_success() {
 
     // Verify that the transceiver's bit is set in the attested_transceivers bitmap
     let transceiver_info: TransceiverInfo =
-        get_account(&mut context.banks_client, registered_transceiver_pda).await;
+        get_account(&mut context.banks_client, transceiver_info_pda).await;
     assert!(attestation_info
         .attested_transceivers
         .get(transceiver_info.index)
@@ -171,7 +169,7 @@ async fn test_attest_message_after_exec() {
         _,
         _,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         chain_id,
     ) = setup_test_environment().await;
@@ -183,21 +181,10 @@ async fn test_attest_message_after_exec() {
     let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
     let payload_hash = [3u8; 32];
 
-    let (attestation_info_pda, _) = AttestationInfo::pda(AttestationInfo::compute_message_hash(
-        src_chain,
-        src_addr,
-        sequence,
-        dst_chain,
-        dst_addr,
-        payload_hash,
-    ));
-
     // First execution (should succeed)
     exec_message(
         &mut context,
         &payer,
-        integrator_chain_config_pda,
-        attestation_info_pda,
         src_chain,
         src_addr,
         sequence,
@@ -211,10 +198,9 @@ async fn test_attest_message_after_exec() {
     let result = attest_message(
         &mut context,
         &payer,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         integrator_chain_config_pda,
-        attestation_info_pda,
         src_chain,
         src_addr,
         sequence,
@@ -227,6 +213,14 @@ async fn test_attest_message_after_exec() {
     assert!(result.is_ok(), "attest_message failed: {:?}", result.err());
 
     // Verify the attestation info account was created and initialized correctly
+    let (attestation_info_pda, _) = AttestationInfo::pda(AttestationInfo::compute_message_hash(
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    ));
     let attestation_info: AttestationInfo =
         get_account(&mut context.banks_client, attestation_info_pda).await;
     assert_eq!(attestation_info.src_chain, src_chain);
@@ -238,7 +232,7 @@ async fn test_attest_message_after_exec() {
 
     // Verify that the transceiver's bit is set in the attested_transceivers bitmap
     let transceiver_info: TransceiverInfo =
-        get_account(&mut context.banks_client, registered_transceiver_pda).await;
+        get_account(&mut context.banks_client, transceiver_info_pda).await;
     assert!(attestation_info
         .attested_transceivers
         .get(transceiver_info.index)
@@ -254,7 +248,7 @@ async fn test_attest_message_duplicate_attestation() {
         _,
         _,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         chain_id,
     ) = setup_test_environment().await;
@@ -266,23 +260,13 @@ async fn test_attest_message_duplicate_attestation() {
     let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
     let payload_hash = [3u8; 32];
 
-    let (attestation_info_pda, _) = AttestationInfo::pda(AttestationInfo::compute_message_hash(
-        src_chain,
-        src_addr,
-        sequence,
-        dst_chain,
-        dst_addr,
-        payload_hash,
-    ));
-
     // First attestation (should succeed)
     attest_message(
         &mut context,
         &payer,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         integrator_chain_config_pda,
-        attestation_info_pda,
         src_chain,
         src_addr,
         sequence,
@@ -297,10 +281,9 @@ async fn test_attest_message_duplicate_attestation() {
     let result = attest_message(
         &mut context,
         &payer,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         integrator_chain_config_pda,
-        attestation_info_pda,
         src_chain,
         src_addr,
         sequence,

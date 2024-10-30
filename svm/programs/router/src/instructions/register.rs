@@ -1,4 +1,4 @@
-use crate::state::{IntegratorConfig, OutboxMessageKey};
+use crate::state::{IntegratorConfig, SequenceTracker};
 use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -20,6 +20,7 @@ pub struct Register<'info> {
     pub payer: Signer<'info>,
 
     /// The IntegratorConfig account being initialized
+    /// `init` constraint checks that caller is not already registered
     #[account(
         init,
         payer = payer,
@@ -32,18 +33,18 @@ pub struct Register<'info> {
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 
-    /// The OutboxMessageKey account being initialized
+    /// The SequenceTracker account being initialized
     #[account(
         init,
         payer = payer,
-        space = 8 + OutboxMessageKey::INIT_SPACE,
+        space = 8 + SequenceTracker::INIT_SPACE,
         seeds = [
-            OutboxMessageKey::SEED_PREFIX,
+            SequenceTracker::SEED_PREFIX,
             args.integrator_program_id.as_ref(),
         ],
         bump
     )]
-    pub outbox_message_key: Account<'info, OutboxMessageKey>,
+    pub sequence_tracker: Account<'info, SequenceTracker>,
 
     /// The integrator program's PDA
     /// This makes sure that the Signer is a Integrator Program PDA Signer
@@ -86,12 +87,12 @@ pub fn register(ctx: Context<Register>, args: RegisterArgs) -> Result<()> {
         admin: Some(args.admin),
         pending_admin: None,
         integrator_program_id: args.integrator_program_id,
-        registered_transceivers: Vec::new(),
+        transceiver_infos: Vec::new(),
     });
 
-    // Initialize the OutboxMessageKey account with default values
-    ctx.accounts.outbox_message_key.set_inner(OutboxMessageKey {
-        bump: ctx.bumps.outbox_message_key,
+    // Initialize the SequenceTracker account with default values
+    ctx.accounts.sequence_tracker.set_inner(SequenceTracker {
+        bump: ctx.bumps.sequence_tracker,
         integrator_program_id: args.integrator_program_id,
         sequence: 0,
     });

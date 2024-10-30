@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use router::cpi::accounts::{AttestMessage, PickUpMessage};
+use router::instructions::{AttestMessageArgs, PickUpMessageArgs};
 use router::program::Router;
 use router::{self};
 use universal_address::UniversalAddress;
@@ -9,7 +10,6 @@ declare_id!("4ZiURKmq17KrwY3K2KxxzqttzytxQsqAcMy374QUi7tx");
 
 #[program]
 pub mod mock_transceiver {
-    use router::instructions::{AttestMessageArgs, PickUpMessageArgs};
 
     use super::*;
 
@@ -28,6 +28,7 @@ pub mod mock_transceiver {
                 .invoke_pick_up_message()
                 .with_signer(signer_seeds),
             PickUpMessageArgs {
+                transceiver_program_id: crate::id(),
                 transceiver_pda_bump: ctx.bumps.transceiver_pda,
             },
         )?;
@@ -50,13 +51,15 @@ pub mod mock_transceiver {
                 .invoke_attest_message()
                 .with_signer(signer_seeds),
             AttestMessageArgs {
+                transceiver_program_id: crate::id(),
                 transceiver_pda_bump: ctx.bumps.transceiver_pda,
                 src_chain: args.src_chain,
                 src_addr: args.src_addr,
                 sequence: args.sequence,
                 dst_chain: args.dst_chain,
-                dst_addr: args.dst_addr,
+                integrator_program_id: args.integrator_program_id,
                 payload_hash: args.payload_hash,
+                message_hash: args.message_hash,
             },
         )?;
 
@@ -115,8 +118,9 @@ pub struct InvokeAttestMessageArgs {
     pub src_addr: UniversalAddress,
     pub sequence: u64,
     pub dst_chain: u16,
-    pub dst_addr: UniversalAddress,
+    pub integrator_program_id: Pubkey,
     pub payload_hash: [u8; 32],
+    pub message_hash: [u8; 32],
 }
 
 /// Accounts struct for the invoke_attest_message instruction

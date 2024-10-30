@@ -41,4 +41,7 @@ pub enum RouterError {
 
     #[msg("Unknown Message Attestation")]
     UnknownMessageAttestation,
+
+    #[msg("Message Hash is invalid")]
+    InvalidMessageHash,
 }

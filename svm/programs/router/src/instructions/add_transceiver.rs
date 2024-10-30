@@ -22,7 +22,7 @@ pub struct AddTransceiver<'info> {
 
     /// The integrator config account
     /// This makes sure that the admin signing this ix is the one registered in the IntegratorConfig
-    /// The new registered transceiver will be pushed to the `registered_transceivers` field in
+    /// The new registered transceiver will be pushed to the `transceiver_infos` field in
     /// this account
     /// `has_one` constraint checks if admin signer is the current admin of the config
     #[account(
@@ -77,7 +77,7 @@ impl<'info> AddTransceiver<'info> {
 /// Returns `Ok(())` if the transceiver is successfully registered, or an error otherwise.
 #[access_control(AddTransceiver::validate(&ctx.accounts))]
 pub fn add_transceiver(ctx: Context<AddTransceiver>, args: AddTransceiverArgs) -> Result<()> {
-    let index = ctx.accounts.integrator_config.registered_transceivers.len() as u8;
+    let index = ctx.accounts.integrator_config.transceiver_infos.len() as u8;
 
     // Add the new transceiver to the list
     // The vector length check is in `add_transceiver`

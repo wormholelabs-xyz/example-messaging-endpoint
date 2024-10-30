@@ -3,7 +3,7 @@ use universal_address::UniversalAddress;
 
 use crate::{
     error::RouterError,
-    state::{IntegratorChainConfig, OutboxMessage, OutboxMessageKey},
+    state::{IntegratorChainConfig, OutboxMessage, SequenceTracker},
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -44,12 +44,12 @@ pub struct SendMessage<'info> {
     #[account(
         mut,
         seeds = [
-            OutboxMessageKey::SEED_PREFIX,
+            SequenceTracker::SEED_PREFIX,
             args.integrator_program_id.as_ref(),
         ],
-        bump = outbox_message_key.bump,
+        bump = sequence_tracker.bump,
     )]
-    pub outbox_message_key: Account<'info, OutboxMessageKey>,
+    pub sequence_tracker: Account<'info, SequenceTracker>,
 
     #[account(
         init,
@@ -83,7 +83,7 @@ pub struct SendMessage<'info> {
 /// # Side Effects
 ///
 /// * Initializes a new `OutboxMessage` account.
-/// * Increments the sequence number in the `OutboxMessageKey` account.
+/// * Increments the sequence number in the `SequenceTracker` account.
 pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<()> {
     // Check if there are any enabled send transceivers for destination chain
     require!(
@@ -96,12 +96,13 @@ pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<
 
     // Create and initialize the outbox message
     ctx.accounts.outbox_message.set_inner(OutboxMessage {
-        src_addr: UniversalAddress::from(ctx.accounts.integrator_program_pda.key()),
-        sequence: ctx.accounts.outbox_message_key.next_sequence(),
+        src_addr: UniversalAddress::from(args.integrator_program_id),
+        sequence: ctx.accounts.sequence_tracker.next_sequence(),
         dst_chain: args.dst_chain,
         dst_addr: args.dst_addr,
         payload_hash: args.payload_hash,
         outstanding_transceivers: ctx.accounts.integrator_chain_config.send_transceiver_bitmap,
+        refund_recipient: ctx.accounts.payer.key(),
     });
 
     Ok(())

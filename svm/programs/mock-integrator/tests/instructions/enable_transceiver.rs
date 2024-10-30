@@ -16,7 +16,7 @@ pub async fn execute_enable_transceiver(
     payer: &Keypair,
     integrator_config: Pubkey,
     integrator_chain_config: Pubkey,
-    registered_transceiver: Pubkey,
+    transceiver_info: Pubkey,
     instruction_data: Vec<u8>,
 ) -> Result<(), BanksClientError> {
     let accounts = EnableTransceiver {
@@ -24,7 +24,7 @@ pub async fn execute_enable_transceiver(
         admin: admin.pubkey(),
         integrator_config,
         integrator_chain_config,
-        registered_transceiver,
+        transceiver_info,
         system_program: solana_sdk::system_program::id(),
     };
 
@@ -42,7 +42,7 @@ pub async fn enable_recv_transceiver(
     payer: &Keypair,
     integrator_config: Pubkey,
     integrator_chain_config: Pubkey,
-    registered_transceiver: Pubkey,
+    transceiver_info: Pubkey,
     chain_id: u16,
     transceiver_program_id: Pubkey,
     integrator_program_id: Pubkey,
@@ -59,7 +59,7 @@ pub async fn enable_recv_transceiver(
         payer,
         integrator_config,
         integrator_chain_config,
-        registered_transceiver,
+        transceiver_info,
         instruction_data,
     )
     .await
@@ -71,7 +71,7 @@ pub async fn enable_send_transceiver(
     payer: &Keypair,
     integrator_config: Pubkey,
     integrator_chain_config: Pubkey,
-    registered_transceiver: Pubkey,
+    transceiver_info: Pubkey,
     chain_id: u16,
     transceiver_program_id: Pubkey,
     integrator_program_id: Pubkey,
@@ -88,7 +88,7 @@ pub async fn enable_send_transceiver(
         payer,
         integrator_config,
         integrator_chain_config,
-        registered_transceiver,
+        transceiver_info,
         instruction_data,
     )
     .await

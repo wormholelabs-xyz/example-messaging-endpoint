@@ -3,7 +3,7 @@ use universal_address::UniversalAddress;
 
 use crate::{
     error::RouterError,
-    state::{AttestationInfo, IntegratorChainConfig},
+    state::{AttestationInfo, AttestationInfoArgs},
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -13,8 +13,9 @@ pub struct ExecMessageArgs {
     pub src_addr: UniversalAddress,
     pub sequence: u64,
     pub dst_chain: u16,
-    pub dst_addr: UniversalAddress,
+    pub integrator_program_id: Pubkey,
     pub payload_hash: [u8; 32],
+    pub message_hash: [u8; 32],
 }
 
 #[derive(Accounts)]
@@ -28,20 +29,9 @@ pub struct ExecMessage<'info> {
     #[account(
         seeds = [b"router_integrator"],
         bump = args.integrator_program_pda_bump,
-        seeds::program = args.dst_addr.to_pubkey(),
+        seeds::program = args.integrator_program_id,
     )]
     pub integrator_program_pda: Signer<'info>,
-
-    /// The integrator chain config account
-    #[account(
-        seeds = [
-            IntegratorChainConfig::SEED_PREFIX,
-            args.dst_addr.to_bytes().as_ref(),
-            args.src_chain.to_be_bytes().as_ref()
-        ],
-        bump = integrator_chain_config.bump,
-    )]
-    pub integrator_chain_config: Account<'info, IntegratorChainConfig>,
 
     /// The attestation info account
     /// This account is initialized if it doesn't exist
@@ -51,14 +41,7 @@ pub struct ExecMessage<'info> {
         space = 8 + AttestationInfo::INIT_SPACE,
         seeds = [
             AttestationInfo::SEED_PREFIX,
-            &AttestationInfo::compute_message_hash(
-                args.src_chain,
-                args.src_addr,
-                args.sequence,
-                args.dst_chain,
-                args.dst_addr,
-                args.payload_hash
-            )
+            &args.message_hash
         ],
         bump
     )]
@@ -95,16 +78,19 @@ pub fn exec_message(ctx: Context<ExecMessage>, args: ExecMessageArgs) -> Result<
     require!(!attestation_info.executed, RouterError::AlreadyExecuted);
 
     // If the attestation_info is newly created, initialize it
-    if attestation_info.message_hash == [0; 32] {
-        attestation_info.set_inner(AttestationInfo::new(
-            ctx.bumps.attestation_info,
-            args.src_chain,
-            args.src_addr,
-            args.sequence,
-            args.dst_chain,
-            args.dst_addr,
-            args.payload_hash,
-        )?);
+    if attestation_info.src_chain == 0 {
+        let args = AttestationInfoArgs {
+            bump: ctx.bumps.attestation_info,
+            src_chain: args.src_chain,
+            src_addr: args.src_addr,
+            sequence: args.sequence,
+            dst_chain: args.dst_chain,
+            dst_addr: UniversalAddress::from_pubkey(&args.integrator_program_id),
+            payload_hash: args.payload_hash,
+            message_hash: args.message_hash,
+        };
+
+        attestation_info.set_inner(AttestationInfo::new(args)?);
     }
 
     // Mark the message as executed

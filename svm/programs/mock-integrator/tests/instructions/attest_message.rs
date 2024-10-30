@@ -1,5 +1,6 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
 use mock_transceiver::{accounts::InvokeAttestMessage, InvokeAttestMessageArgs};
+use router::state::AttestationInfo;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -15,9 +16,7 @@ pub async fn attest_message(
     payer: &Keypair,
     transceiver_info: Pubkey,
     transceiver_pda: Pubkey,
-
     integrator_chain_config: Pubkey,
-    attestation_info: Pubkey,
     src_chain: u16,
     src_addr: UniversalAddress,
     sequence: u64,
@@ -25,6 +24,15 @@ pub async fn attest_message(
     dst_addr: UniversalAddress,
     payload_hash: [u8; 32],
 ) -> Result<(), BanksClientError> {
+    let message_hash = AttestationInfo::compute_message_hash(
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    );
+    let (attestation_info, _) = AttestationInfo::pda(message_hash);
     let accounts = InvokeAttestMessage {
         payer: payer.pubkey(),
         transceiver_info,
@@ -40,8 +48,9 @@ pub async fn attest_message(
         src_addr,
         sequence,
         dst_chain,
-        dst_addr,
+        integrator_program_id: mock_integrator::id(),
         payload_hash,
+        message_hash,
     };
 
     let ix = Instruction {

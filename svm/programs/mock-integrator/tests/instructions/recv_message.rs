@@ -41,7 +41,7 @@ pub async fn recv_message(
         src_addr,
         sequence,
         dst_chain,
-        dst_addr,
+        integrator_program_id: mock_integrator::id(),
         payload_hash,
     };
 

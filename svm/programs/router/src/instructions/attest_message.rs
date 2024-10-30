@@ -3,18 +3,20 @@ use universal_address::UniversalAddress;
 
 use crate::{
     error::RouterError,
-    state::{AttestationInfo, IntegratorChainConfig, TransceiverInfo},
+    state::{AttestationInfo, AttestationInfoArgs, IntegratorChainConfig, TransceiverInfo},
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct AttestMessageArgs {
+    pub transceiver_program_id: Pubkey,
     pub transceiver_pda_bump: u8,
     pub src_chain: u16,
     pub src_addr: UniversalAddress,
     pub sequence: u64,
     pub dst_chain: u16,
-    pub dst_addr: UniversalAddress,
+    pub integrator_program_id: Pubkey,
     pub payload_hash: [u8; 32],
+    pub message_hash: [u8; 32],
 }
 
 #[derive(Accounts)]
@@ -24,6 +26,14 @@ pub struct AttestMessage<'info> {
     pub payer: Signer<'info>,
 
     /// The transceiver info account
+    #[account(
+        seeds = [
+            TransceiverInfo::SEED_PREFIX,
+            args.integrator_program_id.as_ref(),
+            args.transceiver_program_id.as_ref(),
+        ],
+        bump = transceiver_info.bump,
+    )]
     pub transceiver_info: Account<'info, TransceiverInfo>,
 
     /// The transceiver PDA signing account.
@@ -31,7 +41,7 @@ pub struct AttestMessage<'info> {
     #[account(
         seeds = ["transceiver_pda".as_bytes()],
         bump = args.transceiver_pda_bump,
-        seeds::program = transceiver_info.transceiver_program_id
+        seeds::program = args.transceiver_program_id
     )]
     pub transceiver_pda: Signer<'info>,
 
@@ -39,7 +49,7 @@ pub struct AttestMessage<'info> {
     #[account(
         seeds = [
             IntegratorChainConfig::SEED_PREFIX,
-            args.dst_addr.to_bytes().as_ref(),
+            args.integrator_program_id.as_ref(),
             args.src_chain.to_be_bytes().as_ref()
         ],
         bump = integrator_chain_config.bump,
@@ -53,14 +63,7 @@ pub struct AttestMessage<'info> {
         space = 8 + AttestationInfo::INIT_SPACE,
         seeds = [
             AttestationInfo::SEED_PREFIX,
-            &AttestationInfo::compute_message_hash(
-                args.src_chain,
-                args.src_addr,
-                args.sequence,
-                args.dst_chain,
-                args.dst_addr,
-                args.payload_hash
-            )
+            &args.message_hash
         ],
         bump
     )]
@@ -113,16 +116,21 @@ pub fn attest_message(ctx: Context<AttestMessage>, args: AttestMessageArgs) -> R
     );
 
     // If the attestation_info is newly created, initialize it
-    if attestation_info.message_hash == [0; 32] {
-        attestation_info.set_inner(AttestationInfo::new(
-            ctx.bumps.attestation_info,
-            args.src_chain,
-            args.src_addr,
-            args.sequence,
-            args.dst_chain,
-            args.dst_addr,
-            args.payload_hash,
-        )?);
+    // It is fine to check for initialization using `src_chain == 0` as
+    // `IntegratorChainConfig` and `AttestationInfo` can never have chain_id that is 0
+    if attestation_info.src_chain == 0 {
+        let args = AttestationInfoArgs {
+            bump: ctx.bumps.attestation_info,
+            src_chain: args.src_chain,
+            src_addr: args.src_addr,
+            sequence: args.sequence,
+            dst_chain: args.dst_chain,
+            dst_addr: UniversalAddress::from_pubkey(&args.integrator_program_id),
+            payload_hash: args.payload_hash,
+            message_hash: args.message_hash,
+        };
+
+        attestation_info.set_inner(AttestationInfo::new(args)?);
     }
 
     // Check if the Transceiver has already attested

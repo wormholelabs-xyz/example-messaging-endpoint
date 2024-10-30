@@ -16,20 +16,20 @@ async fn execute_send_message(
     integrator_program_pda: Pubkey,
     integrator_chain_config: Pubkey,
     outbox_message: &Keypair,
-    outbox_message_key: Pubkey,
+    sequence_tracker: Pubkey,
     instruction_data: Vec<u8>,
 ) -> Result<(), BanksClientError> {
     println!("Payer Pubkey: {}", payer.pubkey());
     println!("Integrator Program PDA: {}", integrator_program_pda);
     println!("Integrator Chain Config: {}", integrator_chain_config);
     println!("Outbox Message: {}", outbox_message.pubkey());
-    println!("Outbox Message Key: {}", outbox_message_key);
+    println!("Outbox Message Key: {}", sequence_tracker);
     let accounts = InvokeSendMessage {
         payer: payer.pubkey(),
         integrator_program_pda,
         integrator_chain_config,
         outbox_message: outbox_message.pubkey(),
-        outbox_message_key,
+        sequence_tracker,
         system_program: solana_sdk::system_program::id(),
         router_program: router::id(),
     };
@@ -49,7 +49,7 @@ pub async fn send_message(
     integrator_program_pda: Pubkey,
     integrator_chain_config: Pubkey,
     outbox_message: &Keypair,
-    outbox_message_key: Pubkey,
+    sequence_tracker: Pubkey,
     dst_chain: u16,
     dst_addr: UniversalAddress,
     payload_hash: [u8; 32],
@@ -68,7 +68,7 @@ pub async fn send_message(
         integrator_program_pda,
         integrator_chain_config,
         outbox_message,
-        outbox_message_key,
+        sequence_tracker,
         instruction_data,
     )
     .await

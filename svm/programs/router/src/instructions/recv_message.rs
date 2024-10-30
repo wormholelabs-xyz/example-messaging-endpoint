@@ -13,7 +13,7 @@ pub struct RecvMessageArgs {
     pub src_addr: UniversalAddress,
     pub sequence: u64,
     pub dst_chain: u16,
-    pub dst_addr: UniversalAddress,
+    pub integrator_program_id: Pubkey,
     pub payload_hash: [u8; 32],
 }
 
@@ -28,7 +28,7 @@ pub struct RecvMessage<'info> {
     #[account(
         seeds = [b"router_integrator"],
         bump = args.integrator_program_pda_bump,
-        seeds::program = args.dst_addr.to_pubkey()
+        seeds::program = args.integrator_program_id
     )]
     pub integrator_program_pda: Signer<'info>,
 
@@ -36,7 +36,7 @@ pub struct RecvMessage<'info> {
     #[account(
         seeds = [
             IntegratorChainConfig::SEED_PREFIX,
-            args.dst_addr.to_bytes().as_ref(),
+            args.integrator_program_id.as_ref(),
             args.src_chain.to_be_bytes().as_ref()
         ],
         bump = integrator_chain_config.bump,
@@ -54,7 +54,7 @@ pub struct RecvMessage<'info> {
                 args.src_addr,
                 args.sequence,
                 args.dst_chain,
-                args.dst_addr,
+                UniversalAddress::from_pubkey(&args.integrator_program_id),
                 args.payload_hash
             )
         ],

@@ -6,6 +6,7 @@ use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct PickUpMessageArgs {
+    pub transceiver_program_id: Pubkey,
     pub transceiver_pda_bump: u8,
 }
 
@@ -20,6 +21,14 @@ pub struct PickUpMessage<'info> {
 
     /// The transceiver info account
     /// This account contains index of the transceiver picking up the message
+    #[account(
+        seeds = [
+            TransceiverInfo::SEED_PREFIX,
+            outbox_message.src_addr.to_pubkey().as_ref(),
+            args.transceiver_program_id.as_ref(),
+        ],
+        bump = transceiver_info.bump,
+    )]
     pub transceiver_info: Account<'info, TransceiverInfo>,
 
     /// The transceiver PDA account, used for signing
@@ -32,7 +41,10 @@ pub struct PickUpMessage<'info> {
     pub transceiver_pda: Signer<'info>,
 
     /// The account that will receive the rent from closing the outbox message account
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = refund_recipient.key() == outbox_message.refund_recipient
+    )]
     /// CHECK: This is an account for receiving the rent refund
     pub refund_recipient: AccountInfo<'info>,
 
@@ -76,8 +88,7 @@ pub fn pick_up_message(ctx: Context<PickUpMessage>, _args: PickUpMessageArgs) ->
     // Mark the message as picked up by this transceiver
     outbox_message
         .outstanding_transceivers
-        .set(transceiver_index, false)
-        .map_err(|_| RouterError::MessageAlreadyPickedUp)?;
+        .set(transceiver_index, false)?;
 
     // Close `outbox_message` account if all transceivers have picked up the message
     if outbox_message.outstanding_transceivers.as_value() == 0 {

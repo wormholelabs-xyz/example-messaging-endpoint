@@ -7,28 +7,51 @@ jobs:
   test:
     name: Anchor Test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: svm
     steps:
+      - name: Free Disk Space (Ubuntu)
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af
+          df -h
+
       - uses: actions/checkout@v4
+
       - name: Get solana version
+        working-directory: svm
         id: solana
         run: |
           SOLANA_VERSION="$(awk '/solana_version =/ { print substr($3, 2, length($3)-2) }' Anchor.toml)"
           echo "::set-output name=version::${SOLANA_VERSION}"
+
       - name: Get anchor version
+        working-directory: svm
         id: anchor
         run: |
           ANCHOR_VERSION="$(awk '/anchor_version =/ { print substr($3, 2, length($3)-2) }' Anchor.toml)"
           echo "::set-output name=version::${ANCHOR_VERSION}"
+
       - uses: evan-gray/anchor-test@06370fbca011ee48b176211b8f858789d6c33282
         with:
           anchor-version: "${{steps.anchor.outputs.version}}"
           solana-cli-version: "${{steps.solana.outputs.version}}"
           working-directory: "svm"
 
-      - run: cargo fmt --check --all
-      - run: cargo clippy
-      - run: cargo test-sbf
-      - run: cargo test
+      - name: Format check
+        working-directory: svm
+        run: cargo fmt --check --all
+
+      - name: Clippy check
+        working-directory: svm
+        run: cargo clippy
+
+      - name: Run test-sbf
+        working-directory: svm
+        run: cargo test-sbf
+
+      - name: Run tests
+        working-directory: svm
+        run: cargo test

@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::keccak;
 use universal_address::UniversalAddress;
 
+use crate::error::RouterError;
 use crate::utils::bitmap::Bitmap;
 
 #[account]
@@ -27,11 +28,9 @@ pub struct AttestationInfo {
     pub dst_chain: u16,
 
     /// Destination address (32 bytes)
-    #[max_len(32)]
     pub dst_addr: UniversalAddress,
 
     /// Payload hash (32 bytes)
-    #[max_len(32)]
     pub payload_hash: [u8; 32],
 
     /// Replay protection flag
@@ -41,32 +40,44 @@ pub struct AttestationInfo {
     pub attested_transceivers: Bitmap,
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct AttestationInfoArgs {
+    pub bump: u8,
+    pub src_chain: u16,
+    pub src_addr: UniversalAddress,
+    pub sequence: u64,
+    pub dst_chain: u16,
+    pub dst_addr: UniversalAddress,
+    pub payload_hash: [u8; 32],
+    pub message_hash: [u8; 32],
+}
+
 impl AttestationInfo {
     /// Seed prefix for deriving AttestionInfo PDAs
     pub const SEED_PREFIX: &'static [u8] = b"attestation_info";
 
-    pub fn new(
-        bump: u8,
-        src_chain: u16,
-        src_addr: UniversalAddress,
-        sequence: u64,
-        dst_chain: u16,
-        dst_addr: UniversalAddress,
-        payload_hash: [u8; 32],
-    ) -> Result<Self> {
+    pub fn new(args: AttestationInfoArgs) -> Result<Self> {
         let mut info = Self {
-            bump,
-            src_chain,
-            src_addr,
-            sequence,
-            dst_chain,
-            dst_addr,
-            payload_hash,
+            bump: args.bump,
+            src_chain: args.src_chain,
+            src_addr: args.src_addr,
+            sequence: args.sequence,
+            dst_chain: args.dst_chain,
+            dst_addr: args.dst_addr,
+            payload_hash: args.payload_hash,
             message_hash: [0; 32],
             executed: false,
             attested_transceivers: Bitmap::new(),
         };
-        info.message_hash = info.compute_own_message_hash();
+
+        let computed_hash = info.compute_own_message_hash();
+
+        require!(
+            computed_hash == args.message_hash,
+            RouterError::InvalidMessageHash
+        );
+
+        info.message_hash = computed_hash;
         Ok(info)
     }
 
@@ -101,7 +112,7 @@ impl AttestationInfo {
     }
 
     pub fn pda(message_hash: [u8; 32]) -> (Pubkey, u8) {
-        Pubkey::find_program_address(&[Self::SEED_PREFIX, &message_hash[..]], &crate::ID)
+        Pubkey::find_program_address(&[Self::SEED_PREFIX, &message_hash], &crate::ID)
     }
 }
 

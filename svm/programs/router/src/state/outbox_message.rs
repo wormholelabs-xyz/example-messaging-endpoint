@@ -23,4 +23,7 @@ pub struct OutboxMessage {
 
     /// The bitmap of send-enabled transceivers for this destination chain that have not picked up the message
     pub outstanding_transceivers: Bitmap,
+
+    /// The recipient of the lamports when this account is closed
+    pub refund_recipient: Pubkey,
 }

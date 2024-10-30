@@ -8,7 +8,7 @@ use anchor_lang::prelude::*;
 /// tracking better.
 #[account]
 #[derive(InitSpace)]
-pub struct OutboxMessageKey {
+pub struct SequenceTracker {
     /// Bump seed for PDA derivation
     pub bump: u8,
 
@@ -20,9 +20,9 @@ pub struct OutboxMessageKey {
     pub sequence: u64,
 }
 
-impl OutboxMessageKey {
-    /// Seed prefix for deriving OutboxMessageKey PDAs
-    pub const SEED_PREFIX: &'static [u8] = b"outbox_message_key";
+impl SequenceTracker {
+    /// Seed prefix for deriving SequenceTracker PDAs
+    pub const SEED_PREFIX: &'static [u8] = b"sequence_tracker";
 
     pub fn pda(integrator_program: &Pubkey) -> (Pubkey, u8) {
         Pubkey::find_program_address(

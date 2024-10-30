@@ -14,7 +14,7 @@ use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
 use router::error::RouterError;
 use router::state::{
-    IntegratorChainConfig, IntegratorConfig, OutboxMessage, OutboxMessageKey, TransceiverInfo,
+    IntegratorChainConfig, IntegratorConfig, OutboxMessage, SequenceTracker, TransceiverInfo,
 };
 use solana_program_test::*;
 use solana_sdk::{
@@ -59,7 +59,7 @@ async fn setup_test_environment() -> (
 
     // Setup transceiver
     let transceiver_program_id = mock_transceiver::id();
-    let (registered_transceiver_pda, _) =
+    let (transceiver_info_pda, _) =
         TransceiverInfo::pda(&integrator_program_id, &transceiver_program_id);
     let (transceiver_pda, _) =
         Pubkey::find_program_address(&[b"transceiver_pda"], &transceiver_program_id);
@@ -70,7 +70,7 @@ async fn setup_test_environment() -> (
         &admin,
         &payer,
         integrator_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         integrator_program_id,
         transceiver_program_id,
     )
@@ -83,7 +83,7 @@ async fn setup_test_environment() -> (
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         transceiver_program_id,
         integrator_program_id,
@@ -97,7 +97,7 @@ async fn setup_test_environment() -> (
         admin,
         integrator_program_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         bump,
         chain_id,
@@ -114,7 +114,7 @@ async fn create_and_send_message(
     chain_id: u16,
 ) -> Keypair {
     let outbox_message = Keypair::new();
-    let (outbox_message_key_pda, _) = OutboxMessageKey::pda(&integrator_program_id);
+    let (sequence_tracker_pda, _) = SequenceTracker::pda(&integrator_program_id);
     let dst_addr = UniversalAddress::from_bytes([1u8; 32]);
     let payload_hash = [2u8; 32];
 
@@ -124,7 +124,7 @@ async fn create_and_send_message(
         integrator_program_pda,
         integrator_chain_config_pda,
         &outbox_message,
-        outbox_message_key_pda,
+        sequence_tracker_pda,
         chain_id,
         dst_addr,
         payload_hash,
@@ -143,7 +143,7 @@ async fn test_pick_up_message_success() {
         _,
         integrator_program_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         bump,
         chain_id,
@@ -165,7 +165,7 @@ async fn test_pick_up_message_success() {
         &mut context,
         &payer,
         outbox_message.pubkey(),
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         payer.pubkey(),
     )
@@ -200,7 +200,7 @@ async fn test_pick_up_message_all_already_picked_up() {
         _,
         integrator_program_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         bump,
         chain_id,
@@ -222,7 +222,7 @@ async fn test_pick_up_message_all_already_picked_up() {
         &mut context,
         &payer,
         outbox_message.pubkey(),
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         payer.pubkey(),
     )
@@ -234,7 +234,7 @@ async fn test_pick_up_message_all_already_picked_up() {
         &mut context,
         &payer,
         outbox_message.pubkey(),
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_pda,
         payer.pubkey(),
     )

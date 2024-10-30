@@ -18,7 +18,7 @@ pub struct TransceiverInfo {
     /// This is used as a seed for PDA derivation
     pub transceiver_program_id: Pubkey,
 
-    /// Index of the transceiver with respect to the registered_transceiver vector in
+    /// Index of the transceiver with respect to the transceiver_info vector in
     /// IntegratorConfig
     pub index: u8,
 }

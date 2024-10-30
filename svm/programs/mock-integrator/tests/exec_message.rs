@@ -20,7 +20,7 @@ use solana_sdk::{
 };
 use universal_address::UniversalAddress;
 
-async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubkey, Pubkey, u16) {
+async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubkey, u16) {
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
     let admin = Keypair::new();
@@ -44,7 +44,7 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubk
 
     // Setup transceiver
     let transceiver_program_id = mock_transceiver::id();
-    let (registered_transceiver_pda, _) =
+    let (transceiver_info_pda, _) =
         TransceiverInfo::pda(&integrator_program_id, &transceiver_program_id);
     let (transceiver_pda, _) =
         Pubkey::find_program_address(&[b"transceiver_pda"], &transceiver_program_id);
@@ -55,7 +55,7 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubk
         &admin,
         &payer,
         integrator_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         integrator_program_id,
         transceiver_program_id,
     )
@@ -68,7 +68,7 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubk
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         transceiver_program_id,
         integrator_program_id,
@@ -76,20 +76,12 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubk
     .await
     .unwrap();
 
-    (
-        context,
-        payer,
-        admin,
-        integrator_config_pda,
-        integrator_chain_config_pda,
-        chain_id,
-    )
+    (context, payer, admin, integrator_config_pda, chain_id)
 }
 
 #[tokio::test]
 async fn test_exec_message_success() {
-    let (mut context, payer, _, _, integrator_chain_config_pda, chain_id) =
-        setup_test_environment().await;
+    let (mut context, payer, _, _, chain_id) = setup_test_environment().await;
 
     let src_chain: u16 = chain_id;
     let src_addr = UniversalAddress::from_bytes([1u8; 32]);
@@ -98,20 +90,9 @@ async fn test_exec_message_success() {
     let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
     let payload_hash = [3u8; 32];
 
-    let (attestation_info_pda, _) = AttestationInfo::pda(AttestationInfo::compute_message_hash(
-        src_chain,
-        src_addr,
-        sequence,
-        dst_chain,
-        dst_addr,
-        payload_hash,
-    ));
-
     let result = exec_message(
         &mut context,
         &payer,
-        integrator_chain_config_pda,
-        attestation_info_pda,
         src_chain,
         src_addr,
         sequence,
@@ -124,6 +105,14 @@ async fn test_exec_message_success() {
     assert!(result.is_ok(), "exec_message failed: {:?}", result.err());
 
     // Verify the attestation info account was created and initialized correctly
+    let (attestation_info_pda, _) = AttestationInfo::pda(AttestationInfo::compute_message_hash(
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    ));
     let attestation_info: AttestationInfo =
         get_account(&mut context.banks_client, attestation_info_pda).await;
     assert_eq!(attestation_info.src_chain, src_chain);
@@ -137,8 +126,7 @@ async fn test_exec_message_success() {
 
 #[tokio::test]
 async fn test_exec_message_duplicate_execution() {
-    let (mut context, payer, _, _, integrator_chain_config_pda, chain_id) =
-        setup_test_environment().await;
+    let (mut context, payer, _, _, chain_id) = setup_test_environment().await;
 
     let src_chain: u16 = chain_id;
     let src_addr = UniversalAddress::from_bytes([1u8; 32]);
@@ -147,21 +135,10 @@ async fn test_exec_message_duplicate_execution() {
     let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
     let payload_hash = [3u8; 32];
 
-    let (attestation_info_pda, _) = AttestationInfo::pda(AttestationInfo::compute_message_hash(
-        src_chain,
-        src_addr,
-        sequence,
-        dst_chain,
-        dst_addr,
-        payload_hash,
-    ));
-
     // First execution (should succeed)
     exec_message(
         &mut context,
         &payer,
-        integrator_chain_config_pda,
-        attestation_info_pda,
         src_chain,
         src_addr,
         sequence,
@@ -176,8 +153,6 @@ async fn test_exec_message_duplicate_execution() {
     let result = exec_message(
         &mut context,
         &payer,
-        integrator_chain_config_pda,
-        attestation_info_pda,
         src_chain,
         src_addr,
         sequence,

@@ -12,7 +12,7 @@ use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
 use router::error::RouterError;
 use router::state::{
-    IntegratorChainConfig, IntegratorConfig, OutboxMessage, OutboxMessageKey, TransceiverInfo,
+    IntegratorChainConfig, IntegratorConfig, OutboxMessage, SequenceTracker, TransceiverInfo,
 };
 use solana_program_test::*;
 use solana_sdk::{
@@ -49,7 +49,7 @@ async fn initialize_test_environment(
         IntegratorChainConfig::pda(&integrator_program_id, chain_id);
 
     let transceiver_program_id = Keypair::new().pubkey();
-    let (registered_transceiver_pda, _) =
+    let (transceiver_info_pda, _) =
         TransceiverInfo::pda(&integrator_program_id, &transceiver_program_id);
 
     // Add and enable transceiver
@@ -58,7 +58,7 @@ async fn initialize_test_environment(
         &admin,
         &payer,
         integrator_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         integrator_program_id,
         transceiver_program_id,
     )
@@ -71,7 +71,7 @@ async fn initialize_test_environment(
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         transceiver_program_id,
         integrator_program_id,
@@ -85,7 +85,7 @@ async fn initialize_test_environment(
         integrator_config_pda,
         integrator_chain_config_pda,
         integrator_program_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         bump,
         chain_id,
     )
@@ -102,7 +102,7 @@ async fn test_send_message_success() {
         _integrator_config_pda,
         integrator_chain_config_pda,
         integrator_program_pda,
-        _registered_transceiver_pda,
+        _transceiver_info_pda,
         bump,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
@@ -110,7 +110,7 @@ async fn test_send_message_success() {
     let dst_addr = UniversalAddress::from_bytes([1u8; 32]);
     let payload_hash = [2u8; 32];
 
-    let (outbox_message_key_pda, _) = OutboxMessageKey::pda(&integrator_program_id);
+    let (sequence_tracker_pda, _) = SequenceTracker::pda(&integrator_program_id);
     let outbox_message = Keypair::new();
 
     let result = send_message(
@@ -119,7 +119,7 @@ async fn test_send_message_success() {
         integrator_program_pda,
         integrator_chain_config_pda,
         &outbox_message,
-        outbox_message_key_pda,
+        sequence_tracker_pda,
         chain_id,
         dst_addr,
         payload_hash,
@@ -133,7 +133,7 @@ async fn test_send_message_success() {
         get_account(&mut context.banks_client, outbox_message.pubkey()).await;
     assert_eq!(
         outbox_msg.src_addr,
-        UniversalAddress::from(integrator_program_pda)
+        UniversalAddress::from(mock_integrator::id())
     );
     assert_eq!(outbox_msg.sequence, 0);
     assert_eq!(outbox_msg.dst_chain, chain_id);
@@ -153,14 +153,14 @@ async fn test_send_message_increments_sequence() {
         _integrator_config_pda,
         integrator_chain_config_pda,
         integrator_program_pda,
-        _registered_transceiver_pda,
+        _transceiver_info_pda,
         bump,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
 
     let dst_addr = UniversalAddress::from_bytes([1u8; 32]);
     let payload_hash = [2u8; 32];
-    let (outbox_message_key_pda, _) = OutboxMessageKey::pda(&integrator_program_id);
+    let (sequence_tracker_pda, _) = SequenceTracker::pda(&integrator_program_id);
 
     // Send first message
     let outbox_message_1 = Keypair::new();
@@ -170,7 +170,7 @@ async fn test_send_message_increments_sequence() {
         integrator_program_pda,
         integrator_chain_config_pda,
         &outbox_message_1,
-        outbox_message_key_pda,
+        sequence_tracker_pda,
         chain_id,
         dst_addr,
         payload_hash,
@@ -191,7 +191,7 @@ async fn test_send_message_increments_sequence() {
         integrator_program_pda,
         integrator_chain_config_pda,
         &outbox_message_2,
-        outbox_message_key_pda,
+        sequence_tracker_pda,
         chain_id,
         dst_addr,
         payload_hash,
@@ -205,9 +205,9 @@ async fn test_send_message_increments_sequence() {
     assert_eq!(outbox_msg_2.sequence, 1);
 
     // Verify the sequence key was incremented
-    let outbox_message_key: OutboxMessageKey =
-        get_account(&mut context.banks_client, outbox_message_key_pda).await;
-    assert_eq!(outbox_message_key.sequence, 2); // Next available sequence
+    let sequence_tracker: SequenceTracker =
+        get_account(&mut context.banks_client, sequence_tracker_pda).await;
+    assert_eq!(sequence_tracker.sequence, 2); // Next available sequence
 }
 
 #[tokio::test]
@@ -239,7 +239,7 @@ async fn test_send_message_no_enabled_transceivers() {
 
     let dst_addr = UniversalAddress::from_bytes([1u8; 32]);
     let payload_hash = [2u8; 32];
-    let (outbox_message_key_pda, _) = OutboxMessageKey::pda(&integrator_program_id);
+    let (sequence_tracker_pda, _) = SequenceTracker::pda(&integrator_program_id);
     let outbox_message = Keypair::new();
 
     let result = send_message(
@@ -248,7 +248,7 @@ async fn test_send_message_no_enabled_transceivers() {
         integrator_program_pda,
         integrator_chain_config_pda,
         &outbox_message,
-        outbox_message_key_pda,
+        sequence_tracker_pda,
         chain_id,
         dst_addr,
         payload_hash,
@@ -272,7 +272,7 @@ async fn test_send_message_unregistered_chain() {
         _integrator_config_pda,
         _integrator_chain_config_pda,
         integrator_program_pda,
-        _registered_transceiver_pda,
+        _transceiver_info_pda,
         bump,
         _chain_id,
     ) = initialize_test_environment(&mut context).await;
@@ -284,7 +284,7 @@ async fn test_send_message_unregistered_chain() {
 
     let dst_addr = UniversalAddress::from_bytes([1u8; 32]);
     let payload_hash = [2u8; 32];
-    let (outbox_message_key_pda, _) = OutboxMessageKey::pda(&integrator_program_id);
+    let (sequence_tracker_pda, _) = SequenceTracker::pda(&integrator_program_id);
     let outbox_message = Keypair::new();
 
     let result = send_message(
@@ -293,7 +293,7 @@ async fn test_send_message_unregistered_chain() {
         integrator_program_pda,
         unregistered_chain_config_pda,
         &outbox_message,
-        outbox_message_key_pda,
+        sequence_tracker_pda,
         unregistered_chain_id,
         dst_addr,
         payload_hash,

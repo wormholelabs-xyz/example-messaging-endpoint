@@ -16,14 +16,14 @@ async fn execute_disable_transceiver(
     payer: &Keypair,
     integrator_config: Pubkey,
     integrator_chain_config: Pubkey,
-    registered_transceiver: Pubkey,
+    transceiver_info: Pubkey,
     instruction_data: Vec<u8>,
 ) -> Result<(), BanksClientError> {
     let accounts = DisableTransceiver {
         admin: admin.pubkey(),
         integrator_config,
         integrator_chain_config,
-        registered_transceiver,
+        transceiver_info,
     };
 
     let ix = Instruction {
@@ -40,7 +40,7 @@ pub async fn disable_recv_transceiver(
     payer: &Keypair,
     integrator_config: Pubkey,
     integrator_chain_config: Pubkey,
-    registered_transceiver: Pubkey,
+    transceiver_info: Pubkey,
     chain_id: u16,
     transceiver_program_id: Pubkey,
     integrator_program_id: Pubkey,
@@ -57,7 +57,7 @@ pub async fn disable_recv_transceiver(
         payer,
         integrator_config,
         integrator_chain_config,
-        registered_transceiver,
+        transceiver_info,
         instruction_data,
     )
     .await
@@ -69,7 +69,7 @@ pub async fn disable_send_transceiver(
     payer: &Keypair,
     integrator_config: Pubkey,
     integrator_chain_config: Pubkey,
-    registered_transceiver: Pubkey,
+    transceiver_info: Pubkey,
     chain_id: u16,
     transceiver_program_id: Pubkey,
     integrator_program_id: Pubkey,
@@ -86,7 +86,7 @@ pub async fn disable_send_transceiver(
         payer,
         integrator_config,
         integrator_chain_config,
-        registered_transceiver,
+        transceiver_info,
         instruction_data,
     )
     .await
