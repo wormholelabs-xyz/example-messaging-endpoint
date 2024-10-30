@@ -23,12 +23,12 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
 
     /// @dev Wormhole chain ID that the Router is deployed on.
     /// This chain ID is formatted Wormhole Chain IDs -- https://docs.wormhole.com/wormhole/reference/constants.
-    uint16 public immutable ourChainId;
+    uint16 public immutable ourChain;
 
     // =============== Setup =================================================================
 
-    constructor(uint16 _ourChainId) {
-        ourChainId = _ourChainId;
+    constructor(uint16 _ourChain) {
+        ourChain = _ourChain;
     }
 
     // =============== Events ================================================================
@@ -414,7 +414,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         }
 
         emit MessageSent(
-            computeMessageDigest(ourChainId, sender, sequence, dstChain, dstAddr, payloadHash),
+            computeMessageDigest(ourChain, sender, sequence, dstChain, dstAddr, payloadHash),
             sender,
             sequence,
             dstAddr,
@@ -435,7 +435,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         address integrator = dstAddr.toAddress();
 
         // sanity check that destinationChain is this chain
-        if (dstChain != ourChainId) {
+        if (dstChain != ourChain) {
             revert InvalidDestinationChain();
         }
 
@@ -486,7 +486,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         bytes32 payloadHash
     ) external payable returns (uint128 enabledBitmap, uint128 attestedBitmap) {
         // sanity check that dstChain is this chain
-        if (dstChain != ourChainId) {
+        if (dstChain != ourChain) {
             revert InvalidDestinationChain();
         }
 
@@ -526,13 +526,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         returns (uint128 enabledBitmap, uint128 attestedBitmap, bool executed)
     {
         return _getMessageStatus(
-            srcChain,
-            srcAddr,
-            sequence,
-            ourChainId,
-            UniversalAddressLibrary.fromAddress(msg.sender),
-            msg.sender,
-            payloadHash
+            srcChain, srcAddr, sequence, UniversalAddressLibrary.fromAddress(msg.sender), msg.sender, payloadHash
         );
     }
 
@@ -541,14 +535,10 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         uint16 srcChain,
         UniversalAddress srcAddr,
         uint64 sequence,
-        uint16 dstChain,
         UniversalAddress dstAddr,
         bytes32 payloadHash
     ) external view returns (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) {
-        if (dstChain != ourChainId) {
-            revert InvalidDestinationChain();
-        }
-        return _getMessageStatus(srcChain, srcAddr, sequence, dstChain, dstAddr, dstAddr.toAddress(), payloadHash);
+        return _getMessageStatus(srcChain, srcAddr, sequence, dstAddr, dstAddr.toAddress(), payloadHash);
     }
 
     /// @inheritdoc IRouterIntegrator
@@ -560,7 +550,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         UniversalAddress dstAddr,
         bytes32 payloadHash
     ) external {
-        if (dstChain != ourChainId) {
+        if (dstChain != ourChain) {
             revert InvalidDestinationChain();
         }
         // compute the message digest
@@ -593,7 +583,6 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     /// @param srcChain The Wormhole chain ID of the sender.
     /// @param srcAddr The universal address of the peer on the sending chain.
     /// @param sequence The sequence number of the message (per integrator).
-    /// @param dstChain The Wormhole chain ID of the destination.
     /// @param dstUAddr The destination universal address of the message.
     /// @param dstAddr The destination address of the message.
     /// @param payloadHash The keccak256 of payload from the integrator
@@ -604,16 +593,13 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         uint16 srcChain,
         UniversalAddress srcAddr,
         uint64 sequence,
-        uint16 dstChain,
         UniversalAddress dstUAddr,
         address dstAddr,
         bytes32 payloadHash
     ) internal view returns (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) {
-        // sanity check that dstChain is this chain
-
         enabledBitmap = _getEnabledRecvTransceiversBitmapForChain(dstAddr, srcChain);
         // compute the message digest
-        bytes32 messageDigest = computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstUAddr, payloadHash);
+        bytes32 messageDigest = computeMessageDigest(srcChain, srcAddr, sequence, ourChain, dstUAddr, payloadHash);
 
         AttestationInfo storage attestationInfo = _getAttestationInfoStorage()[dstAddr][messageDigest];
 

@@ -61,7 +61,6 @@ interface IRouterIntegrator is IMessageSequence {
     /// @param srcChain The Wormhole chain ID of the sender.
     /// @param srcAddr The universal address of the message.
     /// @param sequence The sequence number of the message.
-    /// @param dstChain The Wormhole chain ID of the destination.
     /// @param dstAddr The destination address of the message.
     /// @param payloadHash The keccak256 of payload from the integrator.
     /// @return (uint128, uint128, bool) The enabled bitmap, the attested bitmap, if the message was executed.
@@ -69,7 +68,6 @@ interface IRouterIntegrator is IMessageSequence {
         uint16 srcChain,
         UniversalAddress srcAddr,
         uint64 sequence,
-        uint16 dstChain,
         UniversalAddress dstAddr,
         bytes32 payloadHash
     ) external returns (uint128, uint128, bool);
