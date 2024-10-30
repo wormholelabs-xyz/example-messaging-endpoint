@@ -9,20 +9,9 @@ import {TransceiverRegistry} from "../src/TransceiverRegistry.sol";
 import {ITransceiver} from "../src/interfaces/ITransceiver.sol";
 
 contract RouterImpl is Router {
-    uint16 public constant OurChainId = 42;
+    uint16 public constant OurChainId = 0x2714;
 
     constructor() Router(OurChainId) {}
-
-    function myComputeMessageHash(
-        uint16 sourceChain,
-        UniversalAddress srcAddr,
-        uint64 sequence,
-        uint16 destinationChain,
-        UniversalAddress dstAddr,
-        bytes32 payloadHash
-    ) public pure returns (bytes32) {
-        return _computeMessageDigest(sourceChain, srcAddr, sequence, destinationChain, dstAddr, payloadHash);
-    }
 }
 
 // This contract does send/receive operations
@@ -80,7 +69,7 @@ contract TransceiverImpl is ITransceiver {
 }
 
 contract RouterTest is Test {
-    uint16 constant OurChainId = 42;
+    uint16 constant OurChainId = 0x2714;
 
     RouterImpl public router;
     TransceiverImpl public transceiverImpl;
@@ -472,11 +461,15 @@ contract RouterTest is Test {
         vm.startPrank(integrator);
         router.register(admin);
 
-        // No transceivers should revert.
+        // Nothing is attested, yet.
         vm.startPrank(integrator);
-        router.getMessageStatus(2, sourceIntegrator, 1, OurChainId, destIntegrator, messageHash);
+        (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) =
+            router.getMessageStatus(2, sourceIntegrator, 1, destIntegrator, messageHash);
+        require(enabledBitmap == 0, "Enabled bitmap is wrong1");
+        require(attestedBitmap == 0, "Attested bitmap is wrong1");
+        require(executed == false, "executed flag is wrong1");
 
-        // Now enable some transceivers so we can attest. Receive doesn't use the transceivers.
+        // Now enable some transceivers so we can attest.
         vm.startPrank(admin);
         router.addTransceiver(integrator, address(transceiver1));
         router.enableRecvTransceiver(integrator, 2, address(transceiver1));
@@ -485,32 +478,72 @@ contract RouterTest is Test {
         router.addTransceiver(integrator, address(transceiver3));
         router.enableRecvTransceiver(integrator, 3, address(transceiver3));
 
-        // Only an integrator can call receive.
         vm.startPrank(userB);
-        router.getMessageStatus(2, sourceIntegrator, 1, OurChainId, destIntegrator, messageHash);
+        (enabledBitmap, attestedBitmap, executed) =
+            router.getMessageStatus(2, sourceIntegrator, 1, destIntegrator, messageHash);
+        // 00000011 bitmap = 3 decimal
+        require(enabledBitmap == 3, "Enabled bitmap is wrong2");
+        require(attestedBitmap == 0, "Attested bitmap is wrong2");
+        require(executed == false, "executed flag is wrong2");
 
-        // Receiving a message destined for the wrong chain should revert.
+        // Should get the same values as above
         vm.startPrank(integrator);
-        vm.expectRevert(abi.encodeWithSelector(Router.InvalidDestinationChain.selector));
-        router.getMessageStatus(2, sourceIntegrator, 1, OurChainId + 1, destIntegrator, messageHash);
+        (enabledBitmap, attestedBitmap, executed) =
+            router.getMessageStatus(2, sourceIntegrator, 1, destIntegrator, messageHash);
+        require(enabledBitmap == 3, "Enabled bitmap is wrong4");
+        require(attestedBitmap == 0, "Attested bitmap is wrong4");
+        require(executed == false, "executed flag is wrong4");
 
-        // Receiving before there are any attestations should revert.
-        vm.startPrank(integrator);
-        // vm.expectRevert(abi.encodeWithSelector(Router.UnknownMessageAttestation.selector));
-        router.getMessageStatus(2, sourceIntegrator, 1, OurChainId, destIntegrator, messageHash);
-
-        // Attest so we can receive.
+        // Attest
         vm.startPrank(address(transceiver2));
         router.attestMessage(2, sourceIntegrator, 1, OurChainId, destIntegrator, messageHash);
 
-        // This receive should work.
+        // Should now have a non zero value for attested bitmap
         vm.startPrank(integrator);
-        (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) =
-            router.getMessageStatus(2, sourceIntegrator, 1, OurChainId, destIntegrator, messageHash);
+        (enabledBitmap, attestedBitmap, executed) =
+            router.getMessageStatus(2, sourceIntegrator, 1, destIntegrator, messageHash);
+        require(enabledBitmap == 3, "Enabled bitmap is wrong5");
+        // 00000010 bitmap = 2 decimal
+        require(attestedBitmap == 2, "Attested bitmap is wrong5");
+        require(executed == false, "executed flag is wrong5");
 
-        // Make sure it return the right bitmaps.
-        require(enabledBitmap == 0x03, "Enabled bitmap is wrong");
-        require(attestedBitmap == 0x02, "Attested bitmap is wrong");
+        // Test the second version of getMessageStatus.
+        (enabledBitmap, attestedBitmap, executed) = router.getMessageStatus(2, sourceIntegrator, 1, messageHash);
+        require(enabledBitmap == 3, "Enabled bitmap is wrong6");
+        require(attestedBitmap == 2, "Attested bitmap is wrong6");
+        require(executed == false, "executed flag is wrong6");
+    }
+
+    function test_realScenario() public {
+        uint16 srcChain = 0x2712;
+        UniversalAddress srcAddr =
+            UniversalAddressLibrary.fromBytes32(0x000000000000000000000000701b575d65f8ecd8de43d423ce4d6a09420da8c0);
+        uint64 sequence = 0x0000000000000000;
+        uint16 dstChain = 0x2714;
+        UniversalAddress dstAddr =
+            UniversalAddressLibrary.fromBytes32(0x000000000000000000000000949d2139d42b6122a663d3e62f1582678f1458d7);
+        bytes32 payloadHash = 0x29bf7021020ea89dbd91ef52022b5a654b55ed418c9e7aba71ef3b43a51669f2;
+        address dstIntegrator = UniversalAddressLibrary.toAddress(dstAddr);
+
+        RouterImpl endpoint = new RouterImpl();
+        vm.startPrank(dstIntegrator);
+        endpoint.register(dstIntegrator);
+
+        // Register and enable recv transceiver.
+        TransceiverImpl recvTrans = new TransceiverImpl();
+        endpoint.addTransceiver(dstIntegrator, address(recvTrans));
+        endpoint.enableRecvTransceiver(dstIntegrator, srcChain, address(recvTrans));
+
+        // Dest transceiver needs to attest.
+        vm.startPrank(address(recvTrans));
+        endpoint.attestMessage(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
+
+        // Double check the parameters.
+        vm.startPrank(dstIntegrator);
+        (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) =
+            endpoint.getMessageStatus(srcChain, srcAddr, sequence, dstAddr, payloadHash);
+        require(enabledBitmap == 0x01, "Enabled bitmap is wrong");
+        require(attestedBitmap == 0x01, "Attested bitmap is wrong");
         require(executed == false, "executed flag is wrong");
     }
 
@@ -533,7 +566,6 @@ contract RouterTest is Test {
             chain1,
             UniversalAddressLibrary.fromAddress(address(userA)),
             sequence,
-            OurChainId,
             UniversalAddressLibrary.fromAddress(address(integrator)),
             messageHash
         );
@@ -559,7 +591,6 @@ contract RouterTest is Test {
             chain1,
             UniversalAddressLibrary.fromAddress(address(userA)),
             sequence,
-            OurChainId,
             UniversalAddressLibrary.fromAddress(address(integrator)),
             messageHash
         );
@@ -584,7 +615,7 @@ contract RouterTest is Test {
         uint64 sequence = 3;
         bytes32 payloadHash = keccak256("hello, world");
         bytes32 myMessageHash =
-            router.myComputeMessageHash(srcChain, sourceIntegrator, sequence, dstChain, destIntegrator, payloadHash);
+            router.computeMessageDigest(srcChain, sourceIntegrator, sequence, dstChain, destIntegrator, payloadHash);
         bytes32 expectedHash =
             keccak256(abi.encodePacked(srcChain, sourceIntegrator, sequence, dstChain, destIntegrator, payloadHash));
         require(myMessageHash == expectedHash, "Message hash is wrong");

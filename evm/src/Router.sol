@@ -22,27 +22,27 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     // =============== Immutables ============================================================
 
     /// @dev Wormhole chain ID that the Router is deployed on.
-    /// This chain ID is formatted Wormhole Chain IDs -- https://docs.wormhole.com/wormhole/reference/constants
-    uint16 public immutable ourChainId;
+    /// This chain ID is formatted Wormhole Chain IDs -- https://docs.wormhole.com/wormhole/reference/constants.
+    uint16 public immutable ourChain;
 
     // =============== Setup =================================================================
 
-    constructor(uint16 _ourChainId) {
-        ourChainId = _ourChainId;
+    constructor(uint16 _ourChain) {
+        ourChain = _ourChain;
     }
 
     // =============== Events ================================================================
 
     /// @notice Emitted when an integrator registers with the router.
     /// @dev Topic0
-    ///      0x582a4322c684b4cdebf273e2be5090d5f21476be5566a98d6a224a450447c5b4
+    ///      0x582a4322c684b4cdebf273e2be5090d5f21476be5566a98d6a224a450447c5b4.
     /// @param integrator The address of the integrator contract.
     /// @param admin The address of the admin contract.
     event IntegratorRegistered(address integrator, address admin);
 
     /// @notice Emitted when the admin is changed for an integrator.
     /// @dev Topic0
-    ///      0x9f6130d220a6021d90d78c7ed17b7cfb79f530974405b174fef75f671205513c
+    ///      0x9f6130d220a6021d90d78c7ed17b7cfb79f530974405b174fef75f671205513c.
     /// @param integrator The address of the integrator contract.
     /// @param oldAdmin The address of the old admin contract.
     /// @param newAdmin The address of the new admin contract.
@@ -50,20 +50,21 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
 
     /// @notice Emitted when an admin change request is received for an integrator.
     /// @dev Topic0
-    ///      0xcdeb0d05a920666dfd2822eb51628fff963ba0b1672f984a8b60017ed83939e4
+    ///      0xcdeb0d05a920666dfd2822eb51628fff963ba0b1672f984a8b60017ed83939e4.
     /// @param integrator The address of the integrator contract.
     /// @param oldAdmin The address of the old admin contract.
     /// @param newAdmin The address of the new admin contract.
     event AdminUpdateRequested(address integrator, address oldAdmin, address newAdmin);
 
     /// @notice Emitted when a message has been sent.
+    /// @dev Topic0
+    ///      0x1c170583317700fb71bc583fa6fdd8ff893f6c3a15a79104f1681d6d9eb708ee.
     /// @param messageDigest The keccak256 of the provided fields.  It is, also, indexed.
     /// @param sender The address of the sender.
     /// @param sequence The sequence of the message.
     /// @param recipient The address of the recipient.
     /// @param recipientChain The chainId of the recipient.
     /// @param payloadDigest The digest of the payload (from the integrator).
-    /// @dev Topic0 0x1c170583317700fb71bc583fa6fdd8ff893f6c3a15a79104f1681d6d9eb708ee
     event MessageSent(
         bytes32 indexed messageDigest,
         UniversalAddress sender,
@@ -74,6 +75,8 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     );
 
     /// @notice Emitted when a message has been attested to.
+    /// @dev Topic0
+    ///      0xb2328f51e669b73cf1831e232716eec9959360a52818a63bb1d82d900de667d8.
     /// @param messageHash The keccak256 of the message.  It is, also, indexed.
     /// @param srcChain The Wormhole chain ID of the sender.
     /// @param srcAddr The universal address of the peer on the sending chain.
@@ -83,7 +86,6 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     /// @param payloadHash The keccak256 of payload from the integrator.
     /// @param attestedBitmap Bitmap of transceivers that have attested the message.
     /// @param attestingTransceiver The address of the transceiver that attested the message.
-    /// @dev Topic0 0xb2328f51e669b73cf1831e232716eec9959360a52818a63bb1d82d900de667d8
     event MessageAttestedTo(
         bytes32 indexed messageHash,
         uint16 srcChain,
@@ -97,6 +99,8 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     );
 
     /// @notice Emitted when a message has been received.
+    /// @dev Topic0
+    ///      0xae4f20b00e13c9f1eec6c3c72ba3146c9538ca60f28c3eb57538b14965905e7d.
     /// @param messageHash The keccak256 of the message.  It is, also, indexed.
     /// @param srcChain The Wormhole chain ID of the sender.
     /// @param srcAddr The universal address of the peer on the sending chain.
@@ -106,7 +110,6 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     /// @param payloadHash The keccak256 of payload from the integrator.
     /// @param enabledBitmap Bitmap of transceivers enabled for the source chain.
     /// @param attestedBitmap Bitmap of transceivers that have attested the message.
-    /// @dev Topic0 0xae4f20b00e13c9f1eec6c3c72ba3146c9538ca60f28c3eb57538b14965905e7d
     event MessageReceived(
         bytes32 indexed messageHash,
         uint16 srcChain,
@@ -168,7 +171,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     // =============== Storage ===============================================================
 
     /// @dev Holds the integrator address to IntegratorConfig mapping.
-    ///      mapping(address => IntegratorConfig)
+    ///      mapping(address => IntegratorConfig).
     bytes32 private constant INTEGRATOR_CONFIGS_SLOT = bytes32(uint256(keccak256("router.integratorConfigs")) - 1);
 
     /// @dev Integrator address => IntegratorConfig mapping.
@@ -185,7 +188,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     }
 
     /// @dev Holds the integrator address to message digest to attestation info mapping.
-    ///      mapping(address => mapping(bytes32 => AttestationInfo)
+    ///      mapping(address => mapping(bytes32 => AttestationInfo).
     bytes32 private constant ATTESTATION_INFO_SLOT = bytes32(uint256(keccak256("router.attestationInfo")) - 1);
 
     /// @dev Integrator address => message digest -> attestation info mapping.
@@ -204,7 +207,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
 
     /// @notice Returns the admin for a given integrator.
     /// @param integrator The address of the integrator contract.
-    /// @return address The address of the administrator contract
+    /// @return address The address of the administrator contract.
     function getAdmin(address integrator) public view returns (address) {
         mapping(address => IntegratorConfig) storage integratorConfigs = _getIntegratorConfigsStorage();
         return integratorConfigs[integrator].admin;
@@ -212,13 +215,32 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
 
     /// @notice Returns the pending_admin for a given integrator.
     /// @param integrator The address of the integrator contract.
-    /// @return address The address of the pending administrator contract
+    /// @return address The address of the pending administrator contract.
     function getPendingAdmin(address integrator) public view returns (address) {
         mapping(address => IntegratorConfig) storage integratorConfigs = _getIntegratorConfigsStorage();
         return integratorConfigs[integrator].pending_admin;
     }
 
     // =============== External ==============================================================
+
+    /// @notice Computes the message digest.
+    /// @param srcChain The Wormhole chain ID of the sender.
+    /// @param srcAddr The universal address of the peer on the sending chain.
+    /// @param sequence The sequence number of the message (per integrator).
+    /// @param dstChain The Wormhole chain ID of the destination.
+    /// @param dstAddr The destination universal address of the message.
+    /// @param payloadHash The keccak256 of payload from the integrator.
+    /// @return bytes32 The keccak256 of the provided fields.
+    function computeMessageDigest(
+        uint16 srcChain,
+        UniversalAddress srcAddr,
+        uint64 sequence,
+        uint16 dstChain,
+        UniversalAddress dstAddr,
+        bytes32 payloadHash
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash));
+    }
 
     // =============== Admin functions =======================================================
 
@@ -392,7 +414,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         }
 
         emit MessageSent(
-            _computeMessageDigest(ourChainId, sender, sequence, dstChain, dstAddr, payloadHash),
+            computeMessageDigest(ourChain, sender, sequence, dstChain, dstAddr, payloadHash),
             sender,
             sequence,
             dstAddr,
@@ -413,7 +435,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         address integrator = dstAddr.toAddress();
 
         // sanity check that destinationChain is this chain
-        if (dstChain != ourChainId) {
+        if (dstChain != ourChain) {
             revert InvalidDestinationChain();
         }
 
@@ -428,7 +450,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         }
 
         // compute the message digest
-        bytes32 messageDigest = _computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
+        bytes32 messageDigest = computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
 
         AttestationInfo storage attestationInfo = _getAttestationInfoStorage()[integrator][messageDigest];
         uint128 updatedTransceivers = attestationInfo.attestedTransceivers | uint128(1 << tsInfo.index);
@@ -442,7 +464,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         // set the bit in perIntegratorAttestations[dstAddr][digest] corresponding to msg.sender
         attestationInfo.attestedTransceivers = updatedTransceivers;
         emit MessageAttestedTo(
-            _computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash),
+            computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash),
             srcChain,
             srcAddr,
             sequence,
@@ -464,7 +486,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         bytes32 payloadHash
     ) external payable returns (uint128 enabledBitmap, uint128 attestedBitmap) {
         // sanity check that dstChain is this chain
-        if (dstChain != ourChainId) {
+        if (dstChain != ourChain) {
             revert InvalidDestinationChain();
         }
 
@@ -474,7 +496,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         }
 
         // compute the message digest
-        bytes32 messageDigest = _computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
+        bytes32 messageDigest = computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
 
         AttestationInfo storage attestationInfo = _getAttestationInfoStorage()[msg.sender][messageDigest];
 
@@ -498,27 +520,25 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     }
 
     /// @inheritdoc IRouterIntegrator
+    function getMessageStatus(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash)
+        external
+        view
+        returns (uint128 enabledBitmap, uint128 attestedBitmap, bool executed)
+    {
+        return _getMessageStatus(
+            srcChain, srcAddr, sequence, UniversalAddressLibrary.fromAddress(msg.sender), msg.sender, payloadHash
+        );
+    }
+
+    /// @inheritdoc IRouterIntegrator
     function getMessageStatus(
         uint16 srcChain,
         UniversalAddress srcAddr,
         uint64 sequence,
-        uint16 dstChain,
         UniversalAddress dstAddr,
         bytes32 payloadHash
     ) external view returns (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) {
-        // sanity check that dstChain is this chain
-        if (dstChain != ourChainId) {
-            revert InvalidDestinationChain();
-        }
-        enabledBitmap = _getEnabledRecvTransceiversBitmapForChain(msg.sender, srcChain);
-        // compute the message digest
-        bytes32 messageDigest = _computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
-
-        AttestationInfo storage attestationInfo = _getAttestationInfoStorage()[msg.sender][messageDigest];
-
-        attestedBitmap = attestationInfo.attestedTransceivers;
-
-        executed = attestationInfo.executed;
+        return _getMessageStatus(srcChain, srcAddr, sequence, dstAddr, dstAddr.toAddress(), payloadHash);
     }
 
     /// @inheritdoc IRouterIntegrator
@@ -530,11 +550,11 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         UniversalAddress dstAddr,
         bytes32 payloadHash
     ) external {
-        if (dstChain != ourChainId) {
+        if (dstChain != ourChain) {
             revert InvalidDestinationChain();
         }
         // compute the message digest
-        bytes32 messageDigest = _computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
+        bytes32 messageDigest = computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
 
         AttestationInfo storage attestationInfo = _getAttestationInfoStorage()[msg.sender][messageDigest];
 
@@ -558,14 +578,33 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         _;
     }
 
-    function _computeMessageDigest(
+    /// @notice Retrieves the status of a message.
+    /// @dev This is an internal function taking an extra destination address format in order to avoid extra conversions.
+    /// @param srcChain The Wormhole chain ID of the sender.
+    /// @param srcAddr The universal address of the peer on the sending chain.
+    /// @param sequence The sequence number of the message (per integrator).
+    /// @param dstUAddr The destination universal address of the message.
+    /// @param dstAddr The destination address of the message.
+    /// @param payloadHash The keccak256 of payload from the integrator
+    /// @return enabledBitmap A bitmap indicating enabled receive transceivers for the destination address.
+    /// @return attestedBitmap A bitmap indicating attested transceivers for the message.
+    /// @return executed A boolean indicating if the message has been executed.
+    function _getMessageStatus(
         uint16 srcChain,
         UniversalAddress srcAddr,
         uint64 sequence,
-        uint16 dstChain,
-        UniversalAddress dstAddr,
+        UniversalAddress dstUAddr,
+        address dstAddr,
         bytes32 payloadHash
-    ) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash));
+    ) internal view returns (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) {
+        enabledBitmap = _getEnabledRecvTransceiversBitmapForChain(dstAddr, srcChain);
+        // compute the message digest
+        bytes32 messageDigest = computeMessageDigest(srcChain, srcAddr, sequence, ourChain, dstUAddr, payloadHash);
+
+        AttestationInfo storage attestationInfo = _getAttestationInfoStorage()[dstAddr][messageDigest];
+
+        attestedBitmap = attestationInfo.attestedTransceivers;
+
+        executed = attestationInfo.executed;
     }
 }
