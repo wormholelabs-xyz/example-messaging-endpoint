@@ -545,6 +545,9 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         UniversalAddress dstAddr,
         bytes32 payloadHash
     ) external view returns (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) {
+        if (dstChain != ourChainId) {
+            revert InvalidDestinationChain();
+        }
         return _getMessageStatus(srcChain, srcAddr, sequence, dstChain, dstAddr, dstAddr.toAddress(), payloadHash);
     }
 
@@ -607,9 +610,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         bytes32 payloadHash
     ) internal view returns (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) {
         // sanity check that dstChain is this chain
-        if (dstChain != ourChainId) {
-            revert InvalidDestinationChain();
-        }
+
         enabledBitmap = _getEnabledRecvTransceiversBitmapForChain(dstAddr, srcChain);
         // compute the message digest
         bytes32 messageDigest = computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstUAddr, payloadHash);
