@@ -27,6 +27,10 @@ impl Bitmap {
         Bitmap { map: value }
     }
 
+    pub fn as_value(&self) -> u128 {
+        self.map
+    }
+
     pub fn set(&mut self, index: u8, value: bool) -> StdResult<(), RouterError> {
         if index >= Self::BITS {
             return Err(RouterError::BitmapIndexOutOfBounds);

@@ -1,6 +1,6 @@
 #![cfg(feature = "test-sbf")]
 
-use router::state::IntegratorConfig;
+use router::state::{IntegratorConfig, SequenceTracker};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::InstructionError, signature::Keypair, signer::Signer,
@@ -46,7 +46,23 @@ async fn test_invoke_register() {
         integrator_config_data.integrator_program_id,
         mock_integrator::id()
     );
-    assert!(integrator_config_data.registered_transceivers.is_empty());
+    assert!(integrator_config_data.transceiver_infos.is_empty());
+
+    let (sequence_tracker, _) = SequenceTracker::pda(&mock_integrator::id());
+    let sequence_tracker_data: router::state::SequenceTracker =
+        get_account(&mut context.banks_client, sequence_tracker).await;
+    // Verify that the integrator program ID and sequence are correct
+    assert_eq!(
+        sequence_tracker_data.integrator_program_id,
+        mock_integrator::id(),
+        "Integrator program ID does not match"
+    );
+
+    let expected_sequence = 0;
+    assert_eq!(
+        sequence_tracker_data.sequence, expected_sequence,
+        "Sequence number is incorrect"
+    );
 }
 
 #[tokio::test]

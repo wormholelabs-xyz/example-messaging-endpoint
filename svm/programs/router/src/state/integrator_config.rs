@@ -4,7 +4,7 @@ use crate::error::RouterError;
 
 /// Manages the configuration for a specific integrator.
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace, Debug)]
 pub struct IntegratorConfig {
     /// Bump seed for PDA derivation
     pub bump: u8,
@@ -24,7 +24,7 @@ pub struct IntegratorConfig {
 
     /// Vector of registered transceiver addresses
     #[max_len(128)]
-    pub registered_transceivers: Vec<Pubkey>,
+    pub transceiver_infos: Vec<Pubkey>,
 }
 
 impl IntegratorConfig {
@@ -57,10 +57,10 @@ impl IntegratorConfig {
     /// `AccountAlreadyInUse` error will be thrown
     pub fn add_transceiver(&mut self, transceiver: Pubkey) -> Result<()> {
         require!(
-            self.registered_transceivers.len() < Self::MAX_TRANSCEIVERS,
+            self.transceiver_infos.len() < Self::MAX_TRANSCEIVERS,
             RouterError::MaxTransceiversReached
         );
-        self.registered_transceivers.push(transceiver);
+        self.transceiver_infos.push(transceiver);
         Ok(())
     }
 }

@@ -145,4 +145,92 @@ pub mod router {
     pub fn discard_admin(ctx: Context<DiscardAdmin>) -> Result<()> {
         instructions::discard_admin::discard_admin(ctx)
     }
+
+    /// Sends a message through the router
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `args` - The `SendMessageArgs` struct containing:
+    ///     * `integrator_program_id` - The program ID of the integrator
+    ///     * `integrator_program_pda_bump` - The bump for the integrator_program_pda derivation
+    ///     * `dst_chain` - The destination chain ID
+    ///     * `dst_addr` - The destination address
+    ///     * `payload_hash` - The hash of the message payload
+    pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<()> {
+        instructions::send_message::send_message(ctx, args)
+    }
+
+    /// Picks up a message from the outbox
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction containing:
+    ///     * `outbox_message` - The outbox message to pick up
+    ///     * `transceiver_info` - The transceiver info account
+    ///     * `transceiver_pda` - The transceiver PDA signer
+    /// * `args` - The `PickUpMessageArgs` struct containing:
+    ///     * `transceiver_program_id` - The program ID of the transceiver
+    ///     * `transceiver_pda_bump` - The bump for the transceiver PDA
+    pub fn pick_up_message(ctx: Context<PickUpMessage>, args: PickUpMessageArgs) -> Result<()> {
+        instructions::pick_up_message::pick_up_message(ctx, args)
+    }
+
+    /// Attests to a message
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `args` - The `AttestMessageArgs` struct containing:
+    ///     * `transceiver_program_id` - The program ID of the transceiver
+    ///     * `transceiver_pda_bump` - The bump for the transceiver PDA
+    ///     * `src_chain` - The source chain ID
+    ///     * `src_addr` - The source address
+    ///     * `sequence` - The sequence number
+    ///     * `dst_chain` - The destination chain ID
+    ///     * `integrator_program_id` - The program ID of the integrator, aka dst_addr
+    ///     * `payload_hash` - The hash of the message payload
+    pub fn attest_message(ctx: Context<AttestMessage>, args: AttestMessageArgs) -> Result<()> {
+        instructions::attest_message::attest_message(ctx, args)
+    }
+
+    /// Executes a message
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction
+    /// * `args` - The `ExecMessageArgs` struct containing:
+    ///     * `integrator_program_pda_bump` - The bump for the integrator program PDA
+    ///     * `src_chain` - The source chain ID
+    ///     * `src_addr` - The source address
+    ///     * `sequence` - The sequence number
+    ///     * `dst_chain` - The destination chain ID
+    ///     * `integrator_program_id` - The program ID of the integrator, aka dst_addr
+    ///     * `payload_hash` - The hash of the message payload
+    pub fn exec_message(
+        ctx: Context<ExecMessage>,
+        args: exec_message::ExecMessageArgs,
+    ) -> Result<()> {
+        exec_message::exec_message(ctx, args)
+    }
+
+    /// Receives a message that has been attested to.
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx` - The context of the instruction, containing the accounts involved
+    /// * `args` - The `RecvMessageArgs` struct containing:
+    ///     * `integrator_program_pda_bump` - The bump seed for the integrator program PDA
+    ///     * `src_chain` - The source chain ID
+    ///     * `src_addr` - The source address as a UniversalAddress
+    ///     * `sequence` - The sequence number of the message
+    ///     * `dst_chain` - The destination chain ID
+    ///     * `integrator_program_id` - The program ID of the integrator, aka dst_addr
+    ///     * `payload_hash` - The hash of the message payload
+    pub fn recv_message(
+        ctx: Context<RecvMessage>,
+        args: recv_message::RecvMessageArgs,
+    ) -> Result<()> {
+        recv_message::recv_message(ctx, args)
+    }
 }

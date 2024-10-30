@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 /// Each transceiver is associated with a specific integrator and has a unique ID
 /// within that integrator's context. It can be used across multiple chains.
 #[account]
-#[derive(InitSpace)]
+#[derive(InitSpace, Debug)]
 pub struct TransceiverInfo {
     /// Bump seed for PDA derivation
     pub bump: u8,
@@ -18,7 +18,7 @@ pub struct TransceiverInfo {
     /// This is used as a seed for PDA derivation
     pub transceiver_program_id: Pubkey,
 
-    /// Index of the transceiver with respect to the registered_transceiver vector in
+    /// Index of the transceiver with respect to the transceiver_info vector in
     /// IntegratorConfig
     pub index: u8,
 }

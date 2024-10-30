@@ -1,12 +1,12 @@
 [package]
-name = "mock-integrator"
+name = "mock-transceiver"
 version = "0.1.0"
 description = "Created with Anchor"
 edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
-name = "mock_integrator"
+name = "mock_transceiver"
 
 [features]
 default = []
@@ -21,10 +21,3 @@ test-sbf = ["no-entrypoint"]
 anchor-lang = { workspace = true }
 router = { workspace = true, features = ["cpi"] }
 universal-address = { workspace = true }
-
-[dev-dependencies]
-mock-transceiver = { workspace = true }
-tokio = { workspace = true }
-solana-program-test = { workspace = true }
-solana-sdk = { workspace = true }
-solana-program-runtime = { workspace = true }

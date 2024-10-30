@@ -12,16 +12,30 @@ jobs:
         working-directory: svm
     steps:
       - uses: actions/checkout@v4
+
+      - name: Free Disk Space (Ubuntu)
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af
+          df -h
+        working-directory: .
+
       - name: Get solana version
         id: solana
         run: |
           SOLANA_VERSION="$(awk '/solana_version =/ { print substr($3, 2, length($3)-2) }' Anchor.toml)"
           echo "::set-output name=version::${SOLANA_VERSION}"
+
       - name: Get anchor version
         id: anchor
         run: |
           ANCHOR_VERSION="$(awk '/anchor_version =/ { print substr($3, 2, length($3)-2) }' Anchor.toml)"
           echo "::set-output name=version::${ANCHOR_VERSION}"
+
       - uses: evan-gray/anchor-test@06370fbca011ee48b176211b8f858789d6c33282
         with:
           anchor-version: "${{steps.anchor.outputs.version}}"

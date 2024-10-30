@@ -1,4 +1,4 @@
-use crate::state::IntegratorConfig;
+use crate::state::{IntegratorConfig, SequenceTracker};
 use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -33,6 +33,19 @@ pub struct Register<'info> {
     )]
     pub integrator_config: Account<'info, IntegratorConfig>,
 
+    /// The SequenceTracker account being initialized
+    #[account(
+        init,
+        payer = payer,
+        space = 8 + SequenceTracker::INIT_SPACE,
+        seeds = [
+            SequenceTracker::SEED_PREFIX,
+            args.integrator_program_id.as_ref(),
+        ],
+        bump
+    )]
+    pub sequence_tracker: Account<'info, SequenceTracker>,
+
     /// The integrator program's PDA
     /// This makes sure that the Signer is a Integrator Program PDA Signer
     /// TODO: Ideally there is a `AccountUncheckedOwner` that does not explicitly enforce owner
@@ -48,7 +61,6 @@ pub struct Register<'info> {
     )]
     pub integrator_program_pda: Signer<'info>,
 
-    /// The System Program
     pub system_program: Program<'info, System>,
 }
 
@@ -75,7 +87,14 @@ pub fn register(ctx: Context<Register>, args: RegisterArgs) -> Result<()> {
         admin: Some(args.admin),
         pending_admin: None,
         integrator_program_id: args.integrator_program_id,
-        registered_transceivers: Vec::new(),
+        transceiver_infos: Vec::new(),
+    });
+
+    // Initialize the SequenceTracker account with default values
+    ctx.accounts.sequence_tracker.set_inner(SequenceTracker {
+        bump: ctx.bumps.sequence_tracker,
+        integrator_program_id: args.integrator_program_id,
+        sequence: 0,
     });
 
     Ok(())

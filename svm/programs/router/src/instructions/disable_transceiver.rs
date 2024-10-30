@@ -40,9 +40,9 @@ pub struct DisableTransceiver<'info> {
             args.integrator_program_id.as_ref(),
             args.transceiver_program_id.as_ref(),
         ],
-        bump = registered_transceiver.bump,
+        bump = transceiver_info.bump,
     )]
-    pub registered_transceiver: Account<'info, TransceiverInfo>,
+    pub transceiver_info: Account<'info, TransceiverInfo>,
 }
 
 impl<'info> DisableTransceiver<'info> {
@@ -66,13 +66,13 @@ pub fn disable_recv_transceiver(
     ctx: Context<DisableTransceiver>,
     _args: TransceiverInfoArgs,
 ) -> Result<()> {
-    let registered_transceiver = &ctx.accounts.registered_transceiver;
+    let transceiver_info = &ctx.accounts.transceiver_info;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
     // Check if the transceiver is already disabled
     if !integrator_chain_config
         .recv_transceiver_bitmap
-        .get(registered_transceiver.index)?
+        .get(transceiver_info.index)?
     {
         return Err(RouterError::TransceiverAlreadyDisabled.into());
     }
@@ -80,7 +80,7 @@ pub fn disable_recv_transceiver(
     // Disable the transceiver in the bitmap
     integrator_chain_config
         .recv_transceiver_bitmap
-        .set(registered_transceiver.index, false)?;
+        .set(transceiver_info.index, false)?;
 
     Ok(())
 }
@@ -100,13 +100,13 @@ pub fn disable_send_transceiver(
     ctx: Context<DisableTransceiver>,
     _args: TransceiverInfoArgs,
 ) -> Result<()> {
-    let registered_transceiver = &ctx.accounts.registered_transceiver;
+    let transceiver_info = &ctx.accounts.transceiver_info;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
     // Check if the transceiver is already disabled
     if !integrator_chain_config
         .send_transceiver_bitmap
-        .get(registered_transceiver.index)?
+        .get(transceiver_info.index)?
     {
         return Err(RouterError::TransceiverAlreadyDisabled.into());
     }
@@ -114,7 +114,7 @@ pub fn disable_send_transceiver(
     // Disable the transceiver in the bitmap
     integrator_chain_config
         .send_transceiver_bitmap
-        .set(registered_transceiver.index, false)?;
+        .set(transceiver_info.index, false)?;
 
     Ok(())
 }

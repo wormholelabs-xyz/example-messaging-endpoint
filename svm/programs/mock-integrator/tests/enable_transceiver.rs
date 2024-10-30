@@ -48,7 +48,7 @@ async fn initialize_test_environment(
 
     // Register a transceiver
     let transceiver_program_id = Keypair::new().pubkey();
-    let (registered_transceiver_pda, _) =
+    let (transceiver_info_pda, _) =
         TransceiverInfo::pda(&integrator_program_id, &transceiver_program_id);
 
     add_transceiver(
@@ -56,7 +56,7 @@ async fn initialize_test_environment(
         &admin,
         &payer,
         integrator_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         integrator_program_id,
         transceiver_program_id,
     )
@@ -68,7 +68,7 @@ async fn initialize_test_environment(
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver_program_id,
         chain_id,
     )
@@ -108,7 +108,7 @@ async fn test_enable_in_transceivers_success() {
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
@@ -121,7 +121,7 @@ async fn test_enable_in_transceivers_success() {
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         transceiver,
         integrator_program_id,
@@ -148,7 +148,7 @@ async fn test_enable_in_transceivers_multiple_sets_success() {
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
@@ -162,7 +162,7 @@ async fn test_enable_in_transceivers_multiple_sets_success() {
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         transceiver,
         integrator_program_id,
@@ -172,7 +172,7 @@ async fn test_enable_in_transceivers_multiple_sets_success() {
 
     // Register a second transceiver
     let transceiver2_address = Pubkey::new_unique();
-    let (registered_transceiver2_pda, _) =
+    let (transceiver_info2_pda, _) =
         TransceiverInfo::pda(&integrator_program_id, &transceiver2_address);
 
     add_transceiver(
@@ -180,7 +180,7 @@ async fn test_enable_in_transceivers_multiple_sets_success() {
         &admin,
         &payer,
         integrator_config_pda,
-        registered_transceiver2_pda,
+        transceiver_info2_pda,
         integrator_program_id,
         transceiver2_address,
     )
@@ -193,7 +193,7 @@ async fn test_enable_in_transceivers_multiple_sets_success() {
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver2_pda,
+        transceiver_info2_pda,
         chain_id,
         transceiver2_address,
         integrator_program_id,
@@ -222,7 +222,7 @@ async fn test_enable_out_transceivers_success() {
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
@@ -235,7 +235,7 @@ async fn test_enable_out_transceivers_success() {
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         transceiver,
         integrator_program_id,
@@ -263,7 +263,7 @@ async fn test_enable_transceiver_invalid_admin() {
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
@@ -278,7 +278,7 @@ async fn test_enable_transceiver_invalid_admin() {
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         transceiver,
         integrator_program_id,
@@ -305,7 +305,7 @@ async fn test_enable_transceiver_invalid_transceiver_id() {
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         _transceiver,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
@@ -320,7 +320,7 @@ async fn test_enable_transceiver_invalid_transceiver_id() {
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         invalid_transceiver,
         integrator_program_id,
@@ -345,7 +345,7 @@ async fn test_enable_already_enabled_transceiver() {
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
@@ -359,7 +359,7 @@ async fn test_enable_already_enabled_transceiver() {
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         transceiver,
         integrator_program_id,
@@ -384,7 +384,7 @@ async fn test_enable_already_enabled_transceiver() {
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         transceiver,
         integrator_program_id,
@@ -421,7 +421,7 @@ async fn test_enable_transceiver_with_transfer_in_progress() {
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
@@ -448,7 +448,7 @@ async fn test_enable_transceiver_with_transfer_in_progress() {
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         transceiver,
         integrator_program_id,
@@ -482,7 +482,7 @@ async fn test_enable_transceiver_with_transfer_in_progress() {
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         transceiver,
         integrator_program_id,
@@ -518,7 +518,7 @@ async fn test_enable_transceiver_with_immutable_config() {
         integrator_program_id,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         transceiver,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
@@ -537,7 +537,7 @@ async fn test_enable_transceiver_with_immutable_config() {
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         chain_id,
         transceiver,
         integrator_program_id,

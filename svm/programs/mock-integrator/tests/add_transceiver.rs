@@ -51,7 +51,7 @@ async fn register_test_transceiver(
     integrator_program_id: Pubkey,
 ) -> (Pubkey, Pubkey) {
     let transceiver_program_id = Keypair::new().pubkey();
-    let (registered_transceiver_pda, _) =
+    let (transceiver_info_pda, _) =
         TransceiverInfo::pda(&integrator_program_id, &transceiver_program_id);
 
     add_transceiver(
@@ -59,14 +59,14 @@ async fn register_test_transceiver(
         admin,
         payer,
         integrator_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         integrator_program_id,
         transceiver_program_id,
     )
     .await
     .unwrap();
 
-    (transceiver_program_id, registered_transceiver_pda)
+    (transceiver_program_id, transceiver_info_pda)
 }
 
 #[tokio::test]
@@ -74,7 +74,7 @@ async fn test_add_transceiver_success() {
     let (mut context, payer, admin, integrator_program_id, integrator_config_pda) =
         setup_test_environment().await;
 
-    let (transceiver_program_id, registered_transceiver_pda) = register_test_transceiver(
+    let (transceiver_program_id, transceiver_info_pda) = register_test_transceiver(
         &mut context,
         &admin,
         &payer,
@@ -84,25 +84,25 @@ async fn test_add_transceiver_success() {
     .await;
 
     // Fetch and verify the registered transceiver
-    let registered_transceiver: TransceiverInfo =
-        get_account(&mut context.banks_client, registered_transceiver_pda).await;
+    let transceiver_info: TransceiverInfo =
+        get_account(&mut context.banks_client, transceiver_info_pda).await;
 
-    assert_eq!(registered_transceiver.index, 0);
+    assert_eq!(transceiver_info.index, 0);
     assert_eq!(
-        registered_transceiver.integrator_program_id,
+        transceiver_info.integrator_program_id,
         integrator_program_id
     );
     assert_eq!(
-        registered_transceiver.transceiver_program_id,
+        transceiver_info.transceiver_program_id,
         transceiver_program_id
     );
 
     // Verify that the integrator config's transceivers list has been updated
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.registered_transceivers.len(), 1);
+    assert_eq!(integrator_config.transceiver_infos.len(), 1);
     assert_eq!(
-        integrator_config.registered_transceivers[0],
+        integrator_config.transceiver_infos[0],
         transceiver_program_id
     );
 }
@@ -115,7 +115,7 @@ async fn test_register_multiple_transceivers() {
     // Register two transceivers
     let mut transceiver_program_ides = Vec::new();
     for id in 0..2 {
-        let (transceiver_program_id, registered_transceiver_pda) = register_test_transceiver(
+        let (transceiver_program_id, transceiver_info_pda) = register_test_transceiver(
             &mut context,
             &admin,
             &payer,
@@ -126,16 +126,16 @@ async fn test_register_multiple_transceivers() {
         transceiver_program_ides.push(transceiver_program_id);
 
         // Fetch and verify the registered transceiver
-        let registered_transceiver: TransceiverInfo =
-            get_account(&mut context.banks_client, registered_transceiver_pda).await;
+        let transceiver_info: TransceiverInfo =
+            get_account(&mut context.banks_client, transceiver_info_pda).await;
 
-        assert_eq!(registered_transceiver.index, id as u8);
+        assert_eq!(transceiver_info.index, id as u8);
         assert_eq!(
-            registered_transceiver.integrator_program_id,
+            transceiver_info.integrator_program_id,
             integrator_program_id
         );
         assert_eq!(
-            registered_transceiver.transceiver_program_id,
+            transceiver_info.transceiver_program_id,
             transceiver_program_id
         );
     }
@@ -143,9 +143,9 @@ async fn test_register_multiple_transceivers() {
     // Verify that the integrator config's transceivers list has been updated
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.registered_transceivers.len(), 2);
+    assert_eq!(integrator_config.transceiver_infos.len(), 2);
     assert_eq!(
-        integrator_config.registered_transceivers,
+        integrator_config.transceiver_infos,
         transceiver_program_ides
     );
 }
@@ -169,7 +169,7 @@ async fn test_register_max_transceivers() {
 
     // Attempt to register one more transceiver (should fail)
     let extra_transceiver_program_id = Keypair::new().pubkey();
-    let (extra_registered_transceiver_pda, _) =
+    let (extra_transceiver_info_pda, _) =
         TransceiverInfo::pda(&integrator_program_id, &extra_transceiver_program_id);
 
     let result = add_transceiver(
@@ -177,7 +177,7 @@ async fn test_register_max_transceivers() {
         &admin,
         &payer,
         integrator_config_pda,
-        extra_registered_transceiver_pda,
+        extra_transceiver_info_pda,
         integrator_program_id,
         extra_transceiver_program_id,
     )
@@ -197,7 +197,7 @@ async fn test_register_max_transceivers() {
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
     assert_eq!(
-        integrator_config.registered_transceivers.len(),
+        integrator_config.transceiver_infos.len(),
         IntegratorConfig::MAX_TRANSCEIVERS
     );
 }
@@ -208,7 +208,7 @@ async fn test_add_transceiver_reinitialization() {
         setup_test_environment().await;
 
     // Register a transceiver
-    let (transceiver_program_id, registered_transceiver_pda) = register_test_transceiver(
+    let (transceiver_program_id, transceiver_info_pda) = register_test_transceiver(
         &mut context,
         &admin,
         &payer,
@@ -223,7 +223,7 @@ async fn test_add_transceiver_reinitialization() {
         &admin,
         &payer,
         integrator_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         integrator_program_id,
         transceiver_program_id,
     )
@@ -242,9 +242,9 @@ async fn test_add_transceiver_reinitialization() {
     // Verify that the integrator config's transceivers list has not been updated
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.registered_transceivers.len(), 1);
+    assert_eq!(integrator_config.transceiver_infos.len(), 1);
     assert_eq!(
-        integrator_config.registered_transceivers[0],
+        integrator_config.transceiver_infos[0],
         transceiver_program_id
     );
 }
@@ -259,7 +259,7 @@ async fn test_add_transceiver_non_authority() {
 
     // Attempt to register a transceiver with non-authority signer
     let transceiver_program_id = Keypair::new().pubkey();
-    let (registered_transceiver_pda, _) =
+    let (transceiver_info_pda, _) =
         TransceiverInfo::pda(&integrator_program_id, &transceiver_program_id);
 
     let result = add_transceiver(
@@ -267,7 +267,7 @@ async fn test_add_transceiver_non_authority() {
         &non_authority, // Use non-authority signer
         &payer,
         integrator_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         integrator_program_id,
         transceiver_program_id,
     )
@@ -286,7 +286,7 @@ async fn test_add_transceiver_non_authority() {
     // Verify that the integrator config's transceivers list has not been updated
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.registered_transceivers.len(), 0);
+    assert_eq!(integrator_config.transceiver_infos.len(), 0);
 }
 
 #[tokio::test]
@@ -310,7 +310,7 @@ async fn test_add_transceiver_with_transfer_in_progress() {
 
     // Now try to add a transceiver
     let transceiver_program_id = Keypair::new().pubkey();
-    let (registered_transceiver_pda, _) =
+    let (transceiver_info_pda, _) =
         TransceiverInfo::pda(&integrator_program_id, &transceiver_program_id);
 
     let result = add_transceiver(
@@ -318,7 +318,7 @@ async fn test_add_transceiver_with_transfer_in_progress() {
         &admin,
         &payer,
         integrator_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         integrator_program_id,
         transceiver_program_id,
     )
@@ -341,7 +341,7 @@ async fn test_add_transceiver_with_transfer_in_progress() {
         integrator_config.pending_admin,
         Some(pending_admin.pubkey())
     );
-    assert_eq!(integrator_config.registered_transceivers.len(), 0);
+    assert_eq!(integrator_config.transceiver_infos.len(), 0);
 }
 
 #[tokio::test]
@@ -356,7 +356,7 @@ async fn test_add_transceiver_with_immutable_config() {
 
     // Now try to add a transceiver
     let transceiver_program_id = Keypair::new().pubkey();
-    let (registered_transceiver_pda, _) =
+    let (transceiver_info_pda, _) =
         TransceiverInfo::pda(&integrator_program_id, &transceiver_program_id);
 
     let result = add_transceiver(
@@ -364,7 +364,7 @@ async fn test_add_transceiver_with_immutable_config() {
         &admin,
         &payer,
         integrator_config_pda,
-        registered_transceiver_pda,
+        transceiver_info_pda,
         integrator_program_id,
         transceiver_program_id,
     )
@@ -383,5 +383,5 @@ async fn test_add_transceiver_with_immutable_config() {
     // Verify that the integrator config's transceivers list has not been updated
     let integrator_config: IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config_pda).await;
-    assert_eq!(integrator_config.registered_transceivers.len(), 0);
+    assert_eq!(integrator_config.transceiver_infos.len(), 0);
 }

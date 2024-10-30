@@ -48,9 +48,9 @@ pub struct EnableTransceiver<'info> {
             args.integrator_program_id.as_ref(),
             args.transceiver_program_id.as_ref(),
         ],
-        bump = registered_transceiver.bump,
+        bump = transceiver_info.bump,
     )]
-    pub registered_transceiver: Account<'info, TransceiverInfo>,
+    pub transceiver_info: Account<'info, TransceiverInfo>,
 
     /// The System Program
     pub system_program: Program<'info, System>,
@@ -85,7 +85,7 @@ pub fn enable_recv_transceiver(
     ctx: Context<EnableTransceiver>,
     args: TransceiverInfoArgs,
 ) -> Result<()> {
-    let registered_transceiver = &ctx.accounts.registered_transceiver;
+    let transceiver_info = &ctx.accounts.transceiver_info;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
     // If chain_id is 0, this is initial setup
@@ -101,14 +101,14 @@ pub fn enable_recv_transceiver(
 
     if integrator_chain_config
         .recv_transceiver_bitmap
-        .get(registered_transceiver.index)?
+        .get(transceiver_info.index)?
     {
         return Err(RouterError::TransceiverAlreadyEnabled.into());
     }
 
     integrator_chain_config
         .recv_transceiver_bitmap
-        .set(registered_transceiver.index, true)?;
+        .set(transceiver_info.index, true)?;
 
     Ok(())
 }
@@ -131,7 +131,7 @@ pub fn enable_send_transceiver(
     ctx: Context<EnableTransceiver>,
     args: TransceiverInfoArgs,
 ) -> Result<()> {
-    let registered_transceiver = &ctx.accounts.registered_transceiver;
+    let transceiver_info = &ctx.accounts.transceiver_info;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
     // If chain_id is 0, this is initial setup
@@ -147,14 +147,14 @@ pub fn enable_send_transceiver(
 
     if integrator_chain_config
         .send_transceiver_bitmap
-        .get(registered_transceiver.index)?
+        .get(transceiver_info.index)?
     {
         return Err(RouterError::TransceiverAlreadyEnabled.into());
     }
 
     integrator_chain_config
         .send_transceiver_bitmap
-        .set(registered_transceiver.index, true)?;
+        .set(transceiver_info.index, true)?;
 
     Ok(())
 }

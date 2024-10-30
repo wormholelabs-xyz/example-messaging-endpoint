@@ -26,4 +26,22 @@ pub enum RouterError {
 
     #[msg("Invalid Chain Id")]
     InvalidChainId,
+
+    #[msg("No Transceivers Enabled")]
+    TransceiverNotEnabled,
+
+    #[msg("Duplicate Message Attestation")]
+    DuplicateMessageAttestation,
+
+    #[msg("Message has already been picked up")]
+    MessageAlreadyPickedUp,
+
+    #[msg("Message has already been executed")]
+    AlreadyExecuted,
+
+    #[msg("Unknown Message Attestation")]
+    UnknownMessageAttestation,
+
+    #[msg("Message Hash is invalid")]
+    InvalidMessageHash,
 }
