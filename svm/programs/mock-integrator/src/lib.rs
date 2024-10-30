@@ -59,18 +59,18 @@ pub mod mock_integrator {
     pub fn invoke_recv_message(
         ctx: Context<InvokeRecvMessage>,
         args: router::instructions::RecvMessageArgs,
-    ) -> Result<(u128, u128)> {
+    ) -> Result<()> {
         // Prepare the seeds for PDA signing
         let bump_seed = &[ctx.bumps.integrator_program_pda][..];
         let signer_seeds: &[&[&[u8]]] = &[&[b"router_integrator", bump_seed]];
 
         // Perform the CPI call to the router program's recv_message instruction
-        let result = router::cpi::recv_message(
+        router::cpi::recv_message(
             ctx.accounts.invoke_recv_message().with_signer(signer_seeds),
             args,
         )?;
 
-        Ok(result.get())
+        Ok(())
     }
 
     /// Invokes the exec_message instruction on the router program via CPI
@@ -199,10 +199,6 @@ pub struct InvokeRecvMessage<'info> {
     )]
     pub integrator_program_pda: SystemAccount<'info>,
 
-    /// The integrator chain config account
-    /// CHECK: This account is checked by the router program
-    pub integrator_chain_config: UncheckedAccount<'info>,
-
     /// The attestation info account
     /// CHECK: This account is checked by the router program
     #[account(mut)]
@@ -222,7 +218,6 @@ impl<'info> InvokeRecvMessage<'info> {
         let cpi_accounts = RecvMessage {
             integrator_program_pda: self.integrator_program_pda.to_account_info(),
             payer: self.payer.to_account_info(),
-            integrator_chain_config: self.integrator_chain_config.to_account_info(),
             attestation_info: self.attestation_info.to_account_info(),
             system_program: self.system_program.to_account_info(),
         };

@@ -14,13 +14,11 @@ use crate::common::execute_transaction::execute_transaction;
 pub async fn recv_message(
     context: &mut ProgramTestContext,
     payer: &Keypair,
-    integrator_chain_config: Pubkey,
     attestation_info: Pubkey,
     src_chain: u16,
     src_addr: UniversalAddress,
     sequence: u64,
     dst_chain: u16,
-    dst_addr: UniversalAddress,
     payload_hash: [u8; 32],
 ) -> Result<(), BanksClientError> {
     let (integrator_program_pda, integrator_program_pda_bump) =
@@ -29,7 +27,6 @@ pub async fn recv_message(
     let accounts = InvokeRecvMessage {
         payer: payer.pubkey(),
         integrator_program_pda,
-        integrator_chain_config,
         attestation_info,
         system_program: solana_sdk::system_program::id(),
         router_program: router::id(),

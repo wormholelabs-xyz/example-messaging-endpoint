@@ -147,13 +147,11 @@ async fn test_recv_message_success() {
     let result = recv_message(
         &mut context,
         &payer,
-        integrator_chain_config_pda,
         attestation_info_pda,
         src_chain,
         src_addr,
         sequence,
         dst_chain,
-        dst_addr,
         payload_hash,
     )
     .await;
@@ -232,13 +230,11 @@ async fn test_recv_message_already_executed() {
     recv_message(
         &mut context,
         &payer,
-        integrator_chain_config_pda,
         attestation_info_pda,
         src_chain,
         src_addr,
         sequence,
         dst_chain,
-        dst_addr,
         payload_hash,
     )
     .await
@@ -248,13 +244,11 @@ async fn test_recv_message_already_executed() {
     let result = recv_message(
         &mut context,
         &payer,
-        integrator_chain_config_pda,
         attestation_info_pda,
         src_chain,
         src_addr,
         sequence,
         dst_chain,
-        dst_addr,
         payload_hash,
     )
     .await;
@@ -294,13 +288,11 @@ async fn test_recv_message_no_attestation() {
     let result = recv_message(
         &mut context,
         &payer,
-        integrator_chain_config_pda,
         attestation_info_pda,
         src_chain,
         src_addr,
         sequence,
         dst_chain,
-        dst_addr,
         payload_hash,
     )
     .await;

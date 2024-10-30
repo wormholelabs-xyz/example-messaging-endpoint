@@ -59,7 +59,6 @@ pub mod mock_transceiver {
                 dst_chain: args.dst_chain,
                 integrator_program_id: args.integrator_program_id,
                 payload_hash: args.payload_hash,
-                message_hash: args.message_hash,
             },
         )?;
 

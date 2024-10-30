@@ -50,7 +50,6 @@ pub async fn exec_message(
         integrator_program_id: mock_integrator::id(),
         dst_chain,
         payload_hash,
-        message_hash,
     };
 
     let ix = Instruction {

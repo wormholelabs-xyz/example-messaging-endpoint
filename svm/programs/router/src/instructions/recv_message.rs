@@ -1,10 +1,7 @@
 use anchor_lang::prelude::*;
 use universal_address::UniversalAddress;
 
-use crate::{
-    error::RouterError,
-    state::{AttestationInfo, IntegratorChainConfig},
-};
+use crate::{error::RouterError, state::AttestationInfo};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct RecvMessageArgs {
@@ -31,17 +28,6 @@ pub struct RecvMessage<'info> {
         seeds::program = args.integrator_program_id
     )]
     pub integrator_program_pda: Signer<'info>,
-
-    /// The integrator chain config account
-    #[account(
-        seeds = [
-            IntegratorChainConfig::SEED_PREFIX,
-            args.integrator_program_id.as_ref(),
-            args.src_chain.to_be_bytes().as_ref()
-        ],
-        bump = integrator_chain_config.bump,
-    )]
-    pub integrator_chain_config: Account<'info, IntegratorChainConfig>,
 
     /// The attestation info account
     /// This throws when there is no attestation as there is no account initialized yet
@@ -98,19 +84,18 @@ pub struct RecvMessage<'info> {
 /// it means the `AttestationInfo` is already initialized. In other words,
 /// either `attest_message` or `exec_message` has been invoked previously.
 /// In the case of `exec_message`, `AlreadyExecuted` will be thrown.
-pub fn recv_message(ctx: Context<RecvMessage>, _args: RecvMessageArgs) -> Result<(u128, u128)> {
+pub fn recv_message(ctx: Context<RecvMessage>, _args: RecvMessageArgs) -> Result<()> {
     let attestation_info = &mut ctx.accounts.attestation_info;
-    let integrator_chain_config = &ctx.accounts.integrator_chain_config;
 
     // Check if the message has already been executed
     require!(!attestation_info.executed, RouterError::AlreadyExecuted);
+
+    // There is no need to check for the src_chain and dst_chain validity since they
+    // are check during the init of attestation_info in either `exec_message` or `attest_message`
 
     // Mark the message as executed
     attestation_info.executed = true;
 
     // Return the enabled receive Transceivers for that chain along with the attestations
-    Ok((
-        integrator_chain_config.recv_transceiver_bitmap.as_value(),
-        attestation_info.attested_transceivers.as_value(),
-    ))
+    Ok(())
 }

@@ -40,44 +40,40 @@ pub struct AttestationInfo {
     pub attested_transceivers: Bitmap,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct AttestationInfoArgs {
-    pub bump: u8,
-    pub src_chain: u16,
-    pub src_addr: UniversalAddress,
-    pub sequence: u64,
-    pub dst_chain: u16,
-    pub dst_addr: UniversalAddress,
-    pub payload_hash: [u8; 32],
-    pub message_hash: [u8; 32],
-}
-
 impl AttestationInfo {
     /// Seed prefix for deriving AttestionInfo PDAs
     pub const SEED_PREFIX: &'static [u8] = b"attestation_info";
 
-    pub fn new(args: AttestationInfoArgs) -> Result<Self> {
+    pub fn new(
+        bump: u8,
+        src_chain: u16,
+        src_addr: UniversalAddress,
+        sequence: u64,
+        dst_chain: u16,
+        dst_addr: UniversalAddress,
+        payload_hash: [u8; 32],
+    ) -> Result<Self> {
+        // Check that neither chain ID is 0
+        require!(
+            src_chain != 0 && dst_chain != 0,
+            RouterError::InvalidChainId
+        );
+
         let mut info = Self {
-            bump: args.bump,
-            src_chain: args.src_chain,
-            src_addr: args.src_addr,
-            sequence: args.sequence,
-            dst_chain: args.dst_chain,
-            dst_addr: args.dst_addr,
-            payload_hash: args.payload_hash,
+            bump,
+            src_chain,
+            src_addr,
+            sequence,
+            dst_chain,
+            dst_addr,
+            payload_hash,
             message_hash: [0; 32],
             executed: false,
             attested_transceivers: Bitmap::new(),
         };
 
-        let computed_hash = info.compute_own_message_hash();
+        info.message_hash = info.compute_own_message_hash();
 
-        require!(
-            computed_hash == args.message_hash,
-            RouterError::InvalidMessageHash
-        );
-
-        info.message_hash = computed_hash;
         Ok(info)
     }
 

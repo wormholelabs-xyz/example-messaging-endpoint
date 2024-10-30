@@ -171,3 +171,37 @@ async fn test_exec_message_duplicate_execution() {
         )
     );
 }
+
+#[tokio::test]
+async fn test_exec_message_zero_chain_id() {
+    let (mut context, payer, _, _, chain_id) = setup_test_environment().await;
+
+    let src_chain: u16 = chain_id;
+    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let sequence: u64 = 1;
+    let dst_chain = 0;
+    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let payload_hash = [3u8; 32];
+
+    // First execution (should succeed)
+    let result = exec_message(
+        &mut context,
+        &payer,
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    )
+    .await;
+
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err().unwrap(),
+        TransactionError::InstructionError(
+            0,
+            InstructionError::Custom(RouterError::InvalidChainId.into())
+        )
+    );
+}

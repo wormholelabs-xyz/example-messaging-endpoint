@@ -224,7 +224,7 @@ pub mod router {
     pub fn recv_message(
         ctx: Context<RecvMessage>,
         args: recv_message::RecvMessageArgs,
-    ) -> Result<(u128, u128)> {
+    ) -> Result<()> {
         recv_message::recv_message(ctx, args)
     }
 }

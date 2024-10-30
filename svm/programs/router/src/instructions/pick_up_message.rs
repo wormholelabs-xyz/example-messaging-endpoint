@@ -16,7 +16,10 @@ pub struct PickUpMessageArgs {
 pub struct PickUpMessage<'info> {
     /// The outbox message account to be picked up
     /// This account is mutable so we can update the `outstanding_transceivers` state
-    #[account(mut)]
+    #[account(
+        mut,
+        has_one = refund_recipient
+    )]
     pub outbox_message: Account<'info, OutboxMessage>,
 
     /// The transceiver info account
@@ -36,15 +39,12 @@ pub struct PickUpMessage<'info> {
     #[account(
         seeds = ["transceiver_pda".as_bytes()],
         bump = args.transceiver_pda_bump,
-        seeds::program = transceiver_info.transceiver_program_id
+        seeds::program = args.transceiver_program_id
     )]
     pub transceiver_pda: Signer<'info>,
 
     /// The account that will receive the rent from closing the outbox message account
-    #[account(
-        mut,
-        constraint = refund_recipient.key() == outbox_message.refund_recipient
-    )]
+    #[account(mut)]
     /// CHECK: This is an account for receiving the rent refund
     pub refund_recipient: AccountInfo<'info>,
 

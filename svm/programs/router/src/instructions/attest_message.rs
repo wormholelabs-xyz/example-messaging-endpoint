@@ -3,7 +3,7 @@ use universal_address::UniversalAddress;
 
 use crate::{
     error::RouterError,
-    state::{AttestationInfo, AttestationInfoArgs, IntegratorChainConfig, TransceiverInfo},
+    state::{AttestationInfo, IntegratorChainConfig, TransceiverInfo},
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -16,7 +16,6 @@ pub struct AttestMessageArgs {
     pub dst_chain: u16,
     pub integrator_program_id: Pubkey,
     pub payload_hash: [u8; 32],
-    pub message_hash: [u8; 32],
 }
 
 #[derive(Accounts)]
@@ -63,7 +62,14 @@ pub struct AttestMessage<'info> {
         space = 8 + AttestationInfo::INIT_SPACE,
         seeds = [
             AttestationInfo::SEED_PREFIX,
-            &args.message_hash
+            &AttestationInfo::compute_message_hash(
+                args.src_chain,
+                args.src_addr,
+                args.sequence,
+                args.dst_chain,
+                UniversalAddress::from_pubkey(&args.integrator_program_id),
+                args.payload_hash
+            )
         ],
         bump
     )]
@@ -119,18 +125,15 @@ pub fn attest_message(ctx: Context<AttestMessage>, args: AttestMessageArgs) -> R
     // It is fine to check for initialization using `src_chain == 0` as
     // `IntegratorChainConfig` and `AttestationInfo` can never have chain_id that is 0
     if attestation_info.src_chain == 0 {
-        let args = AttestationInfoArgs {
-            bump: ctx.bumps.attestation_info,
-            src_chain: args.src_chain,
-            src_addr: args.src_addr,
-            sequence: args.sequence,
-            dst_chain: args.dst_chain,
-            dst_addr: UniversalAddress::from_pubkey(&args.integrator_program_id),
-            payload_hash: args.payload_hash,
-            message_hash: args.message_hash,
-        };
-
-        attestation_info.set_inner(AttestationInfo::new(args)?);
+        attestation_info.set_inner(AttestationInfo::new(
+            ctx.bumps.attestation_info,
+            args.src_chain,
+            args.src_addr,
+            args.sequence,
+            args.dst_chain,
+            UniversalAddress::from_pubkey(&args.integrator_program_id),
+            args.payload_hash,
+        )?);
     }
 
     // Check if the Transceiver has already attested

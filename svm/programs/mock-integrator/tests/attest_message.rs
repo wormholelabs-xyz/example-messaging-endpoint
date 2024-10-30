@@ -15,8 +15,7 @@ use router::error::RouterError;
 use router::state::{AttestationInfo, IntegratorChainConfig, IntegratorConfig, TransceiverInfo};
 use solana_program_test::*;
 use solana_sdk::{
-    instruction::InstructionError, signature::Keypair, signer::Signer,
-    transaction::TransactionError,
+    instruction::InstructionError, signature::Keypair, transaction::TransactionError,
 };
 use universal_address::UniversalAddress;
 
@@ -299,6 +298,52 @@ async fn test_attest_message_duplicate_attestation() {
         TransactionError::InstructionError(
             0,
             InstructionError::Custom(RouterError::DuplicateMessageAttestation.into())
+        )
+    );
+}
+
+#[tokio::test]
+async fn test_attest_message_zero_chain_id() {
+    // Setup similar to the success test
+    let (
+        mut context,
+        payer,
+        _,
+        _,
+        integrator_chain_config_pda,
+        transceiver_info_pda,
+        transceiver_pda,
+        chain_id,
+    ) = setup_test_environment().await;
+
+    let src_chain: u16 = chain_id;
+    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let sequence: u64 = 1;
+    let dst_chain = 0;
+    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let payload_hash = [3u8; 32];
+
+    let result = attest_message(
+        &mut context,
+        &payer,
+        transceiver_info_pda,
+        transceiver_pda,
+        integrator_chain_config_pda,
+        src_chain,
+        src_addr,
+        sequence,
+        dst_chain,
+        dst_addr,
+        payload_hash,
+    )
+    .await;
+
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err().unwrap(),
+        TransactionError::InstructionError(
+            0,
+            InstructionError::Custom(RouterError::InvalidChainId.into())
         )
     );
 }
