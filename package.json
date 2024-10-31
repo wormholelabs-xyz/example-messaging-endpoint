@@ -2,5 +2,15 @@
   "license": "Apache-2.0",
   "dependencies": {
     "prettier": "^3.3.3"
+  },
+  "devDependencies": {
+    "@typechain/ethers-v6": "^0.5.1",
+    "ethers": "^6.13.4",
+    "ts-node": "^10.9.2",
+    "typechain": "^8.3.2",
+    "typescript": "^5.6.3"
+  },
+  "scripts": {
+    "build": "cd evm && forge build && typechain --target=ethers-v6 --out-dir=sdk/ts/typechain \"out/!(test).sol/*.json\""
   }
 }
