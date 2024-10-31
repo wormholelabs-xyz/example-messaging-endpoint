@@ -8,18 +8,18 @@ import "forge-std/Script.sol";
 contract DeployTestIntegrator is Script {
     function test() public {} // Exclude this from coverage report.
 
-    function dryRun(address router, address transceiver) public {
-        _deploy(router, transceiver);
+    function dryRun(address router, uint16 chain, address transceiver) public {
+        _deploy(router, chain, transceiver);
     }
 
-    function run(address router, address transceiver) public returns (address deployedAddress) {
+    function run(address router, uint16 chain, address transceiver) public returns (address deployedAddress) {
         vm.startBroadcast();
-        (deployedAddress) = _deploy(router, transceiver);
+        (deployedAddress) = _deploy(router, chain, transceiver);
         vm.stopBroadcast();
     }
 
-    function _deploy(address router, address transceiver) internal returns (address deployedAddress) {
-        TestIntegrator testIntegrator = new TestIntegrator(router, transceiver);
+    function _deploy(address router, uint16 chain, address transceiver) internal returns (address deployedAddress) {
+        TestIntegrator testIntegrator = new TestIntegrator(router, chain, transceiver);
 
         return (address(testIntegrator));
     }

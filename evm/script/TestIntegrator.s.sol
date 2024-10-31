@@ -10,23 +10,36 @@ contract TestIntegrator {
 
     address router;
     address transceiver;
+    uint16 chain;
 
-    constructor(address _router, address _transceiver) {
+    constructor(address _router, uint16 _chain, address _transceiver) {
         router = _router;
         transceiver = _transceiver;
+        chain = _chain;
 
         address integrator = address(this);
         IRouterIntegrator(router).register(integrator);
         IRouterAdmin(router).addTransceiver(integrator, transceiver);
-        IRouterAdmin(router).enableSendTransceiver(integrator, 4, transceiver);
-        IRouterAdmin(router).enableRecvTransceiver(integrator, 4, transceiver);
+        IRouterAdmin(router).enableSendTransceiver(integrator, chain, transceiver);
+        IRouterAdmin(router).enableRecvTransceiver(integrator, chain, transceiver);
     }
 
     function sendMessage(address dstAddr) public payable {
         address refundAddress = address(this);
         bytes32 payloadHash = keccak256("hello, world");
         IRouterIntegrator(router).sendMessage(
-            4, UniversalAddressLibrary.fromAddress(dstAddr), payloadHash, refundAddress
+            chain, UniversalAddressLibrary.fromAddress(dstAddr), payloadHash, refundAddress
         );
+    }
+
+    function recvMessage(
+        uint16 srcChain,
+        UniversalAddress srcAddr,
+        uint64 sequence,
+        uint16 dstChain,
+        UniversalAddress dstAddr,
+        bytes32 payloadHash
+    ) public {
+        IRouterIntegrator(router).recvMessage(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
     }
 }
