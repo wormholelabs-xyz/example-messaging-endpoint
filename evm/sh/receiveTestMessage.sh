@@ -2,8 +2,7 @@
 
 #
 # This script receives a message using the TestIntegrator contract.
-# Usage: RPC_URL= MNEMONIC= INTEGRATOR= SRC_CHAIN= SRC_ADDR= SEQ= DST_CHAIN= DST_ADDR=   ./sh/receiveTestMessage.sh
-#  tilt: INTEGRATOR=0x9e90054F4B6730cffAf1E6f6ea10e1bF9dD26dbb DST_ADDR=0x9e90054F4B6730cffAf1E6f6ea10e1bF9dD26dbb ./sh/receiveTestMessage.sh
+# Usage: RPC_URL= MNEMONIC= INTEGRATOR= SRC_CHAIN= SRC_ADDR= SEQ= DST_CHAIN= DST_ADDR= PAYLOAD_HASH= ./sh/receiveTestMessage.sh
 #
 
 [[ -z $INTEGRATOR ]] && { echo "Missing INTEGRATOR"; exit 1; }
