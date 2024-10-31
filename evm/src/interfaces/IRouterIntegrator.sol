@@ -67,4 +67,19 @@ interface IRouterIntegrator is IMessageSequence {
     function getMessageStatus(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash)
         external
         returns (uint128, uint128, bool);
+
+    /// @notice Retrieves the quote for message delivery.
+    /// @dev This version does not need to be called by the integrator.
+    /// @dev This sums up all the individual recvTransceiver's quoteDeliveryPrice calls.
+    /// @param integrator The address of the integrator.
+    /// @param dstChain The Wormhole chain ID of the recipient.
+    /// @return uint256 The total cost of delivering a message to the recipient chain in this chain's native token.
+    function quoteDeliveryPrice(address integrator, uint16 dstChain) external returns (uint256);
+
+    /// @notice Retrieves the quote for message delivery.
+    /// @dev This version must be called by the integrator.
+    /// @dev This sums up all the individual recvTransceiver's quoteDeliveryPrice calls.
+    /// @param dstChain The Wormhole chain ID of the recipient.
+    /// @return uint256 The total cost of delivering a message to the recipient chain in this chain's native token.
+    function quoteDeliveryPrice(uint16 dstChain) external returns (uint256);
 }

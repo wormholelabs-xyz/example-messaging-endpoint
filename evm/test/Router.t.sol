@@ -36,16 +36,22 @@ contract Admin {
 }
 
 contract TransceiverImpl is ITransceiver {
+    uint256 _deliveryPrice = 0;
     //======================= Interface =================================================
     // add this to be excluded from coverage report
+
     function test() public {}
 
     function getTransceiverType() public pure override returns (string memory) {
         return "test";
     }
 
-    function quoteDeliveryPrice(uint16 /*recipientChain*/ ) public pure override returns (uint256) {
-        return 0;
+    function quoteDeliveryPrice(uint16 /*recipientChain*/ ) public view override returns (uint256) {
+        return _deliveryPrice;
+    }
+
+    function setDeliveryPrice(uint256 price) public {
+        _deliveryPrice = price;
     }
 
     function sendMessage(
@@ -593,5 +599,39 @@ contract RouterTest is Test {
             myMessageHash == 0xf589999616054a74b876390c4eb6e067da272da5cd313a9657d33ec3cab06760,
             "Message hash literal is wrong"
         );
+    }
+
+    function test_quoteDeliveryPrice() public {
+        address integrator = address(new Integrator(address(router)));
+        address admin = address(new Admin(integrator, address(router)));
+        uint16 chain = 2;
+        TransceiverImpl transceiver1 = new TransceiverImpl();
+        TransceiverImpl transceiver2 = new TransceiverImpl();
+        TransceiverImpl transceiver3 = new TransceiverImpl();
+        vm.startPrank(integrator);
+        router.register(admin);
+
+        // Set the delivery price.
+        transceiver1.setDeliveryPrice(100);
+        transceiver2.setDeliveryPrice(200);
+        transceiver3.setDeliveryPrice(300);
+
+        // Now enable some transceivers.
+        vm.startPrank(admin);
+        router.addTransceiver(integrator, address(transceiver1));
+        router.enableSendTransceiver(integrator, chain, address(transceiver1));
+        uint256 price = router.quoteDeliveryPrice(integrator, chain);
+        require(price == 100, "Single price is wrong");
+        router.addTransceiver(integrator, address(transceiver2));
+        router.enableSendTransceiver(integrator, chain, address(transceiver2));
+        price = router.quoteDeliveryPrice(integrator, chain);
+        require(price == 300, "Double price is wrong");
+        router.addTransceiver(integrator, address(transceiver3));
+        router.enableSendTransceiver(integrator, 3, address(transceiver3));
+        price = router.quoteDeliveryPrice(integrator, chain);
+        require(price == 300, "Triple price is wrong");
+        vm.startPrank(integrator);
+        price = router.quoteDeliveryPrice(chain);
+        require(price == 300, "Triple price is wrong");
     }
 }
