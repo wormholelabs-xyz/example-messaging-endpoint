@@ -378,7 +378,7 @@ contract RouterTest is Test {
 
         // Receive what we just attested to mark it executed.
         vm.startPrank(integrator);
-        router.recvMessage(chain, sourceIntegrator, anotherChain, OurChainId, destIntegrator, messageHash);
+        router.recvMessage(chain, sourceIntegrator, anotherChain, messageHash);
 
         // Attesting after receive should still work on a different transceiver.
         vm.startPrank(address(transceiver1));
@@ -406,7 +406,7 @@ contract RouterTest is Test {
         // Receiving with no transceivers should revert.
         vm.startPrank(integrator);
         vm.expectRevert(abi.encodeWithSelector(Router.TransceiverNotEnabled.selector));
-        router.recvMessage(2, sourceIntegrator, 1, OurChainId, destIntegrator, messageHash);
+        router.recvMessage(2, sourceIntegrator, 1, messageHash);
 
         // Now enable some transceivers so we can attest. Receive doesn't use the transceivers.
         vm.startPrank(admin);
@@ -420,17 +420,12 @@ contract RouterTest is Test {
         // Only an integrator can call receive.
         vm.startPrank(userB);
         vm.expectRevert(abi.encodeWithSelector(Router.TransceiverNotEnabled.selector));
-        router.recvMessage(2, sourceIntegrator, 1, OurChainId, destIntegrator, messageHash);
-
-        // Receiving a message destine for the wrong chain should revert.
-        vm.startPrank(integrator);
-        vm.expectRevert(abi.encodeWithSelector(Router.InvalidDestinationChain.selector));
-        router.recvMessage(2, sourceIntegrator, 1, OurChainId + 1, destIntegrator, messageHash);
+        router.recvMessage(2, sourceIntegrator, 1, messageHash);
 
         // Receiving before there are any attestations should revert.
         vm.startPrank(integrator);
         vm.expectRevert(abi.encodeWithSelector(Router.UnknownMessageAttestation.selector));
-        router.recvMessage(2, sourceIntegrator, 1, OurChainId, destIntegrator, messageHash);
+        router.recvMessage(2, sourceIntegrator, 1, messageHash);
 
         // Attest so we can receive.
         vm.startPrank(address(transceiver2));
@@ -438,8 +433,7 @@ contract RouterTest is Test {
 
         // This receive should work.
         vm.startPrank(integrator);
-        (uint128 enabledBitmap, uint128 attestedBitmap) =
-            router.recvMessage(2, sourceIntegrator, 1, OurChainId, destIntegrator, messageHash);
+        (uint128 enabledBitmap, uint128 attestedBitmap) = router.recvMessage(2, sourceIntegrator, 1, messageHash);
 
         // Make sure it return the right bitmaps.
         require(enabledBitmap == 0x03, "Enabled bitmap is wrong");
@@ -447,7 +441,7 @@ contract RouterTest is Test {
 
         // But doing it again should revert.
         vm.expectRevert(abi.encodeWithSelector(Router.AlreadyExecuted.selector));
-        router.recvMessage(2, sourceIntegrator, 1, OurChainId, destIntegrator, messageHash);
+        router.recvMessage(2, sourceIntegrator, 1, messageHash);
     }
 
     function test_getMessageStatus() public {
@@ -551,7 +545,6 @@ contract RouterTest is Test {
         address integrator = address(new Integrator(address(router)));
         address admin = address(new Admin(integrator, address(router)));
         TransceiverImpl transceiver1 = new TransceiverImpl();
-        TransceiverImpl transceiver2 = new TransceiverImpl();
         uint16 chain1 = 1;
         uint64 sequence = 1;
         uint128 enabledBitmap;
@@ -564,47 +557,24 @@ contract RouterTest is Test {
 
         (enabledBitmap, attestedBitmap, executed) = router.getMessageStatus(
             chain1,
-            UniversalAddressLibrary.fromAddress(address(userA)),
+            UniversalAddressLibrary.fromAddress(address(transceiver1)),
             sequence,
             UniversalAddressLibrary.fromAddress(address(integrator)),
             messageHash
         );
         require(executed == false, "executed flag should be false before execMessage");
-        vm.expectRevert(abi.encodeWithSelector(Router.InvalidDestinationChain.selector));
-        router.execMessage(
-            chain1,
-            UniversalAddressLibrary.fromAddress(address(transceiver1)),
-            sequence,
-            chain1,
-            UniversalAddressLibrary.fromAddress(address(transceiver2)),
-            messageHash
-        );
-        router.execMessage(
-            chain1,
-            UniversalAddressLibrary.fromAddress(address(transceiver1)),
-            sequence,
-            OurChainId,
-            UniversalAddressLibrary.fromAddress(address(transceiver2)),
-            messageHash
-        );
+        router.execMessage(chain1, UniversalAddressLibrary.fromAddress(address(transceiver1)), sequence, messageHash);
         (enabledBitmap, attestedBitmap, executed) = router.getMessageStatus(
             chain1,
-            UniversalAddressLibrary.fromAddress(address(userA)),
+            UniversalAddressLibrary.fromAddress(address(transceiver1)),
             sequence,
             UniversalAddressLibrary.fromAddress(address(integrator)),
             messageHash
         );
-        // require(executed == true, "executed flag should be true after execMessage");
+        require(executed == true, "executed flag should be true after execMessage");
         // Second execMessage should revert.
         vm.expectRevert(abi.encodeWithSelector(Router.AlreadyExecuted.selector));
-        router.execMessage(
-            chain1,
-            UniversalAddressLibrary.fromAddress(address(transceiver1)),
-            sequence,
-            OurChainId,
-            UniversalAddressLibrary.fromAddress(address(transceiver2)),
-            messageHash
-        );
+        router.execMessage(chain1, UniversalAddressLibrary.fromAddress(address(transceiver1)), sequence, messageHash);
     }
 
     function test_computeMessageHash() public view {

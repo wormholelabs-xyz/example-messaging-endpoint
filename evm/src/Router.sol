@@ -477,26 +477,19 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     }
 
     /// @inheritdoc IRouterIntegrator
-    function recvMessage(
-        uint16 srcChain,
-        UniversalAddress srcAddr,
-        uint64 sequence,
-        uint16 dstChain,
-        UniversalAddress dstAddr,
-        bytes32 payloadHash
-    ) external payable returns (uint128 enabledBitmap, uint128 attestedBitmap) {
-        // sanity check that dstChain is this chain
-        if (dstChain != ourChain) {
-            revert InvalidDestinationChain();
-        }
-
+    function recvMessage(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash)
+        external
+        payable
+        returns (uint128 enabledBitmap, uint128 attestedBitmap)
+    {
         enabledBitmap = _getEnabledRecvTransceiversBitmapForChain(msg.sender, srcChain);
         if (enabledBitmap == 0) {
             revert TransceiverNotEnabled();
         }
+        UniversalAddress dstAddr = UniversalAddressLibrary.fromAddress(msg.sender);
 
         // compute the message digest
-        bytes32 messageDigest = computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
+        bytes32 messageDigest = computeMessageDigest(srcChain, srcAddr, sequence, ourChain, dstAddr, payloadHash);
 
         AttestationInfo storage attestationInfo = _getAttestationInfoStorage()[msg.sender][messageDigest];
 
@@ -515,7 +508,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         attestedBitmap = attestationInfo.attestedTransceivers;
 
         emit MessageReceived(
-            messageDigest, srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash, enabledBitmap, attestedBitmap
+            messageDigest, srcChain, srcAddr, sequence, ourChain, dstAddr, payloadHash, enabledBitmap, attestedBitmap
         );
     }
 
@@ -542,19 +535,11 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     }
 
     /// @inheritdoc IRouterIntegrator
-    function execMessage(
-        uint16 srcChain,
-        UniversalAddress srcAddr,
-        uint64 sequence,
-        uint16 dstChain,
-        UniversalAddress dstAddr,
-        bytes32 payloadHash
-    ) external {
-        if (dstChain != ourChain) {
-            revert InvalidDestinationChain();
-        }
+    function execMessage(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash) external {
         // compute the message digest
-        bytes32 messageDigest = computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
+        bytes32 messageDigest = computeMessageDigest(
+            srcChain, srcAddr, sequence, ourChain, UniversalAddressLibrary.fromAddress(msg.sender), payloadHash
+        );
 
         AttestationInfo storage attestationInfo = _getAttestationInfoStorage()[msg.sender][messageDigest];
 

@@ -32,14 +32,7 @@ contract TestIntegrator {
         );
     }
 
-    function recvMessage(
-        uint16 srcChain,
-        UniversalAddress srcAddr,
-        uint64 sequence,
-        uint16 dstChain,
-        UniversalAddress dstAddr,
-        bytes32 payloadHash
-    ) public {
-        IRouterIntegrator(router).recvMessage(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
+    function recvMessage(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash) public {
+        IRouterIntegrator(router).recvMessage(srcChain, srcAddr, sequence, payloadHash);
     }
 }

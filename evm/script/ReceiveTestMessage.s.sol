@@ -9,29 +9,15 @@ import "../src/libraries/UniversalAddress.sol";
 contract ReceiveTestMessage is Script {
     function test() public {} // Exclude this from coverage report.
 
-    function dryRun(
-        address integrator,
-        uint16 srcChain,
-        bytes32 srcAddr,
-        uint64 sequence,
-        uint16 dstChain,
-        bytes32 dstAddr,
-        bytes32 payloadHash
-    ) public {
-        _receiveTestMessage(integrator, srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
+    function dryRun(address integrator, uint16 srcChain, bytes32 srcAddr, uint64 sequence, bytes32 payloadHash)
+        public
+    {
+        _receiveTestMessage(integrator, srcChain, srcAddr, sequence, payloadHash);
     }
 
-    function run(
-        address integrator,
-        uint16 srcChain,
-        bytes32 srcAddr,
-        uint64 sequence,
-        uint16 dstChain,
-        bytes32 dstAddr,
-        bytes32 payloadHash
-    ) public {
+    function run(address integrator, uint16 srcChain, bytes32 srcAddr, uint64 sequence, bytes32 payloadHash) public {
         vm.startBroadcast();
-        _receiveTestMessage(integrator, srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
+        _receiveTestMessage(integrator, srcChain, srcAddr, sequence, payloadHash);
         vm.stopBroadcast();
     }
 
@@ -40,17 +26,10 @@ contract ReceiveTestMessage is Script {
         uint16 srcChain,
         bytes32 srcAddr,
         uint64 sequence,
-        uint16 dstChain,
-        bytes32 dstAddr,
         bytes32 payloadHash
     ) internal {
         TestIntegrator(integrator).recvMessage(
-            srcChain,
-            UniversalAddressLibrary.fromBytes32(srcAddr),
-            sequence,
-            dstChain,
-            UniversalAddressLibrary.fromBytes32(dstAddr),
-            payloadHash
+            srcChain, UniversalAddressLibrary.fromBytes32(srcAddr), sequence, payloadHash
         );
     }
 }

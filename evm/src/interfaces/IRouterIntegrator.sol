@@ -26,34 +26,19 @@ interface IRouterIntegrator is IMessageSequence {
     /// @param srcChain The Wormhole chain ID of the sender.
     /// @param srcAddr The universal address of the peer on the sending chain.
     /// @param sequence The sequence number of the message (per integrator).
-    /// @param dstChain The Wormhole chain ID of the destination.
-    /// @param dstAddr The destination address of the message.
     /// @param payloadHash The keccak256 of payload from the integrator.
     /// @return (uint128, uint128) The enabled bitmap, and the attested bitmap, respectively.
-    function recvMessage(
-        uint16 srcChain,
-        UniversalAddress srcAddr,
-        uint64 sequence,
-        uint16 dstChain,
-        UniversalAddress dstAddr,
-        bytes32 payloadHash
-    ) external payable returns (uint128, uint128);
+    function recvMessage(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash)
+        external
+        payable
+        returns (uint128, uint128);
 
     /// @notice Executes a message without requiring any attestations.
     /// @param srcChain The Wormhole chain ID of the sender.
     /// @param srcAddr The universal address of the peer on the sending chain.
     /// @param sequence The sequence number of the message (per integrator).
-    /// @param dstChain The Wormhole chain ID of the destination.
-    /// @param dstAddr The destination address of the message.
     /// @param payloadHash The keccak256 of payload from the integrator.
-    function execMessage(
-        uint16 srcChain,
-        UniversalAddress srcAddr,
-        uint64 sequence,
-        uint16 dstChain,
-        UniversalAddress dstAddr,
-        bytes32 payloadHash
-    ) external;
+    function execMessage(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash) external;
 
     /// @notice Retrieves the status of a message.
     /// @dev This version can be called by anyone.
