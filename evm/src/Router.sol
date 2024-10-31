@@ -575,7 +575,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
 
     /// @notice Retrieves the quote for message delivery.
     /// @dev This version does not need to be called by the integrator.
-    /// @dev This sums up all the individual recvTransceiver's quoteDeliveryPrice calls.
+    /// @dev This sums up all the individual sendTransceiver's quoteDeliveryPrice calls.
     /// @param integrator The address of the integrator.
     /// @param dstChain The Wormhole chain ID of the recipient.
     /// @return totalCost The total cost of delivering a message to the recipient chain in this chain's native token.
