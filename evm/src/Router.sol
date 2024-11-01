@@ -549,6 +549,16 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         attestationInfo.executed = true;
     }
 
+    /// @inheritdoc IRouterIntegrator
+    function quoteDeliveryPrice(address integrator, uint16 dstChain) external view returns (uint256) {
+        return _quoteDeliveryPrice(integrator, dstChain);
+    }
+
+    /// @inheritdoc IRouterIntegrator
+    function quoteDeliveryPrice(uint16 dstChain) external view returns (uint256) {
+        return _quoteDeliveryPrice(msg.sender, dstChain);
+    }
+
     // =============== Internal ==============================================================
 
     modifier onlyAdmin(address integrator) {
@@ -561,6 +571,25 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
             revert CallerNotAuthorized();
         }
         _;
+    }
+
+    /// @notice Retrieves the quote for message delivery.
+    /// @dev This version does not need to be called by the integrator.
+    /// @dev This sums up all the individual sendTransceiver's quoteDeliveryPrice calls.
+    /// @param integrator The address of the integrator.
+    /// @param dstChain The Wormhole chain ID of the recipient.
+    /// @return totalCost The total cost of delivering a message to the recipient chain in this chain's native token.
+    function _quoteDeliveryPrice(address integrator, uint16 dstChain) internal view returns (uint256 totalCost) {
+        address[] memory sendTransceivers = getSendTransceiversByChain(integrator, dstChain);
+        uint256 len = sendTransceivers.length;
+        totalCost = 0;
+        for (uint256 i = 0; i < len;) {
+            totalCost += ITransceiver(sendTransceivers[i]).quoteDeliveryPrice(dstChain);
+            unchecked {
+                ++i;
+            }
+        }
+        return totalCost;
     }
 
     /// @notice Retrieves the status of a message.
