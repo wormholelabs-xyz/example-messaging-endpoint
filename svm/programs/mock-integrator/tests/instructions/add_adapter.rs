@@ -19,12 +19,16 @@ pub async fn add_adapter(
     integrator_program_id: Pubkey,
     adapter_program_id: Pubkey,
 ) -> Result<(), BanksClientError> {
+    let (event_authority, _) = Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
+
     let accounts = AddAdapter {
         payer: payer.pubkey(),
         admin: admin.pubkey(),
         integrator_config,
         adapter_info,
         system_program: solana_sdk::system_program::id(),
+        program: endpoint::id(),
+        event_authority,
     };
 
     let args = AddAdapterArgs {

@@ -1,9 +1,11 @@
 use crate::error::EndpointError;
+use crate::event::{RecvAdapterEnabledForChain, SendAdapterEnabledForChain};
 use crate::instructions::common::AdapterInfoArgs;
 use crate::state::{AdapterInfo, IntegratorChainConfig, IntegratorConfig};
 use crate::utils::bitmap::Bitmap;
 use anchor_lang::prelude::*;
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args: AdapterInfoArgs)]
 pub struct EnableAdapter<'info> {
@@ -67,7 +69,13 @@ impl<'info> EnableAdapter<'info> {
     }
 }
 
-/// Sets a receive adapter for the integrator chain configuration
+/// Enables a receive adapter for the integrator chain configuration
+///
+/// This function performs the following steps:
+/// 1. Initializes the IntegratorChainConfig if it's not already set up.
+/// 2. Checks if the adapter is already enabled.
+/// 3. Enables the adapter in the receive adapter bitmap.
+/// 4. Emits a RecvAdapterEnabledForChain event.
 ///
 /// # Arguments
 ///
@@ -79,9 +87,21 @@ impl<'info> EnableAdapter<'info> {
 ///
 /// # Returns
 ///
-/// * `Result<()>` - The result of the operation
+/// * `Result<()>` - Ok if the adapter was successfully enabled, otherwise an error
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * The adapter is already enabled (EndpointError::AdapterAlreadyEnabled)
+///
+/// # Events
+///
+/// Emits a `RecvAdapterEnabledForChain` event
 #[access_control(EnableAdapter::validate(&ctx.accounts, &args))]
-pub fn enable_recv_adapter(ctx: Context<EnableAdapter>, args: AdapterInfoArgs) -> Result<()> {
+pub fn enable_recv_adapter(
+    ctx: Context<EnableAdapter>,
+    args: AdapterInfoArgs,
+) -> Result<()> {
     let adapter_info = &ctx.accounts.adapter_info;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
@@ -106,11 +126,23 @@ pub fn enable_recv_adapter(ctx: Context<EnableAdapter>, args: AdapterInfoArgs) -
     integrator_chain_config
         .recv_adapter_bitmap
         .set(adapter_info.index, true)?;
+
+    emit_cpi!(RecvAdapterEnabledForChain {
+        integrator: args.integrator_program_id,
+        chain: args.chain_id,
+        adapter: args.adapter_program_id,
+    });
 
     Ok(())
 }
 
-/// Sets a send adapter for the integrator chain configuration
+/// Enables a send adapter for the integrator chain configuration
+///
+/// This function performs the following steps:
+/// 1. Initializes the IntegratorChainConfig if it's not already set up.
+/// 2. Checks if the adapter is already enabled.
+/// 3. Enables the adapter in the send adapter bitmap.
+/// 4. Emits a SendAdapterEnabledForChain event.
 ///
 /// # Arguments
 ///
@@ -122,9 +154,21 @@ pub fn enable_recv_adapter(ctx: Context<EnableAdapter>, args: AdapterInfoArgs) -
 ///
 /// # Returns
 ///
-/// * `Result<()>` - The result of the operation
+/// * `Result<()>` - Ok if the adapter was successfully enabled, otherwise an error
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * The adapter is already enabled (EndpointError::AdapterAlreadyEnabled)
+///
+/// # Events
+///
+/// Emits a `SendAdapterEnabledForChain` event
 #[access_control(EnableAdapter::validate(&ctx.accounts, &args))]
-pub fn enable_send_adapter(ctx: Context<EnableAdapter>, args: AdapterInfoArgs) -> Result<()> {
+pub fn enable_send_adapter(
+    ctx: Context<EnableAdapter>,
+    args: AdapterInfoArgs,
+) -> Result<()> {
     let adapter_info = &ctx.accounts.adapter_info;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
@@ -149,6 +193,12 @@ pub fn enable_send_adapter(ctx: Context<EnableAdapter>, args: AdapterInfoArgs) -
     integrator_chain_config
         .send_adapter_bitmap
         .set(adapter_info.index, true)?;
+
+    emit_cpi!(SendAdapterEnabledForChain {
+        integrator: args.integrator_program_id,
+        chain: args.chain_id,
+        adapter: args.adapter_program_id,
+    });
 
     Ok(())
 }

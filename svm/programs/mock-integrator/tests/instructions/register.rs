@@ -19,7 +19,7 @@ pub async fn register(
 ) -> Result<(), BanksClientError> {
     let (integrator_program_pda, _) =
         Pubkey::find_program_address(&[b"endpoint_integrator"], &integrator_program_id);
-
+    let (event_authority, _) = Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
     let (sequence_tracker, _) = SequenceTracker::pda(&integrator_program_id);
 
     let accounts = InvokeRegister {
@@ -27,6 +27,8 @@ pub async fn register(
         integrator_config,
         sequence_tracker,
         integrator_program_pda,
+        event_authority,
+        program: endpoint::id(),
         system_program: solana_sdk::system_program::id(),
         endpoint_program: endpoint::id(),
     };

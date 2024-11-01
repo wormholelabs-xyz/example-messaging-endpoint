@@ -7,7 +7,7 @@ use endpoint::{
 };
 use universal_address::UniversalAddress;
 
-declare_id!("B86KSKnHBRiJeDcP7vwaXuxfkqfChZmYKBqh4dkLYEpj");
+declare_id!("661Ly6gSCDiGWzC4tKJhS8tqXNWJU6yfbhxNKC4gPF5t");
 
 /// This module serves as a mock integrator to demonstrate how to call the register function
 /// in the endpoint program. It's designed to simulate the process of registering an integrator,
@@ -117,6 +117,18 @@ pub struct InvokeRegister<'info> {
     )]
     pub integrator_program_pda: SystemAccount<'info>,
 
+    /// The event authority PDA
+    /// CHECK: This should be seeded with `__event_authority`
+    #[account(
+        seeds = [b"__event_authority"],
+        bump,
+        seeds::program = endpoint::id(),
+    )]
+    pub event_authority: AccountInfo<'info>,
+
+    /// CHECK: Self-CPI will fail if the program is not the current program
+    pub program: AccountInfo<'info>,
+
     /// The System Program
     pub system_program: Program<'info, System>,
 
@@ -132,6 +144,8 @@ impl<'info> InvokeRegister<'info> {
             integrator_program_pda: self.integrator_program_pda.to_account_info(),
             sequence_tracker: self.sequence_tracker.to_account_info(),
             system_program: self.system_program.to_account_info(),
+            event_authority: self.event_authority.to_account_info(),
+            program: self.program.to_account_info(),
         };
         CpiContext::new(cpi_program, cpi_accounts)
     }
@@ -167,6 +181,18 @@ pub struct InvokeSendMessage<'info> {
     /// CHECK: This account is checked by the endpoint program
     pub sequence_tracker: UncheckedAccount<'info>,
 
+    /// The event authority PDA
+    /// CHECK: This should be seeded with `__event_authority`
+    #[account(
+        seeds = [b"__event_authority"],
+        bump,
+        seeds::program = endpoint::id(),
+    )]
+    pub event_authority: AccountInfo<'info>,
+
+    /// CHECK: Self-CPI will fail if the program is n
+    pub program: AccountInfo<'info>,
+
     pub endpoint_program: Program<'info, Endpoint>,
 
     pub system_program: Program<'info, System>,
@@ -182,6 +208,8 @@ impl<'info> InvokeSendMessage<'info> {
             outbox_message: self.outbox_message.to_account_info(),
             sequence_tracker: self.sequence_tracker.to_account_info(),
             system_program: self.system_program.to_account_info(),
+            event_authority: self.event_authority.to_account_info(),
+            program: self.program.to_account_info(),
         };
         CpiContext::new(cpi_program, cpi_accounts)
     }
@@ -204,6 +232,22 @@ pub struct InvokeRecvMessage<'info> {
     #[account(mut)]
     pub attestation_info: UncheckedAccount<'info>,
 
+    /// The integrator chain config account
+    /// CHECK: This account is checked by the endpoint program
+    pub integrator_chain_config: UncheckedAccount<'info>,
+
+    /// The event authority PDA
+    /// CHECK: This should be seeded with `__event_authority`
+    #[account(
+        seeds = [b"__event_authority"],
+        bump,
+        seeds::program = endpoint::id(),
+    )]
+    pub event_authority: AccountInfo<'info>,
+
+    /// CHECK: Self-CPI will fail if the program is n
+    pub program: AccountInfo<'info>,
+
     /// The system program
     pub system_program: Program<'info, System>,
 
@@ -219,7 +263,10 @@ impl<'info> InvokeRecvMessage<'info> {
             integrator_program_pda: self.integrator_program_pda.to_account_info(),
             payer: self.payer.to_account_info(),
             attestation_info: self.attestation_info.to_account_info(),
+            integrator_chain_config: self.integrator_chain_config.to_account_info(),
             system_program: self.system_program.to_account_info(),
+            event_authority: self.event_authority.to_account_info(),
+            program: self.program.to_account_info(),
         };
         CpiContext::new(cpi_program, cpi_accounts)
     }
@@ -241,6 +288,18 @@ pub struct InvokeExecMessage<'info> {
     #[account(mut)]
     pub attestation_info: UncheckedAccount<'info>,
 
+    /// The event authority PDA
+    /// CHECK: This should be seeded with `__event_authority`
+    #[account(
+        seeds = [b"__event_authority"],
+        bump,
+        seeds::program = endpoint::id(),
+    )]
+    pub event_authority: AccountInfo<'info>,
+
+    /// CHECK: Self-CPI will fail if the program is n
+    pub program: AccountInfo<'info>,
+
     /// The system program
     pub system_program: Program<'info, System>,
 
@@ -259,6 +318,8 @@ impl<'info> InvokeExecMessage<'info> {
             integrator_program_pda: self.integrator_program_pda.to_account_info(),
             attestation_info: self.attestation_info.to_account_info(),
             system_program: self.system_program.to_account_info(),
+            event_authority: self.event_authority.to_account_info(),
+            program: self.program.to_account_info(),
         };
         CpiContext::new(cpi_program, cpi_accounts)
     }

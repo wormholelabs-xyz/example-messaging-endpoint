@@ -19,11 +19,8 @@ async fn execute_send_message(
     sequence_tracker: Pubkey,
     instruction_data: Vec<u8>,
 ) -> Result<(), BanksClientError> {
-    println!("Payer Pubkey: {}", payer.pubkey());
-    println!("Integrator Program PDA: {}", integrator_program_pda);
-    println!("Integrator Chain Config: {}", integrator_chain_config);
-    println!("Outbox Message: {}", outbox_message.pubkey());
-    println!("Outbox Message Key: {}", sequence_tracker);
+    let (event_authority, _) = Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
+
     let accounts = InvokeSendMessage {
         payer: payer.pubkey(),
         integrator_program_pda,
@@ -32,6 +29,8 @@ async fn execute_send_message(
         sequence_tracker,
         system_program: solana_sdk::system_program::id(),
         endpoint_program: endpoint::id(),
+        event_authority,
+        program: endpoint::id(),
     };
 
     let ix = Instruction {

@@ -19,11 +19,15 @@ async fn execute_disable_adapter(
     adapter_info: Pubkey,
     instruction_data: Vec<u8>,
 ) -> Result<(), BanksClientError> {
+    let (event_authority, _) = Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
+
     let accounts = DisableAdapter {
         admin: admin.pubkey(),
         integrator_config,
         integrator_chain_config,
         adapter_info,
+        event_authority,
+        program: endpoint::id(),
     };
 
     let ix = Instruction {

@@ -1,8 +1,10 @@
 use crate::error::EndpointError;
+use crate::event::{RecvAdapterDisabledForChain, SendAdapterDisabledForChain};
 use crate::instructions::common::AdapterInfoArgs;
 use crate::state::{AdapterInfo, IntegratorChainConfig, IntegratorConfig};
 use anchor_lang::prelude::*;
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args: AdapterInfoArgs)]
 pub struct DisableAdapter<'info> {
@@ -61,8 +63,12 @@ impl<'info> DisableAdapter<'info> {
 /// # Returns
 ///
 /// * `Result<()>` - Ok if the adapter was successfully disabled, otherwise an error
+///
+/// # Events
+///
+/// Emits a `RecvAdapterDisabledForChain` event
 #[access_control(DisableAdapter::validate(&ctx.accounts))]
-pub fn disable_recv_adapter(ctx: Context<DisableAdapter>, _args: AdapterInfoArgs) -> Result<()> {
+pub fn disable_recv_adapter(ctx: Context<DisableAdapter>, args: AdapterInfoArgs) -> Result<()> {
     let adapter_info = &ctx.accounts.adapter_info;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
@@ -78,6 +84,12 @@ pub fn disable_recv_adapter(ctx: Context<DisableAdapter>, _args: AdapterInfoArgs
     integrator_chain_config
         .recv_adapter_bitmap
         .set(adapter_info.index, false)?;
+
+    emit_cpi!(RecvAdapterDisabledForChain {
+        integrator: args.integrator_program_id,
+        chain: args.chain_id,
+        adapter: args.adapter_program_id,
+    });
 
     Ok(())
 }
@@ -92,8 +104,12 @@ pub fn disable_recv_adapter(ctx: Context<DisableAdapter>, _args: AdapterInfoArgs
 /// # Returns
 ///
 /// * `Result<()>` - Ok if the adapter was successfully disabled, otherwise an error
+///
+/// # Events
+///
+/// Emits a `SendAdapterDisabledForChain` event
 #[access_control(DisableAdapter::validate(&ctx.accounts))]
-pub fn disable_send_adapter(ctx: Context<DisableAdapter>, _args: AdapterInfoArgs) -> Result<()> {
+pub fn disable_send_adapter(ctx: Context<DisableAdapter>, args: AdapterInfoArgs) -> Result<()> {
     let adapter_info = &ctx.accounts.adapter_info;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
@@ -109,6 +125,12 @@ pub fn disable_send_adapter(ctx: Context<DisableAdapter>, _args: AdapterInfoArgs
     integrator_chain_config
         .send_adapter_bitmap
         .set(adapter_info.index, false)?;
+
+    emit_cpi!(SendAdapterDisabledForChain {
+        integrator: args.integrator_program_id,
+        chain: args.chain_id,
+        adapter: args.adapter_program_id,
+    });
 
     Ok(())
 }

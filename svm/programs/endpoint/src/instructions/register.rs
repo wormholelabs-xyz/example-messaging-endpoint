@@ -1,4 +1,7 @@
-use crate::state::{IntegratorConfig, SequenceTracker};
+use crate::{
+    event::IntegratorRegistered,
+    state::{IntegratorConfig, SequenceTracker},
+};
 use anchor_lang::prelude::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -13,6 +16,7 @@ pub struct RegisterArgs {
     pub admin: Pubkey,
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args: RegisterArgs)]
 pub struct Register<'info> {
@@ -66,9 +70,12 @@ pub struct Register<'info> {
 
 /// Register an integrator program with the endpoint
 ///
-/// This function initializes an IntegratorConfig account for the given integrator program.
-/// It sets up the configuration with the provided admin and program ID, and initializes
-/// an empty list of registered adapters.
+/// This function performs the following steps:
+/// 1. Initializes an IntegratorConfig account for the given integrator program.
+/// 2. Sets up the configuration with the provided admin and program ID.
+/// 3. Initializes an empty list of registered adapters.
+/// 4. Initializes a SequenceTracker account for the integrator program.
+/// 5. Emits IntegratorRegistered events.
 ///
 /// # Arguments
 ///
@@ -76,10 +83,15 @@ pub struct Register<'info> {
 /// * `args` - The arguments for the register instruction, containing:
 ///   - `integrator_program_id`: The public key of the integrator program
 ///   - `integrator_program_pda_bump`: The bump used to derive the integrator program's PDA
+///   - `admin`: The public key of the admin for the IntegratorConfig
 ///
 /// # Returns
 ///
 /// Returns `Ok(())` if the registration is successful, or an error if it fails
+///
+/// # Events
+///
+/// Emits `IntegratorRegistered` event
 pub fn register(ctx: Context<Register>, args: RegisterArgs) -> Result<()> {
     // Initialize the IntegratorConfig account with the provided information
     ctx.accounts.integrator_config.set_inner(IntegratorConfig {
@@ -95,6 +107,16 @@ pub fn register(ctx: Context<Register>, args: RegisterArgs) -> Result<()> {
         bump: ctx.bumps.sequence_tracker,
         integrator_program_id: args.integrator_program_id,
         sequence: 0,
+    });
+
+    emit_cpi!(IntegratorRegistered {
+        integrator: args.integrator_program_id,
+        admin: args.admin,
+    });
+
+    emit!(IntegratorRegistered {
+        integrator: args.integrator_program_id,
+        admin: args.admin,
     });
 
     Ok(())

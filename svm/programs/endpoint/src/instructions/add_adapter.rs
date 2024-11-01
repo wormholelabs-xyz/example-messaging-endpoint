@@ -1,4 +1,7 @@
-use crate::state::{AdapterInfo, IntegratorConfig};
+use crate::{
+    event::AdapterAdded,
+    state::{AdapterInfo, IntegratorConfig},
+};
 use anchor_lang::prelude::*;
 
 /// Arguments for the add_adapter instruction
@@ -11,6 +14,7 @@ pub struct AddAdapterArgs {
     pub adapter_program_id: Pubkey,
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args: AddAdapterArgs)]
 pub struct AddAdapter<'info> {
@@ -68,13 +72,17 @@ impl<'info> AddAdapter<'info> {
 /// # Arguments
 ///
 /// * `ctx` - The context for the instruction, containing the accounts.
-/// * `args` - The arguments for registering an adapter, including:
+/// * `args` - The arguments for registering a adapter, including:
 ///     * `integrator_program`: The Pubkey of the integrator program.
 ///     * `adapter_program_id`: The Pubkey of the adapter to be registered.
 ///
 /// # Returns
 ///
 /// Returns `Ok(())` if the adapter is successfully registered, or an error otherwise.
+///
+/// # Events
+///
+/// Emits a `AdapterAdded` event
 #[access_control(AddAdapter::validate(&ctx.accounts))]
 pub fn add_adapter(ctx: Context<AddAdapter>, args: AddAdapterArgs) -> Result<()> {
     let index = ctx.accounts.integrator_config.adapter_infos.len() as u8;
@@ -91,6 +99,12 @@ pub fn add_adapter(ctx: Context<AddAdapter>, args: AddAdapterArgs) -> Result<()>
         index,
         integrator_program_id: args.integrator_program_id,
         adapter_program_id: args.adapter_program_id,
+    });
+
+    emit_cpi!(AdapterAdded {
+        integrator: args.integrator_program_id,
+        adapter: args.adapter_program_id,
+        adapters_num: index,
     });
 
     Ok(())

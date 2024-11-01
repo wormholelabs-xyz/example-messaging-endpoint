@@ -6,7 +6,7 @@ use endpoint::{self};
 use universal_address::UniversalAddress;
 
 // Declare the program ID for the mock adapter
-declare_id!("4ZiURKmq17KrwY3K2KxxzqttzytxQsqAcMy374QUi7tx");
+declare_id!("5k8XySmYJ6nQTF8ZFZtRoevjCx9Y9PS5MT9oJDLNA162");
 
 #[program]
 pub mod mock_adapter {
@@ -85,6 +85,17 @@ pub struct InvokePickUpMessage<'info> {
     )]
     pub adapter_pda: SystemAccount<'info>,
 
+    /// CHECK: This should be seeded with `__event_authority`
+    #[account(
+            seeds = [b"__event_authority"],
+            bump,
+            seeds::program = endpoint::id(),
+        )]
+    pub event_authority: AccountInfo<'info>,
+
+    /// CHECK: Self-CPI will fail if the program is n
+    pub program: AccountInfo<'info>,
+
     #[account(mut)]
     /// CHECK: this is a refund recipient that will be passed in by integrator
     pub refund_recipient: AccountInfo<'info>,
@@ -104,6 +115,8 @@ impl<'info> InvokePickUpMessage<'info> {
             outbox_message: self.outbox_message.to_account_info(),
             adapter_info: self.adapter_info.to_account_info(),
             adapter_pda: self.adapter_pda.to_account_info(),
+            event_authority: self.event_authority.to_account_info(),
+            program: self.program.to_account_info(),
             refund_recipient: self.refund_recipient.to_account_info(),
             system_program: self.system_program.to_account_info(),
         };
@@ -148,6 +161,18 @@ pub struct InvokeAttestMessage<'info> {
     #[account(mut)]
     pub attestation_info: UncheckedAccount<'info>,
 
+    /// The event authority PDA
+    /// CHECK: This should be seeded with `__event_authority`
+    #[account(
+        seeds = [b"__event_authority"],
+        bump,
+        seeds::program = endpoint::id(),
+    )]
+    pub event_authority: AccountInfo<'info>,
+
+    /// CHECK: Self-CPI will fail if the program is n
+    pub program: AccountInfo<'info>,
+
     /// The system program
     pub system_program: Program<'info, System>,
 
@@ -165,6 +190,8 @@ impl<'info> InvokeAttestMessage<'info> {
             adapter_pda: self.adapter_pda.to_account_info(),
             integrator_chain_config: self.integrator_chain_config.to_account_info(),
             attestation_info: self.attestation_info.to_account_info(),
+            event_authority: self.event_authority.to_account_info(),
+            program: self.program.to_account_info(),
             system_program: self.system_program.to_account_info(),
         };
         CpiContext::new(cpi_program, cpi_accounts)

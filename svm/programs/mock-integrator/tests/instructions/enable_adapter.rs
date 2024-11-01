@@ -19,6 +19,8 @@ pub async fn execute_enable_adapter(
     adapter_info: Pubkey,
     instruction_data: Vec<u8>,
 ) -> Result<(), BanksClientError> {
+    let (event_authority, _) = Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
+
     let accounts = EnableAdapter {
         payer: payer.pubkey(),
         admin: admin.pubkey(),
@@ -26,6 +28,8 @@ pub async fn execute_enable_adapter(
         integrator_chain_config,
         adapter_info,
         system_program: solana_sdk::system_program::id(),
+        event_authority,
+        program: endpoint::id(),
     };
 
     let ix = Instruction {

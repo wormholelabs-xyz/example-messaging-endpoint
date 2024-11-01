@@ -1,4 +1,5 @@
 use crate::error::EndpointError;
+use crate::event::{AdminUpdateRequested, AdminUpdated};
 use crate::state::IntegratorConfig;
 use anchor_lang::prelude::*;
 
@@ -11,6 +12,7 @@ pub struct TransferAdminArgs {
     pub integrator_program_id: Pubkey,
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args: TransferAdminArgs)]
 pub struct TransferAdmin<'info> {
@@ -36,6 +38,7 @@ impl<'info> TransferAdmin<'info> {
     }
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 pub struct ClaimAdmin<'info> {
     /// The signer, which must be the pending_admin
@@ -55,42 +58,75 @@ pub struct ClaimAdmin<'info> {
 
 /// Initiates the transfer of admin rights for an IntegratorConfig account.
 ///
-/// This function sets a pending admin for the IntegratorConfig account. The pending admin
-/// must later claim the admin rights using the `claim_admin` function.
-///
-/// If there is already a transfer in progress (in other words `pending_admin` is not null)
-/// `AdminTransferInProgress` will be returned
+/// This function performs the following steps:
+/// 1. Validates that the current admin is initiating the transfer.
+/// 2. Sets a pending admin for the IntegratorConfig account.
 ///
 /// # Arguments
 ///
-/// * `ctx` - The context of the request, containing the accounts involved in the admin update.
-/// * `args` - The TransferAdminArg struct containing the new admin's public key.
+/// * `ctx` - The context of the instruction, containing the accounts involved
+/// * `args` - The arguments for the transfer_admin instruction, containing:
+///   - `new_admin`: The public key of the new admin
+///   - `integrator_program_id`: The public key of the integrator program
 ///
 /// # Returns
 ///
-/// Returns `Ok(())` if setting the pending admin is successful, otherwise returns an error.
+/// Returns `Ok(())` if setting the pending admin is successful, or an error if it fails
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * There is already a transfer in progress (EndpointError::AdminTransferInProgress)
+/// * The current admin is not the signer (EndpointError::CallerNotAuthorized)
+///
+/// # Events
+/// Emits an `AdminUpdateRequested` event
 #[access_control(TransferAdmin::validate(&ctx.accounts))]
 pub fn transfer_admin(ctx: Context<TransferAdmin>, args: TransferAdminArgs) -> Result<()> {
     ctx.accounts.integrator_config.pending_admin = Some(args.new_admin);
+
+    emit_cpi!(AdminUpdateRequested {
+        integrator: args.integrator_program_id,
+        old_admin: ctx.accounts.admin.key(),
+        new_admin: args.new_admin,
+    });
+
     Ok(())
 }
 
 /// Claims the admin rights for an IntegratorConfig account.
 ///
-/// This function allows only the pending admin to claim the admin rights,
-/// completing the two-step admin transfer process.
+/// This function performs the following steps:
+/// 1. Validates that the signer is either the pending admin or the current admin.
+/// 2. Sets the new admin as the current admin.
+/// 3. Clears the pending admin field.
 ///
 /// # Arguments
 ///
-/// * `ctx` - The context of the request, containing the accounts involved in claiming admin rights.
+/// * `ctx` - The context of the instruction, containing the accounts involved
 ///
 /// # Returns
 ///
-/// Returns `Ok(())` if claiming admin rights is successful, otherwise returns an error.
+/// Returns `Ok(())` if claiming admin rights is successful, or an error if it fails
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * There is no pending admin transfer (EndpointError::NoAdminTransferInProgress)
+/// * The signer is not the pending admin or the current admin (EndpointError::CallerNotAuthorized)
+///
+/// Emits an `AdminUpdated` event
 pub fn claim_admin(ctx: Context<ClaimAdmin>) -> Result<()> {
     // The constraints in ClaimAdmin struct ensure that pending_admin is Some and matches the signer
     // or the admin matches the signer
     ctx.accounts.integrator_config.admin = Some(ctx.accounts.new_admin.key());
     ctx.accounts.integrator_config.pending_admin = None;
+
+    emit_cpi!(AdminUpdated {
+        integrator: ctx.accounts.integrator_config.integrator_program_id,
+        old_admin: ctx.accounts.integrator_config.admin.unwrap(),
+        new_admin: ctx.accounts.new_admin.key(),
+    });
+
     Ok(())
 }
