@@ -55,7 +55,7 @@ interface IRouterIntegrator is IMessageSequence {
         uint64 sequence,
         UniversalAddress dstAddr,
         bytes32 payloadHash
-    ) external returns (uint128, uint128, bool);
+    ) external view returns (uint128, uint128, bool);
 
     /// @notice Retrieves the status of a message.
     /// @dev This version is expected to be called by the integrator on the destination chain.
@@ -66,6 +66,7 @@ interface IRouterIntegrator is IMessageSequence {
     /// @return (uint128, uint128, bool) The enabled bitmap, the attested bitmap, if the message was executed.
     function getMessageStatus(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash)
         external
+        view
         returns (uint128, uint128, bool);
 
     /// @notice Retrieves the quote for message delivery.
@@ -81,5 +82,5 @@ interface IRouterIntegrator is IMessageSequence {
     /// @dev This sums up all the individual sendTransceiver's quoteDeliveryPrice calls.
     /// @param dstChain The Wormhole chain ID of the recipient.
     /// @return uint256 The total cost of delivering a message to the recipient chain in this chain's native token.
-    function quoteDeliveryPrice(uint16 dstChain) external returns (uint256);
+    function quoteDeliveryPrice(uint16 dstChain) external view returns (uint256);
 }
