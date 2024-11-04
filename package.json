@@ -7,10 +7,13 @@
     "@typechain/ethers-v6": "^0.5.1",
     "ethers": "^6.13.4",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
     "typechain": "^8.3.2",
     "typescript": "^5.6.3"
   },
   "scripts": {
-    "build": "cd evm && forge build && typechain --target=ethers-v6 --out-dir=sdk/ts/typechain \"out/!(test).sol/*.json\""
-  }
+    "build:abi": "cd evm && forge build && typechain --target=ethers-v6 --out-dir=sdk/ts/src/abi \"out/!(test).sol/*.json\"",
+    "build:sdk": "cd evm/sdk/ts/src && tsc"
+  },
+  "type": "module"
 }
