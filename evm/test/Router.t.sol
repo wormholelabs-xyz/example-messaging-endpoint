@@ -380,13 +380,13 @@ contract RouterTest is Test {
             router.computeMessageDigest(
                 OurChainId,
                 UniversalAddressLibrary.fromAddress(integrator),
-                sequence,
+                0,
                 chain,
                 UniversalAddressLibrary.fromAddress(userA),
                 payloadHash
             ),
             UniversalAddressLibrary.fromAddress(integrator),
-            sequence,
+            0,
             UniversalAddressLibrary.fromAddress(userA),
             chain,
             payloadHash
@@ -420,7 +420,7 @@ contract RouterTest is Test {
         TransceiverImpl transceiver2 = new TransceiverImpl();
         TransceiverImpl transceiver3 = new TransceiverImpl();
         uint16 chain = 2;
-        uint16 anotherChain = 1;
+        uint16 sequence = 1;
         vm.startPrank(integrator);
         router.register(admin);
 
@@ -441,59 +441,59 @@ contract RouterTest is Test {
         // Only a transceiver can call attest.
         vm.startPrank(userB);
         vm.expectRevert(abi.encodeWithSelector(Router.TransceiverNotEnabled.selector));
-        router.attestMessage(chain, sourceIntegrator, anotherChain, OurChainId, destIntegrator, payloadHash);
+        router.attestMessage(chain, sourceIntegrator, sequence, OurChainId, destIntegrator, payloadHash);
 
         // Attesting a message destined for the wrong chain should revert.
         vm.startPrank(address(transceiver2));
         vm.expectRevert(abi.encodeWithSelector(Router.InvalidDestinationChain.selector));
-        router.attestMessage(chain, sourceIntegrator, anotherChain, OurChainId + 1, destIntegrator, payloadHash);
+        router.attestMessage(chain, sourceIntegrator, sequence, OurChainId + 1, destIntegrator, payloadHash);
 
         // This attest should work.
         vm.startPrank(address(transceiver2));
         vm.expectEmit(true, true, false, true);
         emit Router.MessageAttestedTo(
-            router.computeMessageDigest(chain, sourceIntegrator, anotherChain, OurChainId, destIntegrator, payloadHash),
+            router.computeMessageDigest(chain, sourceIntegrator, sequence, OurChainId, destIntegrator, payloadHash),
             chain,
             sourceIntegrator,
-            anotherChain,
+            sequence,
             OurChainId,
             destIntegrator,
             payloadHash,
             0x2, // attested bitmap
             UniversalAddressLibrary.fromAddress(address(transceiver2))
         );
-        router.attestMessage(chain, sourceIntegrator, anotherChain, OurChainId, destIntegrator, payloadHash);
+        router.attestMessage(chain, sourceIntegrator, sequence, OurChainId, destIntegrator, payloadHash);
 
         // Multiple Attests from same transceiver should revert.
         vm.expectRevert(abi.encodeWithSelector(Router.DuplicateMessageAttestation.selector));
-        router.attestMessage(chain, sourceIntegrator, anotherChain, OurChainId, destIntegrator, payloadHash);
+        router.attestMessage(chain, sourceIntegrator, sequence, OurChainId, destIntegrator, payloadHash);
 
         // Receive what we just attested to mark it executed.
         vm.startPrank(integrator);
         vm.expectEmit(true, true, false, true);
         emit Router.MessageReceived(
-            router.computeMessageDigest(chain, sourceIntegrator, anotherChain, OurChainId, destIntegrator, payloadHash),
+            router.computeMessageDigest(chain, sourceIntegrator, sequence, OurChainId, destIntegrator, payloadHash),
             chain,
             sourceIntegrator,
-            anotherChain,
+            sequence,
             OurChainId,
             destIntegrator,
             payloadHash,
             0x3, // enabled bitmap
             0x2 // attested bitmap
         );
-        router.recvMessage(chain, sourceIntegrator, anotherChain, payloadHash);
+        router.recvMessage(chain, sourceIntegrator, sequence, payloadHash);
 
         // Attesting after receive should still work on a different transceiver.
         vm.startPrank(address(transceiver1));
-        router.attestMessage(chain, sourceIntegrator, anotherChain, OurChainId, destIntegrator, payloadHash);
+        router.attestMessage(chain, sourceIntegrator, sequence, OurChainId, destIntegrator, payloadHash);
 
         // Attesting on a disabled transceiver should revert.
         vm.startPrank(admin);
         router.disableRecvTransceiver(integrator, 2, address(transceiver1));
         vm.startPrank(address(transceiver1));
         vm.expectRevert(abi.encodeWithSelector(Router.TransceiverNotEnabled.selector));
-        router.attestMessage(chain, sourceIntegrator, anotherChain, OurChainId, destIntegrator, payloadHash);
+        router.attestMessage(chain, sourceIntegrator, sequence, OurChainId, destIntegrator, payloadHash);
     }
 
     function test_recvMessage() public {
