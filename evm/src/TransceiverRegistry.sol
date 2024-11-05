@@ -218,9 +218,9 @@ abstract contract TransceiverRegistry {
         transceiverInfos[integrator][transceiver] =
             TransceiverInfo({registered: true, index: registeredTransceiversLength});
         // Add this transceiver to the integrator => address[] mapping
-        _getRegisteredTransceiversStorage()[integrator].push(transceiver);
+        registeredTransceivers[integrator].push(transceiver);
         // Emit an event
-        emit TransceiverAdded(integrator, transceiver, registeredTransceiversLength);
+        emit TransceiverAdded(integrator, transceiver, registeredTransceiversLength + 1);
 
         return transceiverInfos[integrator][transceiver].index;
     }
@@ -432,6 +432,12 @@ abstract contract TransceiverRegistry {
     }
 
     // =============== PUBLIC GETTERS ========================================
+
+    /// @notice Returns the maximum number of transceivers allowed.
+    /// @return uint8 The maximum number of transceivers allowed.
+    function maxTransceivers() public pure returns (uint8) {
+        return MAX_TRANSCEIVERS;
+    }
 
     /// @notice Returns the queried transceiver's index.
     /// @param integrator The integrator address.
