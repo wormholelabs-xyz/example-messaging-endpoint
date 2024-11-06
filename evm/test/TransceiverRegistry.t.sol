@@ -60,10 +60,6 @@ contract ConcreteTransceiverRegistry is TransceiverRegistry {
     {
         return _isRecvTransceiverEnabledForChainWithCheck(integrator, chainId, transceiver);
     }
-
-    function getMaxTransceivers() public pure returns (uint8) {
-        return MAX_TRANSCEIVERS;
-    }
 }
 
 contract TransceiverRegistryTest is Test {
@@ -249,7 +245,7 @@ contract TransceiverRegistryTest is Test {
 
     function test10() public {
         address me = address(this);
-        uint8 maxTransceivers = transceiverRegistry.getMaxTransceivers();
+        uint8 maxTransceivers = transceiverRegistry.maxTransceivers();
 
         // Send side
         for (uint8 i = 0; i < maxTransceivers; i++) {
@@ -273,7 +269,7 @@ contract TransceiverRegistryTest is Test {
 
     function test11() public {
         address me = address(this);
-        uint8 maxTransceivers = transceiverRegistry.getMaxTransceivers();
+        uint8 maxTransceivers = transceiverRegistry.maxTransceivers();
 
         // Recv side
         for (uint8 i = 0; i < maxTransceivers; i++) {
@@ -346,7 +342,7 @@ contract TransceiverRegistryTest is Test {
 
     function test_recvPerformance() public {
         address me = address(this);
-        uint8 maxTransceivers = transceiverRegistry.getMaxTransceivers();
+        uint8 maxTransceivers = transceiverRegistry.maxTransceivers();
 
         // Recv side
         for (uint8 i = 0; i < maxTransceivers; i++) {
@@ -374,5 +370,9 @@ contract TransceiverRegistryTest is Test {
         require(transceiverRegistry.getTransceiverIndex(me, address(0x2)) == 1, "Invalid index");
         vm.expectRevert(abi.encodeWithSelector(TransceiverRegistry.NonRegisteredTransceiver.selector, address(0x4)));
         transceiverRegistry.getTransceiverIndex(me, address(0x4));
+    }
+
+    function test_maxTransceivers() public view {
+        assertEq(transceiverRegistry.maxTransceivers(), 128);
     }
 }
