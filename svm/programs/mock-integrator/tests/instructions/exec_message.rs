@@ -23,7 +23,8 @@ pub async fn exec_message(
 ) -> Result<(), BanksClientError> {
     let (integrator_program_pda, integrator_program_pda_bump) =
         Pubkey::find_program_address(&[b"endpoint_integrator"], &mock_integrator::id());
-    let (event_authority, _) = Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
+    let (event_authority, _) =
+        Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
 
     let message_hash = AttestationInfo::compute_message_hash(
         src_chain,

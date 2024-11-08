@@ -17,9 +17,14 @@ pub async fn update_admin(
     integrator_config: Pubkey,
     integrator_program_id: Pubkey,
 ) -> Result<(), BanksClientError> {
+    let (event_authority, _) =
+        Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
+
     let accounts = UpdateAdmin {
         admin: admin.pubkey(),
         integrator_config,
+        event_authority,
+        program: endpoint::id(),
     };
 
     let args = endpoint::instructions::UpdateAdminArgs {

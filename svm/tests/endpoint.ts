@@ -3,7 +3,7 @@ import { Program } from "@coral-xyz/anchor";
 import { Endpoint } from "../target/types/endpoint";
 import EndpointIdl from "../target/idl/endpoint.json";
 import { MockIntegrator } from "../target/types/mock_integrator";
-import MockIntegratorIdl from "../target/idl/mock_integrator.json";
+
 import {
   PublicKey,
   Keypair,
@@ -20,7 +20,8 @@ import { Err, Ok } from "ts-results";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { workspace } from "@coral-xyz/anchor";
 
-// Include the provided functions
+// Modified from `example-liquidity-layer` to use async/await instead of Err and Ok from `ts-results``
+// Link: https://github.com/wormhole-foundation/example-liquidity-layer/blob/main/solana/ts/src/testing/utils.ts#L39
 export async function expectIxOk(
   connection: Connection,
   instructions: TransactionInstruction[],
@@ -31,11 +32,16 @@ export async function expectIxOk(
   } = {},
 ) {
   const { addressLookupTableAccounts, confirmOptions } = options;
-  return debugSendAndConfirmTransaction(connection, instructions, signers, {
-    addressLookupTableAccounts,
-    logError: true,
-    confirmOptions,
-  }).then((result) => result.unwrap());
+  return await debugSendAndConfirmTransaction(
+    connection,
+    instructions,
+    signers,
+    {
+      addressLookupTableAccounts,
+      logError: true,
+      confirmOptions,
+    },
+  );
 }
 
 async function debugSendAndConfirmTransaction(
@@ -47,45 +53,41 @@ async function debugSendAndConfirmTransaction(
     logError?: boolean;
     confirmOptions?: ConfirmOptions;
   } = {},
-) {
+): Promise<string> {
   const { logError, confirmOptions, addressLookupTableAccounts } = options;
 
-  const latestBlockhash = await connection.getLatestBlockhash();
+  try {
+    const latestBlockhash = await connection.getLatestBlockhash();
 
-  const messageV0 = new TransactionMessage({
-    payerKey: signers[0].publicKey,
-    recentBlockhash: latestBlockhash.blockhash,
-    instructions,
-  }).compileToV0Message(addressLookupTableAccounts);
+    const messageV0 = new TransactionMessage({
+      payerKey: signers[0].publicKey,
+      recentBlockhash: latestBlockhash.blockhash,
+      instructions,
+    }).compileToV0Message(addressLookupTableAccounts);
 
-  const tx = new VersionedTransaction(messageV0);
+    const tx = new VersionedTransaction(messageV0);
+    tx.sign(signers);
 
-  // sign your transaction with the required `Signers`
-  tx.sign(signers);
+    const signature = await connection.sendTransaction(tx, confirmOptions);
+    await connection.confirmTransaction(
+      {
+        signature,
+        ...latestBlockhash,
+      },
+      confirmOptions === undefined ? "confirmed" : confirmOptions.commitment,
+    );
 
-  return connection
-    .sendTransaction(tx, confirmOptions)
-    .then(async (signature) => {
-      await connection.confirmTransaction(
-        {
-          signature,
-          ...latestBlockhash,
-        },
-        confirmOptions === undefined ? "confirmed" : confirmOptions.commitment,
-      );
-      return new Ok(signature);
-    })
-    .catch((err) => {
-      if (logError) {
-        console.log(err);
-      }
-      if (err.logs !== undefined) {
-        const logs: string[] = err.logs;
-        return new Err(logs.join("\n"));
-      } else {
-        return new Err(err.message);
-      }
-    });
+    return signature;
+  } catch (err) {
+    if (logError) {
+      console.log(err);
+    }
+    if (err.logs !== undefined) {
+      throw new Error(err.logs.join("\n"));
+    } else {
+      throw new Error(err.message);
+    }
+  }
 }
 
 describe("endpoint", () => {

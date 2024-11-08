@@ -15,7 +15,8 @@ pub async fn discard_admin(
     payer: &Keypair,
     integrator_config: Pubkey,
 ) -> Result<(), BanksClientError> {
-    let (event_authority, _) = Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
+    let (event_authority, _) =
+        Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
 
     let accounts = DiscardAdmin {
         admin: admin.pubkey(),

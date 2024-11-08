@@ -33,7 +33,8 @@ pub async fn attest_message(
         payload_hash,
     );
     let (attestation_info, _) = AttestationInfo::pda(message_hash);
-    let (event_authority, _) = Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
+    let (event_authority, _) =
+        Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
 
     let accounts = InvokeAttestMessage {
         payer: payer.pubkey(),

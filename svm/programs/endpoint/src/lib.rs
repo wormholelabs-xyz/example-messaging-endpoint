@@ -10,6 +10,18 @@ use instructions::*;
 
 declare_id!("FMPF1RnXz1vvZ6eovoEQqMPXYRUgYqFKFMXzTJkbWWVD");
 
+cfg_if::cfg_if! {
+    if #[cfg(feature = "solana-mainnet")] {
+        pub const CHAIN_ID: u16 = 1;
+    } else if #[cfg(feature = "solana-devnet")] {
+        pub const CHAIN_ID: u16 = 1;
+    } else if #[cfg(feature = "solana-localnet")] {
+        pub const CHAIN_ID: u16 = 1;
+    } else {
+        compile_error!("One of the features must be selected: solana-mainnet, solana-devnet, or solana-localnet");
+    }
+}
+
 /// The main program module for the Endpoint
 #[program]
 pub mod endpoint {

@@ -19,7 +19,8 @@ pub async fn add_adapter(
     integrator_program_id: Pubkey,
     adapter_program_id: Pubkey,
 ) -> Result<(), BanksClientError> {
-    let (event_authority, _) = Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
+    let (event_authority, _) =
+        Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
 
     let accounts = AddAdapter {
         payer: payer.pubkey(),

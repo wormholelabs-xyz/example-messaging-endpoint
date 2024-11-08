@@ -1492,6 +1492,7 @@ dependencies = [
  "anchor-lang",
  "bincode",
  "bitmaps 3.2.1",
+ "cfg-if",
  "solana-program-runtime",
  "solana-program-test",
  "solana-sdk",

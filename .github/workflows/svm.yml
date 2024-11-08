@@ -41,6 +41,7 @@ jobs:
           anchor-version: "${{steps.anchor.outputs.version}}"
           solana-cli-version: "${{steps.solana.outputs.version}}"
           working-directory: "svm"
+          features: "solana-localnet"
 
       - run: cargo fmt --check --all
       - run: cargo clippy

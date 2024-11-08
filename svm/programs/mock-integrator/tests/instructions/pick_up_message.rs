@@ -13,7 +13,8 @@ pub async fn pick_up_message(
     adapter_pda: Pubkey,
     refund_recipient: Pubkey,
 ) -> Result<(), BanksClientError> {
-    let (event_authority, _) = Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
+    let (event_authority, _) =
+        Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
 
     let accounts = InvokePickUpMessage {
         outbox_message,

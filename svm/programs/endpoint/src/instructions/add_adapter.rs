@@ -72,7 +72,7 @@ impl<'info> AddAdapter<'info> {
 /// # Arguments
 ///
 /// * `ctx` - The context for the instruction, containing the accounts.
-/// * `args` - The arguments for registering a adapter, including:
+/// * `args` - The arguments for registering an adapter, including:
 ///     * `integrator_program`: The Pubkey of the integrator program.
 ///     * `adapter_program_id`: The Pubkey of the adapter to be registered.
 ///

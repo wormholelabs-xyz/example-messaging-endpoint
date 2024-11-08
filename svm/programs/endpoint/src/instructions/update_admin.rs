@@ -1,4 +1,4 @@
-use crate::error::EndpointError;
+use crate::event::AdminUpdated;
 use crate::state::IntegratorConfig;
 use anchor_lang::prelude::*;
 
@@ -11,6 +11,7 @@ pub struct UpdateAdminArgs {
     pub integrator_program_id: Pubkey,
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args: UpdateAdminArgs)]
 pub struct UpdateAdmin<'info> {
@@ -66,12 +67,14 @@ impl<'info> UpdateAdmin<'info> {
 /// Emits an `AdminUpdated` event
 #[access_control(UpdateAdmin::validate(&ctx.accounts))]
 pub fn update_admin(ctx: Context<UpdateAdmin>, args: UpdateAdminArgs) -> Result<()> {
-    // Check if there's a pending admin transfer
-    if ctx.accounts.integrator_config.pending_admin.is_some() {
-        return Err(EndpointError::AdminTransferInProgress.into());
-    }
-
     ctx.accounts.integrator_config.admin = Some(args.new_admin);
+
+    // Emit the AdminUpdated event
+    emit_cpi!(AdminUpdated {
+        integrator: args.integrator_program_id,
+        new_admin: args.new_admin,
+        old_admin: ctx.accounts.integrator_config.admin.unwrap(),
+    });
 
     Ok(())
 }

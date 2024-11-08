@@ -98,10 +98,7 @@ impl<'info> EnableAdapter<'info> {
 ///
 /// Emits a `RecvAdapterEnabledForChain` event
 #[access_control(EnableAdapter::validate(&ctx.accounts, &args))]
-pub fn enable_recv_adapter(
-    ctx: Context<EnableAdapter>,
-    args: AdapterInfoArgs,
-) -> Result<()> {
+pub fn enable_recv_adapter(ctx: Context<EnableAdapter>, args: AdapterInfoArgs) -> Result<()> {
     let adapter_info = &ctx.accounts.adapter_info;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 
@@ -165,10 +162,7 @@ pub fn enable_recv_adapter(
 ///
 /// Emits a `SendAdapterEnabledForChain` event
 #[access_control(EnableAdapter::validate(&ctx.accounts, &args))]
-pub fn enable_send_adapter(
-    ctx: Context<EnableAdapter>,
-    args: AdapterInfoArgs,
-) -> Result<()> {
+pub fn enable_send_adapter(ctx: Context<EnableAdapter>, args: AdapterInfoArgs) -> Result<()> {
     let adapter_info = &ctx.accounts.adapter_info;
     let integrator_chain_config = &mut ctx.accounts.integrator_chain_config;
 

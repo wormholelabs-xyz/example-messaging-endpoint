@@ -5,6 +5,7 @@ use crate::{
     error::EndpointError,
     event::MessageAttestedTo,
     state::{AdapterInfo, AttestationInfo, IntegratorChainConfig},
+    CHAIN_ID,
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -114,6 +115,12 @@ pub struct AttestMessage<'info> {
 ///
 /// Emits a `MessageAttestedTo` event
 pub fn attest_message(ctx: Context<AttestMessage>, args: AttestMessageArgs) -> Result<()> {
+    // Validate that the destination chain is this program's chain
+    require!(
+        args.dst_chain == CHAIN_ID,
+        EndpointError::InvalidDestinationChain
+    );
+
     let adapter_info = &ctx.accounts.adapter_info;
     let integrator_chain_config = &ctx.accounts.integrator_chain_config;
     let attestation_info = &mut ctx.accounts.attestation_info;

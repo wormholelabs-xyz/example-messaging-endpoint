@@ -114,10 +114,5 @@ pub fn register(ctx: Context<Register>, args: RegisterArgs) -> Result<()> {
         admin: args.admin,
     });
 
-    emit!(IntegratorRegistered {
-        integrator: args.integrator_program_id,
-        admin: args.admin,
-    });
-
     Ok(())
 }

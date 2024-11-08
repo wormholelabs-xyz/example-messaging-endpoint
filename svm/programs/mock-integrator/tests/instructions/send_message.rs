@@ -19,7 +19,8 @@ async fn execute_send_message(
     sequence_tracker: Pubkey,
     instruction_data: Vec<u8>,
 ) -> Result<(), BanksClientError> {
-    let (event_authority, _) = Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
+    let (event_authority, _) =
+        Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
 
     let accounts = InvokeSendMessage {
         payer: payer.pubkey(),
