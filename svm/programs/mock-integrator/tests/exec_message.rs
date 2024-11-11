@@ -3,16 +3,16 @@
 mod common;
 mod instructions;
 
-use crate::instructions::add_transceiver::add_transceiver;
+use crate::instructions::add_adapter::add_adapter;
 use crate::instructions::attest_message::attest_message;
-use crate::instructions::enable_transceiver::enable_recv_transceiver;
+use crate::instructions::enable_adapter::enable_recv_adapter;
 use crate::instructions::exec_message::exec_message;
 use crate::instructions::register::register;
 
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
-use router::error::RouterError;
-use router::state::{AttestationInfo, IntegratorChainConfig, IntegratorConfig, TransceiverInfo};
+use endpoint::error::EndpointError;
+use endpoint::state::{AdapterInfo, AttestationInfo, IntegratorChainConfig, IntegratorConfig};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::InstructionError, signature::Keypair, signer::Signer,
@@ -42,35 +42,33 @@ async fn setup_test_environment() -> (ProgramTestContext, Keypair, Keypair, Pubk
     .await
     .unwrap();
 
-    // Setup transceiver
-    let transceiver_program_id = mock_transceiver::id();
-    let (transceiver_info_pda, _) =
-        TransceiverInfo::pda(&integrator_program_id, &transceiver_program_id);
-    let (transceiver_pda, _) =
-        Pubkey::find_program_address(&[b"transceiver_pda"], &transceiver_program_id);
+    // Setup adapter
+    let adapter_program_id = mock_adapter::id();
+    let (adapter_info_pda, _) = AdapterInfo::pda(&integrator_program_id, &adapter_program_id);
+    let (adapter_pda, _) = Pubkey::find_program_address(&[b"adapter_pda"], &adapter_program_id);
 
-    // Add and enable transceiver
-    add_transceiver(
+    // Add and enable adapter
+    add_adapter(
         &mut context,
         &admin,
         &payer,
         integrator_config_pda,
-        transceiver_info_pda,
+        adapter_info_pda,
         integrator_program_id,
-        transceiver_program_id,
+        adapter_program_id,
     )
     .await
     .unwrap();
 
-    enable_recv_transceiver(
+    enable_recv_adapter(
         &mut context,
         &admin,
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        transceiver_info_pda,
+        adapter_info_pda,
         chain_id,
-        transceiver_program_id,
+        adapter_program_id,
         integrator_program_id,
     )
     .await
@@ -167,7 +165,7 @@ async fn test_exec_message_duplicate_execution() {
         result.unwrap_err().unwrap(),
         TransactionError::InstructionError(
             0,
-            InstructionError::Custom(RouterError::AlreadyExecuted.into())
+            InstructionError::Custom(EndpointError::AlreadyExecuted.into())
         )
     );
 }
@@ -201,7 +199,7 @@ async fn test_exec_message_zero_chain_id() {
         result.unwrap_err().unwrap(),
         TransactionError::InstructionError(
             0,
-            InstructionError::Custom(RouterError::InvalidChainId.into())
+            InstructionError::Custom(EndpointError::InvalidChainId.into())
         )
     );
 }

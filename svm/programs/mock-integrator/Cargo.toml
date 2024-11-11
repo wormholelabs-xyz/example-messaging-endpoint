@@ -19,11 +19,11 @@ test-sbf = ["no-entrypoint"]
 
 [dependencies]
 anchor-lang = { workspace = true }
-router = { workspace = true, features = ["cpi"] }
+endpoint = { workspace = true, features = ["cpi"] }
 universal-address = { workspace = true }
 
 [dev-dependencies]
-mock-transceiver = { workspace = true }
+mock-adapter = { workspace = true }
 tokio = { workspace = true }
 solana-program-test = { workspace = true }
 solana-sdk = { workspace = true }

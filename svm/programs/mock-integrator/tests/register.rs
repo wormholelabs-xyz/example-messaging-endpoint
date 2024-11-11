@@ -1,6 +1,6 @@
 #![cfg(feature = "test-sbf")]
 
-use router::state::{IntegratorConfig, SequenceTracker};
+use endpoint::state::{IntegratorConfig, SequenceTracker};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::InstructionError, signature::Keypair, signer::Signer,
@@ -38,7 +38,7 @@ async fn test_invoke_register() {
     );
 
     // Verify that the integrator config account was created and initialized correctly
-    let integrator_config_data: router::state::IntegratorConfig =
+    let integrator_config_data: endpoint::state::IntegratorConfig =
         get_account(&mut context.banks_client, integrator_config).await;
 
     assert_eq!(integrator_config_data.admin, Some(admin.pubkey()));
@@ -46,10 +46,10 @@ async fn test_invoke_register() {
         integrator_config_data.integrator_program_id,
         mock_integrator::id()
     );
-    assert!(integrator_config_data.transceiver_infos.is_empty());
+    assert!(integrator_config_data.adapter_infos.is_empty());
 
     let (sequence_tracker, _) = SequenceTracker::pda(&mock_integrator::id());
-    let sequence_tracker_data: router::state::SequenceTracker =
+    let sequence_tracker_data: endpoint::state::SequenceTracker =
         get_account(&mut context.banks_client, sequence_tracker).await;
     // Verify that the integrator program ID and sequence are correct
     assert_eq!(

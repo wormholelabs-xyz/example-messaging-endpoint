@@ -8,8 +8,8 @@ skip-lint = false
 
 [programs.localnet]
 mock-integrator = "B86KSKnHBRiJeDcP7vwaXuxfkqfChZmYKBqh4dkLYEpj"
-mock-transceiver = "4ZiURKmq17KrwY3K2KxxzqttzytxQsqAcMy374QUi7tx"
-router = "7qtLhNMdb9dNAWwFvNBMok64EJrS1toY9TQoedVhU1xp"
+mock-adapter = "4ZiURKmq17KrwY3K2KxxzqttzytxQsqAcMy374QUi7tx"
+endpoint = "7qtLhNMdb9dNAWwFvNBMok64EJrS1toY9TQoedVhU1xp"
 
 [registry]
 url = "https://api.apr.dev"

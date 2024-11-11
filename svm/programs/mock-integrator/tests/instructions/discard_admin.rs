@@ -1,5 +1,5 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use router::accounts::DiscardAdmin;
+use endpoint::accounts::DiscardAdmin;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -21,9 +21,9 @@ pub async fn discard_admin(
     };
 
     let ix = Instruction {
-        program_id: router::id(),
+        program_id: endpoint::id(),
         accounts: accounts.to_account_metas(None),
-        data: router::instruction::DiscardAdmin {}.data(),
+        data: endpoint::instruction::DiscardAdmin {}.data(),
     };
 
     execute_transaction(context, ix, &[admin, payer], payer).await

@@ -3,16 +3,16 @@
 mod common;
 mod instructions;
 
-use crate::instructions::add_transceiver::add_transceiver;
-use crate::instructions::enable_transceiver::enable_send_transceiver;
+use crate::instructions::add_adapter::add_adapter;
+use crate::instructions::enable_adapter::enable_send_adapter;
 use crate::instructions::register::register;
 use crate::instructions::send_message::send_message;
 
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
-use router::error::RouterError;
-use router::state::{
-    IntegratorChainConfig, IntegratorConfig, OutboxMessage, SequenceTracker, TransceiverInfo,
+use endpoint::error::EndpointError;
+use endpoint::state::{
+    AdapterInfo, IntegratorChainConfig, IntegratorConfig, OutboxMessage, SequenceTracker,
 };
 use solana_program_test::*;
 use solana_sdk::{
@@ -31,7 +31,7 @@ async fn initialize_test_environment(
 
     let (integrator_config_pda, _) = IntegratorConfig::pda(&integrator_program_id);
     let (integrator_program_pda, bump) =
-        Pubkey::find_program_address(&[b"router_integrator"], &integrator_program_id);
+        Pubkey::find_program_address(&[b"endpoint_integrator"], &integrator_program_id);
 
     // Register integrator
     register(
@@ -44,36 +44,35 @@ async fn initialize_test_environment(
     .await
     .unwrap();
 
-    // Setup chain config and transceiver
+    // Setup chain config and adapter
     let (integrator_chain_config_pda, _) =
         IntegratorChainConfig::pda(&integrator_program_id, chain_id);
 
-    let transceiver_program_id = Keypair::new().pubkey();
-    let (transceiver_info_pda, _) =
-        TransceiverInfo::pda(&integrator_program_id, &transceiver_program_id);
+    let adapter_program_id = Keypair::new().pubkey();
+    let (adapter_info_pda, _) = AdapterInfo::pda(&integrator_program_id, &adapter_program_id);
 
-    // Add and enable transceiver
-    add_transceiver(
+    // Add and enable adapter
+    add_adapter(
         context,
         &admin,
         &payer,
         integrator_config_pda,
-        transceiver_info_pda,
+        adapter_info_pda,
         integrator_program_id,
-        transceiver_program_id,
+        adapter_program_id,
     )
     .await
     .unwrap();
 
-    enable_send_transceiver(
+    enable_send_adapter(
         context,
         &admin,
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        transceiver_info_pda,
+        adapter_info_pda,
         chain_id,
-        transceiver_program_id,
+        adapter_program_id,
         integrator_program_id,
     )
     .await
@@ -85,7 +84,7 @@ async fn initialize_test_environment(
         integrator_config_pda,
         integrator_chain_config_pda,
         integrator_program_pda,
-        transceiver_info_pda,
+        adapter_info_pda,
         bump,
         chain_id,
     )
@@ -102,7 +101,7 @@ async fn test_send_message_success() {
         _integrator_config_pda,
         integrator_chain_config_pda,
         integrator_program_pda,
-        _transceiver_info_pda,
+        _adapter_info_pda,
         bump,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
@@ -139,7 +138,7 @@ async fn test_send_message_success() {
     assert_eq!(outbox_msg.dst_chain, chain_id);
     assert_eq!(outbox_msg.dst_addr, dst_addr);
     assert_eq!(outbox_msg.payload_hash, payload_hash);
-    assert_eq!(outbox_msg.outstanding_transceivers.as_value(), 1);
+    assert_eq!(outbox_msg.outstanding_adapters.as_value(), 1);
 }
 
 #[tokio::test]
@@ -153,7 +152,7 @@ async fn test_send_message_increments_sequence() {
         _integrator_config_pda,
         integrator_chain_config_pda,
         integrator_program_pda,
-        _transceiver_info_pda,
+        _adapter_info_pda,
         bump,
         chain_id,
     ) = initialize_test_environment(&mut context).await;
@@ -211,18 +210,18 @@ async fn test_send_message_increments_sequence() {
 }
 
 #[tokio::test]
-async fn test_send_message_no_enabled_transceivers() {
+async fn test_send_message_no_enabled_adapters() {
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
 
-    // Initialize without enabling any transceivers
+    // Initialize without enabling any adapters
     let admin = Keypair::new();
     let integrator_program_id = mock_integrator::id();
     let chain_id: u16 = 1;
 
     let (integrator_config_pda, _) = IntegratorConfig::pda(&integrator_program_id);
     let (integrator_program_pda, bump) =
-        Pubkey::find_program_address(&[b"router_integrator"], &integrator_program_id);
+        Pubkey::find_program_address(&[b"endpoint_integrator"], &integrator_program_id);
     let (integrator_chain_config_pda, _) =
         IntegratorChainConfig::pda(&integrator_program_id, chain_id);
 
@@ -272,7 +271,7 @@ async fn test_send_message_unregistered_chain() {
         _integrator_config_pda,
         _integrator_chain_config_pda,
         integrator_program_pda,
-        _transceiver_info_pda,
+        _adapter_info_pda,
         bump,
         _chain_id,
     ) = initialize_test_environment(&mut context).await;

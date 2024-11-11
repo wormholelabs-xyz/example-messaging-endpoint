@@ -9,7 +9,7 @@ use crate::instructions::transfer_admin::transfer_admin;
 use crate::instructions::update_admin::update_admin;
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
-use router::{error::RouterError, state::IntegratorConfig};
+use endpoint::{error::EndpointError, state::IntegratorConfig};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::InstructionError, signature::Keypair, signer::Signer,
@@ -91,7 +91,7 @@ async fn test_update_admin_non_authority() {
         result.unwrap_err().unwrap(),
         TransactionError::InstructionError(
             0,
-            InstructionError::Custom(RouterError::CallerNotAuthorized.into())
+            InstructionError::Custom(EndpointError::CallerNotAuthorized.into())
         )
     );
 
@@ -169,7 +169,7 @@ async fn test_update_admin_with_transfer_in_progress() {
         result.unwrap_err().unwrap(),
         TransactionError::InstructionError(
             0,
-            InstructionError::Custom(RouterError::AdminTransferInProgress.into())
+            InstructionError::Custom(EndpointError::AdminTransferInProgress.into())
         )
     );
 
@@ -216,7 +216,7 @@ async fn test_update_admin_with_immutable_config() {
         result.unwrap_err().unwrap(),
         TransactionError::InstructionError(
             0,
-            InstructionError::Custom(RouterError::CallerNotAuthorized.into())
+            InstructionError::Custom(EndpointError::CallerNotAuthorized.into())
         )
     );
 
