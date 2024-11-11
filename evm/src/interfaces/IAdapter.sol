@@ -5,7 +5,7 @@ import "../libraries/UniversalAddress.sol";
 
 interface IAdapter {
     /// @notice The caller is not the Endpoint.
-    /// @dev Selector: 0xfb217bcd.
+    /// @dev Selector: 0xc92bf4bb.
     /// @param caller The address of the caller.
     error CallerNotEndpoint(address caller);
 
