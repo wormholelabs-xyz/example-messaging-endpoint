@@ -129,7 +129,7 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
     error InvalidDestinationChain();
 
     /// @notice Error when the adapter is being used as if it is enabled but it is disabled.
-    /// @dev Selector: 0x424afc23.
+    /// @dev Selector: 0x5bacac21.
     error AdapterNotEnabled();
 
     /// @notice Error when the admin is the zero address.
