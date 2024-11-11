@@ -3,8 +3,8 @@ pragma solidity ^0.8.19;
 
 import "../libraries/UniversalAddress.sol";
 
-interface IRouterTransceiver {
-    /// @notice Called by a Transceiver contract to attest to a message.
+interface IEndpointAdapter {
+    /// @notice Called by an Adapter contract to attest to a message.
     /// @param srcChain The Wormhole chain ID of the sender.
     /// @param srcAddr The universal address of the peer on the sending chain.
     /// @param sequence The sequence number of the message (per integrator).

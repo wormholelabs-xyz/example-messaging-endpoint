@@ -3,14 +3,14 @@ pragma solidity ^0.8.19;
 
 import "../libraries/UniversalAddress.sol";
 
-interface ITransceiver {
-    /// @notice The caller is not the Router.
+interface IAdapter {
+    /// @notice The caller is not the Endpoint.
     /// @dev Selector: 0xfb217bcd.
     /// @param caller The address of the caller.
-    error CallerNotRouter(address caller);
+    error CallerNotEndpoint(address caller);
 
-    /// @notice Returns the string type of the transceiver. E.g. "wormhole", "axelar", etc.
-    function getTransceiverType() external view returns (string memory);
+    /// @notice Returns the string type of the adapter. E.g. "wormhole", "axelar", etc.
+    function getAdapterType() external view returns (string memory);
 
     /// @notice Fetch the delivery price for a given recipient chain transfer.
     /// @param recipientChain The Wormhole chain ID of the target chain.

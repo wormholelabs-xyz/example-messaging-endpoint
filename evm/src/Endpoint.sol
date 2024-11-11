@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.19;
 
-import "./interfaces/IRouterAdmin.sol";
-import "./interfaces/IRouterIntegrator.sol";
-import "./interfaces/IRouterTransceiver.sol";
+import "./interfaces/IEndpointAdmin.sol";
+import "./interfaces/IEndpointIntegrator.sol";
+import "./interfaces/IEndpointAdapter.sol";
 import "./MessageSequence.sol";
-import "./TransceiverRegistry.sol";
-import "./interfaces/ITransceiver.sol";
+import "./AdapterRegistry.sol";
+import "./interfaces/IAdapter.sol";
 
-string constant routerVersion = "Router-0.0.1";
+string constant endpointVersion = "Endpoint-0.0.1";
 
-contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageSequence, TransceiverRegistry {
-    string public constant ROUTER_VERSION = routerVersion;
+contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, MessageSequence, AdapterRegistry {
+    string public constant ENDPOINT_VERSION = endpointVersion;
 
     struct IntegratorConfig {
         bool isInitialized;
@@ -21,7 +21,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
 
     // =============== Immutables ============================================================
 
-    /// @dev Wormhole chain ID that the Router is deployed on.
+    /// @dev Wormhole chain ID that the Endpoint is deployed on.
     /// This chain ID is formatted Wormhole Chain IDs -- https://docs.wormhole.com/wormhole/reference/constants.
     uint16 public immutable ourChain;
 
@@ -33,7 +33,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
 
     // =============== Events ================================================================
 
-    /// @notice Emitted when an integrator registers with the router.
+    /// @notice Emitted when an integrator registers with the endpoint.
     /// @dev Topic0
     ///      0x582a4322c684b4cdebf273e2be5090d5f21476be5566a98d6a224a450447c5b4.
     /// @param integrator The address of the integrator contract.
@@ -84,8 +84,8 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     /// @param dstChain The Wormhole chain ID of the destination.
     /// @param dstAddr The destination address of the message.
     /// @param payloadHash The keccak256 of payload from the integrator.
-    /// @param attestedBitmap Bitmap of transceivers that have attested the message.
-    /// @param attestingTransceiver The address of the transceiver that attested the message.
+    /// @param attestedBitmap Bitmap of adapters that have attested the message.
+    /// @param attestingAdapter The address of the adapter that attested the message.
     event MessageAttestedTo(
         bytes32 indexed messageHash,
         uint16 srcChain,
@@ -95,7 +95,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         UniversalAddress dstAddr,
         bytes32 payloadHash,
         uint128 attestedBitmap,
-        UniversalAddress attestingTransceiver
+        UniversalAddress attestingAdapter
     );
 
     /// @notice Emitted when a message has been received.
@@ -108,8 +108,8 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     /// @param dstChain The Wormhole chain ID of the destination.
     /// @param dstAddr The destination address of the message.
     /// @param payloadHash The keccak256 of payload from the integrator.
-    /// @param enabledBitmap Bitmap of transceivers enabled for the source chain.
-    /// @param attestedBitmap Bitmap of transceivers that have attested the message.
+    /// @param enabledBitmap Bitmap of adapters enabled for the source chain.
+    /// @param attestedBitmap Bitmap of adapters that have attested the message.
     event MessageReceived(
         bytes32 indexed messageHash,
         uint16 srcChain,
@@ -128,9 +128,9 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     /// @dev Selector: 0xb86ac1ef.
     error InvalidDestinationChain();
 
-    /// @notice Error when the transceiver is being used as if it is enabled but it is disabled.
+    /// @notice Error when the adapter is being used as if it is enabled but it is disabled.
     /// @dev Selector: 0x424afc23.
-    error TransceiverNotEnabled();
+    error AdapterNotEnabled();
 
     /// @notice Error when the admin is the zero address.
     /// @dev Selector: 0x554ff5d7.
@@ -172,7 +172,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
 
     /// @dev Holds the integrator address to IntegratorConfig mapping.
     ///      mapping(address => IntegratorConfig).
-    bytes32 private constant INTEGRATOR_CONFIGS_SLOT = bytes32(uint256(keccak256("router.integratorConfigs")) - 1);
+    bytes32 private constant INTEGRATOR_CONFIGS_SLOT = bytes32(uint256(keccak256("endpoint.integratorConfigs")) - 1);
 
     /// @dev Integrator address => IntegratorConfig mapping.
     function _getIntegratorConfigsStorage() internal pure returns (mapping(address => IntegratorConfig) storage $) {
@@ -184,12 +184,12 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
 
     struct AttestationInfo {
         bool executed; // replay protection
-        uint128 attestedTransceivers; // bitmap corresponding to perIntegratorTransceivers
+        uint128 attestedAdapters; // bitmap corresponding to perIntegratorAdapters
     }
 
     /// @dev Holds the integrator address to message digest to attestation info mapping.
     ///      mapping(address => mapping(bytes32 => AttestationInfo).
-    bytes32 private constant ATTESTATION_INFO_SLOT = bytes32(uint256(keccak256("router.attestationInfo")) - 1);
+    bytes32 private constant ATTESTATION_INFO_SLOT = bytes32(uint256(keccak256("endpoint.attestationInfo")) - 1);
 
     /// @dev Integrator address => message digest -> attestation info mapping.
     function _getAttestationInfoStorage()
@@ -244,7 +244,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
 
     // =============== Admin functions =======================================================
 
-    /// @inheritdoc IRouterIntegrator
+    /// @inheritdoc IEndpointIntegrator
     function register(address initialAdmin) external {
         if (initialAdmin == address(0)) {
             revert InvalidAdminZeroAddress();
@@ -265,7 +265,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         emit IntegratorRegistered(integrator, initialAdmin);
     }
 
-    /// @inheritdoc IRouterAdmin
+    /// @inheritdoc IEndpointAdmin
     function updateAdmin(address integrator, address newAdmin) external onlyAdmin(integrator) {
         if (newAdmin == address(0)) {
             // Use discardAdmin() instead.
@@ -283,7 +283,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         emit AdminUpdated(integrator, msg.sender, newAdmin);
     }
 
-    /// @inheritdoc IRouterAdmin
+    /// @inheritdoc IEndpointAdmin
     function transferAdmin(address integrator, address newAdmin) external onlyAdmin(integrator) {
         if (newAdmin == address(0)) {
             // Use discardAdmin() instead.
@@ -301,7 +301,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         emit AdminUpdateRequested(integrator, msg.sender, newAdmin);
     }
 
-    /// @inheritdoc IRouterAdmin
+    /// @inheritdoc IEndpointAdmin
     function claimAdmin(address integrator) external {
         // Get the storage for this integrator contract
         mapping(address => IntegratorConfig) storage integratorConfigs = _getIntegratorConfigsStorage();
@@ -322,7 +322,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         emit AdminUpdated(integrator, oldAdmin, newAdmin);
     }
 
-    /// @inheritdoc IRouterAdmin
+    /// @inheritdoc IEndpointAdmin
     function discardAdmin(address integrator) external onlyAdmin(integrator) {
         // Get the storage for this integrator contract
         mapping(address => IntegratorConfig) storage integratorConfigs = _getIntegratorConfigsStorage();
@@ -336,76 +336,60 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         emit AdminUpdated(integrator, msg.sender, address(0));
     }
 
-    // =============== Transceiver functions =======================================================
+    // =============== Adapter functions =======================================================
 
-    /// @inheritdoc IRouterAdmin
-    function addTransceiver(address integrator, address transceiver)
-        external
-        onlyAdmin(integrator)
-        returns (uint8 index)
-    {
-        // Call the TransceiverRegistry version.
-        return _addTransceiver(integrator, transceiver);
+    /// @inheritdoc IEndpointAdmin
+    function addAdapter(address integrator, address adapter) external onlyAdmin(integrator) returns (uint8 index) {
+        // Call the AdapterRegistry version.
+        return _addAdapter(integrator, adapter);
     }
 
-    /// @inheritdoc IRouterAdmin
-    function enableSendTransceiver(address integrator, uint16 chain, address transceiver)
-        external
-        onlyAdmin(integrator)
-    {
-        // Call the TransceiverRegistry version.
-        _enableSendTransceiver(integrator, chain, transceiver);
+    /// @inheritdoc IEndpointAdmin
+    function enableSendAdapter(address integrator, uint16 chain, address adapter) external onlyAdmin(integrator) {
+        // Call the AdapterRegistry version.
+        _enableSendAdapter(integrator, chain, adapter);
     }
 
-    /// @inheritdoc IRouterAdmin
-    function enableRecvTransceiver(address integrator, uint16 chain, address transceiver)
-        external
-        onlyAdmin(integrator)
-    {
-        // Call the TransceiverRegistry version.
-        _enableRecvTransceiver(integrator, chain, transceiver);
+    /// @inheritdoc IEndpointAdmin
+    function enableRecvAdapter(address integrator, uint16 chain, address adapter) external onlyAdmin(integrator) {
+        // Call the AdapterRegistry version.
+        _enableRecvAdapter(integrator, chain, adapter);
     }
 
-    /// @inheritdoc IRouterAdmin
-    function disableSendTransceiver(address integrator, uint16 chain, address transceiver)
-        external
-        onlyAdmin(integrator)
-    {
-        // Call the TransceiverRegistry version.
-        _disableSendTransceiver(integrator, chain, transceiver);
+    /// @inheritdoc IEndpointAdmin
+    function disableSendAdapter(address integrator, uint16 chain, address adapter) external onlyAdmin(integrator) {
+        // Call the AdapterRegistry version.
+        _disableSendAdapter(integrator, chain, adapter);
     }
 
-    /// @inheritdoc IRouterAdmin
-    function disableRecvTransceiver(address integrator, uint16 chain, address transceiver)
-        external
-        onlyAdmin(integrator)
-    {
-        // Call the TransceiverRegistry version.
-        _disableRecvTransceiver(integrator, chain, transceiver);
+    /// @inheritdoc IEndpointAdmin
+    function disableRecvAdapter(address integrator, uint16 chain, address adapter) external onlyAdmin(integrator) {
+        // Call the AdapterRegistry version.
+        _disableRecvAdapter(integrator, chain, adapter);
     }
 
     // =============== Message functions =======================================================
 
-    /// @inheritdoc IRouterIntegrator
+    /// @inheritdoc IEndpointIntegrator
     function sendMessage(uint16 dstChain, UniversalAddress dstAddr, bytes32 payloadHash, address refundAddress)
         external
         payable
         returns (uint64 sequence)
     {
-        // get the enabled send transceivers for [msg.sender][dstChain]
-        address[] memory sendTransceivers = getSendTransceiversByChain(msg.sender, dstChain);
-        uint256 len = sendTransceivers.length;
+        // get the enabled send adapters for [msg.sender][dstChain]
+        address[] memory sendAdapters = getSendAdaptersByChain(msg.sender, dstChain);
+        uint256 len = sendAdapters.length;
         if (len == 0) {
-            revert TransceiverNotEnabled();
+            revert AdapterNotEnabled();
         }
         UniversalAddress sender = UniversalAddressLibrary.fromAddress(msg.sender);
         // get the next sequence number for msg.sender
         sequence = _useMessageSequence(msg.sender);
         for (uint256 i = 0; i < len;) {
             // quote the delivery price
-            uint256 deliveryPrice = ITransceiver(sendTransceivers[i]).quoteDeliveryPrice(dstChain);
+            uint256 deliveryPrice = IAdapter(sendAdapters[i]).quoteDeliveryPrice(dstChain);
             // call sendMessage
-            ITransceiver(sendTransceivers[i]).sendMessage{value: deliveryPrice}(
+            IAdapter(sendAdapters[i]).sendMessage{value: deliveryPrice}(
                 sender, sequence, dstChain, dstAddr, payloadHash, refundAddress
             );
             unchecked {
@@ -423,7 +407,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         );
     }
 
-    /// @inheritdoc IRouterTransceiver
+    /// @inheritdoc IEndpointAdapter
     function attestMessage(
         uint16 srcChain,
         UniversalAddress srcAddr,
@@ -439,30 +423,30 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
             revert InvalidDestinationChain();
         }
 
-        TransceiverInfo storage tsInfo = _getTransceiverInfosStorage()[integrator][msg.sender];
+        AdapterInfo storage tsInfo = _getAdapterInfosStorage()[integrator][msg.sender];
         if (!tsInfo.registered) {
-            revert TransceiverNotEnabled();
+            revert AdapterNotEnabled();
         }
 
         // Make sure it's enabled on the receive.
-        if (!_isRecvTransceiverEnabledForChainWithCheck(integrator, srcChain, msg.sender)) {
-            revert TransceiverNotEnabled();
+        if (!_isRecvAdapterEnabledForChainWithCheck(integrator, srcChain, msg.sender)) {
+            revert AdapterNotEnabled();
         }
 
         // compute the message digest
         bytes32 messageDigest = computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash);
 
         AttestationInfo storage attestationInfo = _getAttestationInfoStorage()[integrator][messageDigest];
-        uint128 updatedTransceivers = attestationInfo.attestedTransceivers | uint128(1 << tsInfo.index);
+        uint128 updatedAdapters = attestationInfo.attestedAdapters | uint128(1 << tsInfo.index);
         // Check that this message has not already been attested.
-        if (updatedTransceivers == attestationInfo.attestedTransceivers) {
+        if (updatedAdapters == attestationInfo.attestedAdapters) {
             revert DuplicateMessageAttestation();
         }
 
         // It's okay to mark it as attested if it has already been executed.
 
         // set the bit in perIntegratorAttestations[dstAddr][digest] corresponding to msg.sender
-        attestationInfo.attestedTransceivers = updatedTransceivers;
+        attestationInfo.attestedAdapters = updatedAdapters;
         emit MessageAttestedTo(
             computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash),
             srcChain,
@@ -471,20 +455,20 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
             dstChain,
             dstAddr,
             payloadHash,
-            attestationInfo.attestedTransceivers,
+            attestationInfo.attestedAdapters,
             UniversalAddressLibrary.fromAddress(msg.sender)
         );
     }
 
-    /// @inheritdoc IRouterIntegrator
+    /// @inheritdoc IEndpointIntegrator
     function recvMessage(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash)
         external
         payable
         returns (uint128 enabledBitmap, uint128 attestedBitmap)
     {
-        enabledBitmap = _getEnabledRecvTransceiversBitmapForChain(msg.sender, srcChain);
+        enabledBitmap = _getEnabledRecvAdaptersBitmapForChain(msg.sender, srcChain);
         if (enabledBitmap == 0) {
-            revert TransceiverNotEnabled();
+            revert AdapterNotEnabled();
         }
         UniversalAddress dstAddr = UniversalAddressLibrary.fromAddress(msg.sender);
 
@@ -494,7 +478,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         AttestationInfo storage attestationInfo = _getAttestationInfoStorage()[msg.sender][messageDigest];
 
         // revert if not in perIntegratorAttestations map
-        if ((attestationInfo.attestedTransceivers == 0) && (!attestationInfo.executed)) {
+        if ((attestationInfo.attestedAdapters == 0) && (!attestationInfo.executed)) {
             revert UnknownMessageAttestation();
         }
 
@@ -505,14 +489,14 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
 
         // set the executed flag in perIntegratorAttestations[dstAddr][digest]
         attestationInfo.executed = true;
-        attestedBitmap = attestationInfo.attestedTransceivers;
+        attestedBitmap = attestationInfo.attestedAdapters;
 
         emit MessageReceived(
             messageDigest, srcChain, srcAddr, sequence, ourChain, dstAddr, payloadHash, enabledBitmap, attestedBitmap
         );
     }
 
-    /// @inheritdoc IRouterIntegrator
+    /// @inheritdoc IEndpointIntegrator
     function getMessageStatus(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash)
         external
         view
@@ -523,7 +507,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         );
     }
 
-    /// @inheritdoc IRouterIntegrator
+    /// @inheritdoc IEndpointIntegrator
     function getMessageStatus(
         uint16 srcChain,
         UniversalAddress srcAddr,
@@ -534,7 +518,7 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         return _getMessageStatus(srcChain, srcAddr, sequence, dstAddr, dstAddr.toAddress(), payloadHash);
     }
 
-    /// @inheritdoc IRouterIntegrator
+    /// @inheritdoc IEndpointIntegrator
     function execMessage(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash) external {
         // compute the message digest
         bytes32 messageDigest = computeMessageDigest(
@@ -549,12 +533,12 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         attestationInfo.executed = true;
     }
 
-    /// @inheritdoc IRouterIntegrator
+    /// @inheritdoc IEndpointIntegrator
     function quoteDeliveryPrice(address integrator, uint16 dstChain) external view returns (uint256) {
         return _quoteDeliveryPrice(integrator, dstChain);
     }
 
-    /// @inheritdoc IRouterIntegrator
+    /// @inheritdoc IEndpointIntegrator
     function quoteDeliveryPrice(uint16 dstChain) external view returns (uint256) {
         return _quoteDeliveryPrice(msg.sender, dstChain);
     }
@@ -575,16 +559,16 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
 
     /// @notice Retrieves the quote for message delivery.
     /// @dev This version does not need to be called by the integrator.
-    /// @dev This sums up all the individual sendTransceiver's quoteDeliveryPrice calls.
+    /// @dev This sums up all the individual sendAdapter's quoteDeliveryPrice calls.
     /// @param integrator The address of the integrator.
     /// @param dstChain The Wormhole chain ID of the recipient.
     /// @return totalCost The total cost of delivering a message to the recipient chain in this chain's native token.
     function _quoteDeliveryPrice(address integrator, uint16 dstChain) internal view returns (uint256 totalCost) {
-        address[] memory sendTransceivers = getSendTransceiversByChain(integrator, dstChain);
-        uint256 len = sendTransceivers.length;
+        address[] memory sendAdapters = getSendAdaptersByChain(integrator, dstChain);
+        uint256 len = sendAdapters.length;
         totalCost = 0;
         for (uint256 i = 0; i < len;) {
-            totalCost += ITransceiver(sendTransceivers[i]).quoteDeliveryPrice(dstChain);
+            totalCost += IAdapter(sendAdapters[i]).quoteDeliveryPrice(dstChain);
             unchecked {
                 ++i;
             }
@@ -600,8 +584,8 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
     /// @param dstUAddr The destination universal address of the message.
     /// @param dstAddr The destination address of the message.
     /// @param payloadHash The keccak256 of payload from the integrator
-    /// @return enabledBitmap A bitmap indicating enabled receive transceivers for the destination address.
-    /// @return attestedBitmap A bitmap indicating attested transceivers for the message.
+    /// @return enabledBitmap A bitmap indicating enabled receive adapters for the destination address.
+    /// @return attestedBitmap A bitmap indicating attested adapters for the message.
     /// @return executed A boolean indicating if the message has been executed.
     function _getMessageStatus(
         uint16 srcChain,
@@ -611,13 +595,13 @@ contract Router is IRouterAdmin, IRouterIntegrator, IRouterTransceiver, MessageS
         address dstAddr,
         bytes32 payloadHash
     ) internal view returns (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) {
-        enabledBitmap = _getEnabledRecvTransceiversBitmapForChain(dstAddr, srcChain);
+        enabledBitmap = _getEnabledRecvAdaptersBitmapForChain(dstAddr, srcChain);
         // compute the message digest
         bytes32 messageDigest = computeMessageDigest(srcChain, srcAddr, sequence, ourChain, dstUAddr, payloadHash);
 
         AttestationInfo storage attestationInfo = _getAttestationInfoStorage()[dstAddr][messageDigest];
 
-        attestedBitmap = attestationInfo.attestedTransceivers;
+        attestedBitmap = attestationInfo.attestedAdapters;
 
         executed = attestationInfo.executed;
     }

@@ -4,9 +4,9 @@ pragma solidity ^0.8.19;
 import "./IMessageSequence.sol";
 import "../libraries/UniversalAddress.sol";
 
-interface IRouterIntegrator is IMessageSequence {
-    /// @notice This is the first thing an integrator should do. It registers the integrator with the router
-    ///         and sets the administrator contract for that integrator. The admin address is used to manage the transceivers.
+interface IEndpointIntegrator is IMessageSequence {
+    /// @notice This is the first thing an integrator should do. It registers the integrator with the endpoint
+    ///         and sets the administrator contract for that integrator. The admin address is used to manage the adapters.
     /// @dev The msg.sender needs to be the integrator contract.
     /// @param initialAdmin The address of the admin.
     function register(address initialAdmin) external;
@@ -16,7 +16,7 @@ interface IRouterIntegrator is IMessageSequence {
     /// @param dstAddr The universal address of the peer on the recipient chain.
     /// @param payloadHash keccak256 of a message to be sent to the recipient chain.
     /// @return uint64 The sequence number of the message.
-    /// @param refundAddress The source chain refund address passed to the Transceiver.
+    /// @param refundAddress The source chain refund address passed to the Adapter.
     function sendMessage(uint16 dstChain, UniversalAddress dstAddr, bytes32 payloadHash, address refundAddress)
         external
         payable
@@ -71,7 +71,7 @@ interface IRouterIntegrator is IMessageSequence {
 
     /// @notice Retrieves the quote for message delivery.
     /// @dev This version does not need to be called by the integrator.
-    /// @dev This sums up all the individual sendTransceiver's quoteDeliveryPrice calls.
+    /// @dev This sums up all the individual sendAdapter's quoteDeliveryPrice calls.
     /// @param integrator The address of the integrator.
     /// @param dstChain The Wormhole chain ID of the recipient.
     /// @return uint256 The total cost of delivering a message to the recipient chain in this chain's native token.
@@ -79,7 +79,7 @@ interface IRouterIntegrator is IMessageSequence {
 
     /// @notice Retrieves the quote for message delivery.
     /// @dev This version must be called by the integrator.
-    /// @dev This sums up all the individual sendTransceiver's quoteDeliveryPrice calls.
+    /// @dev This sums up all the individual sendAdapter's quoteDeliveryPrice calls.
     /// @param dstChain The Wormhole chain ID of the recipient.
     /// @return uint256 The total cost of delivering a message to the recipient chain in this chain's native token.
     function quoteDeliveryPrice(uint16 dstChain) external view returns (uint256);

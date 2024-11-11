@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.19;
 
-interface IRouterAdmin {
+interface IEndpointAdmin {
     /// @notice Transfers admin privileges from the current admin to another contract.
     /// @dev The msg.sender must be the current admin contract.
     /// @param integrator The address of the integrator contract.
@@ -25,33 +25,33 @@ interface IRouterAdmin {
     /// @param integrator The address of the integrator contract.
     function discardAdmin(address integrator) external;
 
-    /// @notice Adds the given transceiver to the given chain for the integrator's list of transceivers.
-    ///         This does NOT enable the transceiver for sending or receiving.
+    /// @notice Adds the given adapter to the given chain for the integrator's list of adapters.
+    ///         This does NOT enable the adapter for sending or receiving.
     /// @param integrator The address of the integrator contract.
-    /// @param transceiver The address of the Transceiver contract.
-    function addTransceiver(address integrator, address transceiver) external returns (uint8 index);
+    /// @param adapter The address of the Adapter contract.
+    function addAdapter(address integrator, address adapter) external returns (uint8 index);
 
-    /// @notice This enables the sending of messages from the given transceiver on the given chain.
+    /// @notice This enables the sending of messages from the given adapter on the given chain.
     /// @param integrator The address of the integrator contract.
-    /// @param transceiver The address of the Transceiver contract.
-    /// @param chain The chain ID of the Transceiver contract.
-    function enableSendTransceiver(address integrator, uint16 chain, address transceiver) external;
+    /// @param adapter The address of the Adapter contract.
+    /// @param chain The chain ID of the Adapter contract.
+    function enableSendAdapter(address integrator, uint16 chain, address adapter) external;
 
-    /// @notice This enables the receiving of messages by the given transceiver on the given chain.
+    /// @notice This enables the receiving of messages by the given adapter on the given chain.
     /// @param integrator The address of the integrator contract.
-    /// @param transceiver The address of the Transceiver contract.
-    /// @param chain The chain ID of the Transceiver contract.
-    function enableRecvTransceiver(address integrator, uint16 chain, address transceiver) external;
+    /// @param adapter The address of the Adapter contract.
+    /// @param chain The chain ID of the Adapter contract.
+    function enableRecvAdapter(address integrator, uint16 chain, address adapter) external;
 
-    /// @notice This disables the sending of messages from the given transceiver on the given chain.
+    /// @notice This disables the sending of messages from the given adapter on the given chain.
     /// @param integrator The address of the integrator contract.
-    /// @param transceiver The address of the Transceiver contract.
-    /// @param chain The chain ID of the Transceiver contract.
-    function disableSendTransceiver(address integrator, uint16 chain, address transceiver) external;
+    /// @param adapter The address of the Adapter contract.
+    /// @param chain The chain ID of the Adapter contract.
+    function disableSendAdapter(address integrator, uint16 chain, address adapter) external;
 
-    /// @notice This disables the receiving of messages by the given transceiver on the given chain.
+    /// @notice This disables the receiving of messages by the given adapter on the given chain.
     /// @param integrator The address of the integrator contract.
-    /// @param transceiver The address of the Transceiver contract.
-    /// @param chain The chain ID of the Transceiver contract.
-    function disableRecvTransceiver(address integrator, uint16 chain, address transceiver) external;
+    /// @param adapter The address of the Adapter contract.
+    /// @param chain The chain ID of the Adapter contract.
+    function disableRecvAdapter(address integrator, uint16 chain, address adapter) external;
 }

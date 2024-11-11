@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #
-# This script deploys the Router contract.
-# Usage: RPC_URL= MNEMONIC= OUR_CHAIN_ID= EVM_CHAIN_ID= ./sh/deployRouter.sh
-#  tilt: ./sh/deployRouter.sh
+# This script deploys the Endpoint contract.
+# Usage: RPC_URL= MNEMONIC= OUR_CHAIN_ID= EVM_CHAIN_ID= ./sh/deployEndpoint.sh
+#  tilt: ./sh/deployEndpoint.sh
 #
 
 if [ "${RPC_URL}X" == "X" ]; then
@@ -22,13 +22,13 @@ if [ "${EVM_CHAIN_ID}X" == "X" ]; then
   EVM_CHAIN_ID=1337
 fi
 
-forge script ./script/DeployRouter.s.sol:DeployRouter \
+forge script ./script/DeployEndpoint.s.sol:DeployEndpoint \
 	--sig "run(uint16)" $OUR_CHAIN_ID \
 	--rpc-url "$RPC_URL" \
 	--private-key "$MNEMONIC" \
 	--broadcast ${FORGE_ARGS}
 
-returnInfo=$(cat ./broadcast/DeployRouter.s.sol/$EVM_CHAIN_ID/run-latest.json)
+returnInfo=$(cat ./broadcast/DeployEndpoint.s.sol/$EVM_CHAIN_ID/run-latest.json)
 
 DEPLOYED_ADDRESS=$(jq -r '.returns.deployedAddress.value' <<< "$returnInfo")
-echo "Deployed router address: $DEPLOYED_ADDRESS"
+echo "Deployed endpoint address: $DEPLOYED_ADDRESS"
