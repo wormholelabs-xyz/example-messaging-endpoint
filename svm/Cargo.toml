@@ -17,14 +17,14 @@ bincode = "1.3.3"
 [workspace.dependencies.universal-address]
 path = "modules/universal-address"
 
-[workspace.dependencies.router]
-path = "programs/router"
+[workspace.dependencies.endpoint]
+path = "programs/endpoint"
 
 [workspace.dependencies.mock-integrator]
 path = "programs/mock-integrator"
 
-[workspace.dependencies.mock-transceiver]
-path = "programs/mock-transceiver"
+[workspace.dependencies.mock-adapter]
+path = "programs/mock-adapter"
 
 [profile.release]
 overflow-checks = true

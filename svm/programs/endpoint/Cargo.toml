@@ -1,0 +1,30 @@
+[package]
+name = "endpoint"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "endpoint"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build"]
+test-sbf = []
+
+[dependencies]
+anchor-lang = { workspace = true, features = ["init-if-needed"] }
+bitmaps = "3.2.1"
+universal-address = { workspace = true }
+
+[dev-dependencies]
+bincode = { workspace = true }
+tokio = { workspace = true }
+solana-program-test = { workspace = true }
+solana-program-runtime = { workspace = true }
+solana-sdk = { workspace = true }

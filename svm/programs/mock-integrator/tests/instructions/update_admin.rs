@@ -1,5 +1,5 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use router::accounts::UpdateAdmin;
+use endpoint::accounts::UpdateAdmin;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -22,15 +22,15 @@ pub async fn update_admin(
         integrator_config,
     };
 
-    let args = router::instructions::UpdateAdminArgs {
+    let args = endpoint::instructions::UpdateAdminArgs {
         integrator_program_id,
         new_admin: *new_admin,
     };
 
     let ix = Instruction {
-        program_id: router::id(),
+        program_id: endpoint::id(),
         accounts: accounts.to_account_metas(None),
-        data: router::instruction::UpdateAdmin { args }.data(),
+        data: endpoint::instruction::UpdateAdmin { args }.data(),
     };
 
     execute_transaction(context, ix, &[admin, payer], payer).await

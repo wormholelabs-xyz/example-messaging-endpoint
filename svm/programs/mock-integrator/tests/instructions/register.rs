@@ -1,6 +1,6 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
+use endpoint::state::SequenceTracker;
 use mock_integrator::{accounts::InvokeRegister, InvokeRegisterArgs};
-use router::state::SequenceTracker;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -18,7 +18,7 @@ pub async fn register(
     integrator_program_id: Pubkey,
 ) -> Result<(), BanksClientError> {
     let (integrator_program_pda, _) =
-        Pubkey::find_program_address(&[b"router_integrator"], &integrator_program_id);
+        Pubkey::find_program_address(&[b"endpoint_integrator"], &integrator_program_id);
 
     let (sequence_tracker, _) = SequenceTracker::pda(&integrator_program_id);
 
@@ -28,7 +28,7 @@ pub async fn register(
         sequence_tracker,
         integrator_program_pda,
         system_program: solana_sdk::system_program::id(),
-        router_program: router::id(),
+        endpoint_program: endpoint::id(),
     };
 
     let args = InvokeRegisterArgs {

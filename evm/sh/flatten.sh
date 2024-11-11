@@ -1,7 +1,7 @@
 rm -rf flattened
 mkdir flattened
 for fileName in \
-src/Router.sol
+src/Endpoint.sol
   do
 	echo $fileName
 	flattened=flattened/`basename $fileName`

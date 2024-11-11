@@ -1,4 +1,4 @@
-# GMP Router Development
+# Modular Messaging Development
 
 ## Dependencies
 

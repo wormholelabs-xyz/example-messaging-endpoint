@@ -1,11 +1,11 @@
 use anchor_lang::prelude::*;
-use router::id as router_id;
+use endpoint::id as endpoint_id;
 use solana_program_test::{ProgramTest, ProgramTestContext};
 
 pub async fn setup() -> ProgramTestContext {
-    let mut program_test = ProgramTest::new("router", router_id(), None);
+    let mut program_test = ProgramTest::new("endpoint", endpoint_id(), None);
     program_test.add_program("mock_integrator", mock_integrator::id(), None);
-    program_test.add_program("mock_transceiver", mock_transceiver::id(), None);
+    program_test.add_program("mock_adapter", mock_adapter::id(), None);
 
     // Start the test context
     program_test.start_with_context().await

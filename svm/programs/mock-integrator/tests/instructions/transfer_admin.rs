@@ -1,5 +1,5 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use router::accounts::{ClaimAdmin, TransferAdmin};
+use endpoint::accounts::{ClaimAdmin, TransferAdmin};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -22,15 +22,15 @@ pub async fn transfer_admin(
         integrator_config,
     };
 
-    let args = router::instructions::TransferAdminArgs {
+    let args = endpoint::instructions::TransferAdminArgs {
         integrator_program_id,
         new_admin: *new_admin,
     };
 
     let ix = Instruction {
-        program_id: router::id(),
+        program_id: endpoint::id(),
         accounts: accounts.to_account_metas(None),
-        data: router::instruction::TransferAdmin { args }.data(),
+        data: endpoint::instruction::TransferAdmin { args }.data(),
     };
 
     execute_transaction(context, ix, &[admin, payer], payer).await
@@ -48,9 +48,9 @@ pub async fn claim_admin(
     };
 
     let ix = Instruction {
-        program_id: router::id(),
+        program_id: endpoint::id(),
         accounts: accounts.to_account_metas(None),
-        data: router::instruction::ClaimAdmin {}.data(),
+        data: endpoint::instruction::ClaimAdmin {}.data(),
     };
 
     execute_transaction(context, ix, &[new_admin, payer], payer).await

@@ -31,7 +31,7 @@ async fn execute_send_message(
         outbox_message: outbox_message.pubkey(),
         sequence_tracker,
         system_program: solana_sdk::system_program::id(),
-        router_program: router::id(),
+        endpoint_program: endpoint::id(),
     };
 
     let ix = Instruction {

@@ -1486,6 +1486,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "endpoint"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "bincode",
+ "bitmaps 3.2.1",
+ "solana-program-runtime",
+ "solana-program-test",
+ "solana-sdk",
+ "tokio",
+ "universal-address",
+]
+
+[[package]]
 name = "enum-iterator"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2372,25 +2386,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "mock-integrator"
+name = "mock-adapter"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
- "mock-transceiver",
- "router",
- "solana-program-runtime",
- "solana-program-test",
- "solana-sdk",
- "tokio",
+ "endpoint",
  "universal-address",
 ]
 
 [[package]]
-name = "mock-transceiver"
+name = "mock-integrator"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
- "router",
+ "endpoint",
+ "mock-adapter",
+ "solana-program-runtime",
+ "solana-program-test",
+ "solana-sdk",
+ "tokio",
  "universal-address",
 ]
 
@@ -3275,20 +3289,6 @@ dependencies = [
  "spin 0.9.8",
  "untrusted 0.9.0",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "router"
-version = "0.1.0"
-dependencies = [
- "anchor-lang",
- "bincode",
- "bitmaps 3.2.1",
- "solana-program-runtime",
- "solana-program-test",
- "solana-sdk",
- "tokio",
- "universal-address",
 ]
 
 [[package]]

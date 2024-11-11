@@ -1,6 +1,6 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
-use mock_transceiver::{accounts::InvokeAttestMessage, InvokeAttestMessageArgs};
-use router::state::AttestationInfo;
+use endpoint::state::AttestationInfo;
+use mock_adapter::{accounts::InvokeAttestMessage, InvokeAttestMessageArgs};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -14,8 +14,8 @@ use crate::common::execute_transaction::execute_transaction;
 pub async fn attest_message(
     context: &mut ProgramTestContext,
     payer: &Keypair,
-    transceiver_info: Pubkey,
-    transceiver_pda: Pubkey,
+    adapter_info: Pubkey,
+    adapter_pda: Pubkey,
     integrator_chain_config: Pubkey,
     src_chain: u16,
     src_addr: UniversalAddress,
@@ -35,12 +35,12 @@ pub async fn attest_message(
     let (attestation_info, _) = AttestationInfo::pda(message_hash);
     let accounts = InvokeAttestMessage {
         payer: payer.pubkey(),
-        transceiver_info,
-        transceiver_pda,
+        adapter_info,
+        adapter_pda,
         integrator_chain_config,
         attestation_info,
         system_program: solana_sdk::system_program::id(),
-        router_program: router::id(),
+        endpoint_program: endpoint::id(),
     };
 
     let args = InvokeAttestMessageArgs {
@@ -54,9 +54,9 @@ pub async fn attest_message(
     };
 
     let ix = Instruction {
-        program_id: mock_transceiver::id(),
+        program_id: mock_adapter::id(),
         accounts: accounts.to_account_metas(None),
-        data: mock_transceiver::instruction::InvokeAttestMessage { args }.data(),
+        data: mock_adapter::instruction::InvokeAttestMessage { args }.data(),
     };
 
     execute_transaction(context, ix, &[payer], payer).await

@@ -1,6 +1,6 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
+use endpoint::instructions::recv_message::RecvMessageArgs;
 use mock_integrator::accounts::InvokeRecvMessage;
-use router::instructions::recv_message::RecvMessageArgs;
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -22,14 +22,14 @@ pub async fn recv_message(
     payload_hash: [u8; 32],
 ) -> Result<(), BanksClientError> {
     let (integrator_program_pda, integrator_program_pda_bump) =
-        Pubkey::find_program_address(&[b"router_integrator"], &mock_integrator::id());
+        Pubkey::find_program_address(&[b"endpoint_integrator"], &mock_integrator::id());
 
     let accounts = InvokeRecvMessage {
         payer: payer.pubkey(),
         integrator_program_pda,
         attestation_info,
         system_program: solana_sdk::system_program::id(),
-        router_program: router::id(),
+        endpoint_program: endpoint::id(),
     };
 
     let args = RecvMessageArgs {

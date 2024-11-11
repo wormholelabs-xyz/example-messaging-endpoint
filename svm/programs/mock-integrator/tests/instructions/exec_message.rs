@@ -1,6 +1,6 @@
 use anchor_lang::{InstructionData, ToAccountMetas};
+use endpoint::{instructions::ExecMessageArgs, state::AttestationInfo};
 use mock_integrator::accounts::InvokeExecMessage;
-use router::{instructions::ExecMessageArgs, state::AttestationInfo};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::Instruction,
@@ -22,7 +22,7 @@ pub async fn exec_message(
     payload_hash: [u8; 32],
 ) -> Result<(), BanksClientError> {
     let (integrator_program_pda, integrator_program_pda_bump) =
-        Pubkey::find_program_address(&[b"router_integrator"], &mock_integrator::id());
+        Pubkey::find_program_address(&[b"endpoint_integrator"], &mock_integrator::id());
 
     let message_hash = AttestationInfo::compute_message_hash(
         src_chain,
@@ -39,7 +39,7 @@ pub async fn exec_message(
         integrator_program_pda,
         attestation_info,
         system_program: solana_sdk::system_program::id(),
-        router_program: router::id(),
+        endpoint_program: endpoint::id(),
     };
 
     let args = ExecMessageArgs {

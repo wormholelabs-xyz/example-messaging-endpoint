@@ -7,7 +7,7 @@ use crate::instructions::discard_admin::discard_admin;
 use crate::instructions::register::register;
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
-use router::{error::RouterError, state::IntegratorConfig};
+use endpoint::{error::EndpointError, state::IntegratorConfig};
 use solana_program_test::*;
 use solana_sdk::{
     instruction::InstructionError, signature::Keypair, signer::Signer,
@@ -68,7 +68,7 @@ async fn test_discard_admin_non_authority() {
         result.unwrap_err().unwrap(),
         TransactionError::InstructionError(
             0,
-            InstructionError::Custom(RouterError::CallerNotAuthorized.into())
+            InstructionError::Custom(EndpointError::CallerNotAuthorized.into())
         )
     );
 }
@@ -90,7 +90,7 @@ async fn test_discard_admin_already_discarded() {
         result.unwrap_err().unwrap(),
         TransactionError::InstructionError(
             0,
-            InstructionError::Custom(RouterError::CallerNotAuthorized.into())
+            InstructionError::Custom(EndpointError::CallerNotAuthorized.into())
         )
     );
 }
@@ -123,7 +123,7 @@ async fn test_discard_admin_with_pending_transfer() {
         result.unwrap_err().unwrap(),
         TransactionError::InstructionError(
             0,
-            InstructionError::Custom(RouterError::AdminTransferInProgress.into())
+            InstructionError::Custom(EndpointError::AdminTransferInProgress.into())
         )
     );
 }

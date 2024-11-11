@@ -3,18 +3,18 @@
 mod common;
 mod instructions;
 
-use crate::instructions::add_transceiver::add_transceiver;
-use crate::instructions::disable_transceiver::disable_send_transceiver;
-use crate::instructions::enable_transceiver::enable_send_transceiver;
+use crate::instructions::add_adapter::add_adapter;
+use crate::instructions::disable_adapter::disable_send_adapter;
+use crate::instructions::enable_adapter::enable_send_adapter;
 use crate::instructions::pick_up_message::pick_up_message;
 use crate::instructions::register::register;
 use crate::instructions::send_message::send_message;
 
 use anchor_lang::prelude::*;
 use common::setup::{get_account, setup};
-use router::error::RouterError;
-use router::state::{
-    IntegratorChainConfig, IntegratorConfig, OutboxMessage, SequenceTracker, TransceiverInfo,
+use endpoint::error::EndpointError;
+use endpoint::state::{
+    AdapterInfo, IntegratorChainConfig, IntegratorConfig, OutboxMessage, SequenceTracker,
 };
 use solana_program_test::*;
 use solana_sdk::{
@@ -44,7 +44,7 @@ async fn setup_test_environment() -> (
     let (integrator_chain_config_pda, _) =
         IntegratorChainConfig::pda(&integrator_program_id, chain_id);
     let (integrator_program_pda, bump) =
-        Pubkey::find_program_address(&[b"router_integrator"], &integrator_program_id);
+        Pubkey::find_program_address(&[b"endpoint_integrator"], &integrator_program_id);
 
     // Register integrator
     register(
@@ -57,35 +57,33 @@ async fn setup_test_environment() -> (
     .await
     .unwrap();
 
-    // Setup transceiver
-    let transceiver_program_id = mock_transceiver::id();
-    let (transceiver_info_pda, _) =
-        TransceiverInfo::pda(&integrator_program_id, &transceiver_program_id);
-    let (transceiver_pda, _) =
-        Pubkey::find_program_address(&[b"transceiver_pda"], &transceiver_program_id);
+    // Setup adapter
+    let adapter_program_id = mock_adapter::id();
+    let (adapter_info_pda, _) = AdapterInfo::pda(&integrator_program_id, &adapter_program_id);
+    let (adapter_pda, _) = Pubkey::find_program_address(&[b"adapter_pda"], &adapter_program_id);
 
-    // Add and enable transceiver
-    add_transceiver(
+    // Add and enable adapter
+    add_adapter(
         &mut context,
         &admin,
         &payer,
         integrator_config_pda,
-        transceiver_info_pda,
+        adapter_info_pda,
         integrator_program_id,
-        transceiver_program_id,
+        adapter_program_id,
     )
     .await
     .unwrap();
 
-    enable_send_transceiver(
+    enable_send_adapter(
         &mut context,
         &admin,
         &payer,
         integrator_config_pda,
         integrator_chain_config_pda,
-        transceiver_info_pda,
+        adapter_info_pda,
         chain_id,
-        transceiver_program_id,
+        adapter_program_id,
         integrator_program_id,
     )
     .await
@@ -97,8 +95,8 @@ async fn setup_test_environment() -> (
         admin,
         integrator_program_pda,
         integrator_chain_config_pda,
-        transceiver_info_pda,
-        transceiver_pda,
+        adapter_info_pda,
+        adapter_pda,
         bump,
         chain_id,
     )
@@ -143,8 +141,8 @@ async fn test_pick_up_message_success() {
         _,
         integrator_program_pda,
         integrator_chain_config_pda,
-        transceiver_info_pda,
-        transceiver_pda,
+        adapter_info_pda,
+        adapter_pda,
         bump,
         chain_id,
     ) = setup_test_environment().await;
@@ -165,8 +163,8 @@ async fn test_pick_up_message_success() {
         &mut context,
         &payer,
         outbox_message.pubkey(),
-        transceiver_info_pda,
-        transceiver_pda,
+        adapter_info_pda,
+        adapter_pda,
         payer.pubkey(),
     )
     .await;
@@ -190,8 +188,8 @@ async fn test_pick_up_message_success() {
     }
 }
 
-/// This test checks `disabled_transceiver` attempting to pick up as well, since the `outstanding_tranceivers`
-/// is copied directly from `enabled_transceivers` at the point of `outbox_message` creation
+/// This test checks `disabled_adapter` attempting to pick up as well, since the `outstanding_tranceivers`
+/// is copied directly from `enabled_adapters` at the point of `outbox_message` creation
 #[tokio::test]
 async fn test_pick_up_message_all_already_picked_up() {
     let (
@@ -200,8 +198,8 @@ async fn test_pick_up_message_all_already_picked_up() {
         _,
         integrator_program_pda,
         integrator_chain_config_pda,
-        transceiver_info_pda,
-        transceiver_pda,
+        adapter_info_pda,
+        adapter_pda,
         bump,
         chain_id,
     ) = setup_test_environment().await;
@@ -222,8 +220,8 @@ async fn test_pick_up_message_all_already_picked_up() {
         &mut context,
         &payer,
         outbox_message.pubkey(),
-        transceiver_info_pda,
-        transceiver_pda,
+        adapter_info_pda,
+        adapter_pda,
         payer.pubkey(),
     )
     .await
@@ -234,8 +232,8 @@ async fn test_pick_up_message_all_already_picked_up() {
         &mut context,
         &payer,
         outbox_message.pubkey(),
-        transceiver_info_pda,
-        transceiver_pda,
+        adapter_info_pda,
+        adapter_pda,
         payer.pubkey(),
     )
     .await;
