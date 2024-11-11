@@ -622,7 +622,6 @@ contract EndpointTest is Test {
             UniversalAddressLibrary.fromBytes32(0x000000000000000000000000949d2139d42b6122a663d3e62f1582678f1458d7);
         address dstIntegrator = UniversalAddressLibrary.toAddress(dstAddr);
 
-        EndpointImpl endpoint = new EndpointImpl();
         vm.startPrank(dstIntegrator);
         endpoint.register(dstIntegrator);
 

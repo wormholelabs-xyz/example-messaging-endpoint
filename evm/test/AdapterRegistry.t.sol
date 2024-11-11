@@ -140,6 +140,8 @@ contract AdapterRegistryTest is Test {
         require(adapterRegistry.getRegisteredAdaptersStorage(me).length == 2, "R5");
         vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.AdapterAlreadyDisabled.selector, recvAdapter));
         adapterRegistry.disableRecvAdapter(me, chain, recvAdapter);
+        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidChain.selector, zeroChain));
+        adapterRegistry.enableRecvAdapter(me, zeroChain, recvAdapter);
         adapterRegistry.enableRecvAdapter(me, chain, recvAdapter);
         require(adapterRegistry.getRegisteredAdaptersStorage(me).length == 2, "R7");
         adapterRegistry.disableRecvAdapter(me, chain, recvAdapter);
