@@ -1,10 +1,10 @@
 [package]
-name = "Router"
+name = "Endpoint"
 version = "0.0.1"
 authors = []
 
 [addresses]
-router = "_"
+endpoint = "_"
 
 [dev-addresses]
 

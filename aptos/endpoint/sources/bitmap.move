@@ -1,4 +1,4 @@
-module router::bitmap {
+module endpoint::bitmap {
     const MAX_U128: u128 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
     const E_ALREADY_ENABLED: u64 = 0;
     const E_ALREADY_DISABLED: u64 = 1;

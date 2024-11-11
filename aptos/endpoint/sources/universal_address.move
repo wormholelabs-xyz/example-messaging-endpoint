@@ -1,6 +1,6 @@
 /// 32 byte, left-padded address representing an arbitrary address, to be used to refer to addresses across chains.
 /// from https://github.com/wormhole-foundation/wormhole/blob/a0dd60f8a0e4b9cfe26593c379d25eaf9f73c43c/aptos/wormhole/sources/external_address.move
-module router::universal_address {
+module endpoint::universal_address {
     use aptos_std::from_bcs;
     use std::bcs;
     use std::vector;
@@ -48,8 +48,8 @@ module router::universal_address {
 }
 
 #[test_only]
-module router::universal_address_test {
-    use router::universal_address::{get_bytes, left_pad, from_bytes, pad_left_32, from_address};
+module endpoint::universal_address_test {
+    use endpoint::universal_address::{get_bytes, left_pad, from_bytes, pad_left_32, from_address};
     use aptos_framework::vector::{Self};
 
     // test get_bytes and left_pad
@@ -72,7 +72,7 @@ module router::universal_address_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0, location = router::universal_address)]
+    #[expected_failure(abort_code = 0, location = endpoint::universal_address)]
     public fun test_left_pad_vector_too_long() {
         let v = x"123456789123456789123456789123451234567891234567891234567891234500"; //33 bytes
         let res = left_pad(&v);
@@ -91,7 +91,7 @@ module router::universal_address_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0, location = router::universal_address)]
+    #[expected_failure(abort_code = 0, location = endpoint::universal_address)]
     public fun test_from_bytes_over_32_bytes() {
         let v = x"00000000000000000000000000000000000000000000000000000000000000001234";
         let ea = from_bytes(v);
@@ -113,7 +113,7 @@ module router::universal_address_test {
     }
 
     #[test]
-    #[expected_failure(abort_code = 0, location = router::universal_address)]
+    #[expected_failure(abort_code = 0, location = endpoint::universal_address)]
     fun test_pad_left_long() {
         let v = x"665555555555555555555555555555555555555555555555555555555555555555";
         pad_left_32(&v);

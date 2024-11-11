@@ -1,18 +1,18 @@
-module router::integrator {
-    use router::bitmap;
+module endpoint::integrator {
+    use endpoint::bitmap;
     use std::option::{Self, Option};
     use std::signer;
     use std::table::{Self, Table};
     use std::vector;
 
-    const MAX_TRANSCEIVERS: u64 = 128;
+    const MAX_ADAPTERS: u64 = 128;
 
     const E_ALREADY_REGISTERED: u64 = 0;
     const E_INVALID_ADMIN: u64 = 1;
     const E_NOT_AUTHORIZED: u64 = 2;
     const E_ADMIN_TRANSFER_IN_PROGRESS: u64 = 3;
     const E_NO_ADMIN_TRANSFER_IN_PROGRESS: u64 = 4;
-    const E_MAX_TRANSCEIVERS_REACHED: u64 = 5;
+    const E_MAX_ADAPTERS_REACHED: u64 = 5;
 
     struct IntegratorCapability has key, store {
         /// Sequence number of the next message
@@ -26,20 +26,20 @@ module router::integrator {
         pending_admin_addr: Option<address>
     }
 
-    struct TransceiversStore has key, store {
-        transceivers: vector<address>
+    struct AdaptersStore has key, store {
+        adapters: vector<address>
     }
 
-    struct TransceiverToIndexStore has key, store {
-        transceiver_to_index: Table<address, u8>
+    struct AdapterToIndexStore has key, store {
+        adapter_to_index: Table<address, u8>
     }
 
-    struct SendTransceiverStore has key, store {
-        per_chain_transceiver_bitmap: Table<u16, u128>
+    struct SendAdapterStore has key, store {
+        per_chain_adapter_bitmap: Table<u16, u128>
     }
 
-    struct RecvTransceiverStore has key, store {
-        per_chain_transceiver_bitmap: Table<u16, u128>
+    struct RecvAdapterStore has key, store {
+        per_chain_adapter_bitmap: Table<u16, u128>
     }
 
     package fun new_integrator(integrator_acct: &signer, admin_addr: address) {
@@ -51,10 +51,10 @@ module router::integrator {
         // Initializes their registration and sets the initial admin.
         move_to(integrator_acct, IntegratorCapability { sequence: 0 });
         move_to(integrator_acct, AdminConfig{admin_addr: option::some(admin_addr), pending_admin_addr: option::none()});
-        move_to(integrator_acct, TransceiversStore{transceivers: vector::empty()});
-        move_to(integrator_acct, TransceiverToIndexStore{transceiver_to_index: table::new<address, u8>()});
-        move_to(integrator_acct, SendTransceiverStore{per_chain_transceiver_bitmap: table::new<u16, u128>()});
-        move_to(integrator_acct, RecvTransceiverStore{per_chain_transceiver_bitmap: table::new<u16, u128>()});
+        move_to(integrator_acct, AdaptersStore{adapters: vector::empty()});
+        move_to(integrator_acct, AdapterToIndexStore{adapter_to_index: table::new<address, u8>()});
+        move_to(integrator_acct, SendAdapterStore{per_chain_adapter_bitmap: table::new<u16, u128>()});
+        move_to(integrator_acct, RecvAdapterStore{per_chain_adapter_bitmap: table::new<u16, u128>()});
     }
 
     #[view]
@@ -73,23 +73,23 @@ module router::integrator {
     }
 
     #[view]
-    public fun get_transceivers(integrator_addr: address): vector<address> acquires TransceiversStore {
-        TransceiversStore[integrator_addr].transceivers
+    public fun get_adapters(integrator_addr: address): vector<address> acquires AdaptersStore {
+        AdaptersStore[integrator_addr].adapters
     }
 
     #[view]
-    public fun get_transceiver_index(integrator_addr: address, transceiver_addr: address): u8 acquires TransceiverToIndexStore {
-        *table::borrow(&TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr)
+    public fun get_adapter_index(integrator_addr: address, adapter_addr: address): u8 acquires AdapterToIndexStore {
+        *table::borrow(&AdapterToIndexStore[integrator_addr].adapter_to_index, adapter_addr)
     }
 
     #[view]
-    public fun get_enabled_send_transceivers(integrator_addr: address, chain_id: u16): u128 acquires SendTransceiverStore {
-        *table::borrow_with_default(&SendTransceiverStore[integrator_addr].per_chain_transceiver_bitmap, chain_id, &0)
+    public fun get_enabled_send_adapters(integrator_addr: address, chain_id: u16): u128 acquires SendAdapterStore {
+        *table::borrow_with_default(&SendAdapterStore[integrator_addr].per_chain_adapter_bitmap, chain_id, &0)
     }
 
     #[view]
-    public fun get_enabled_recv_transceivers(integrator_addr: address, chain_id: u16): u128 acquires RecvTransceiverStore {
-        *table::borrow_with_default(&RecvTransceiverStore[integrator_addr].per_chain_transceiver_bitmap, chain_id, &0)
+    public fun get_enabled_recv_adapters(integrator_addr: address, chain_id: u16): u128 acquires RecvAdapterStore {
+        *table::borrow_with_default(&RecvAdapterStore[integrator_addr].per_chain_adapter_bitmap, chain_id, &0)
     }
 
     public entry fun update_admin(admin: &signer, integrator_addr: address, new_admin: address) acquires AdminConfig {
@@ -137,74 +137,74 @@ module router::integrator {
         admin_config.admin_addr.extract();
     }
 
-    public entry fun add_transceiver(admin: &signer, integrator_addr: address, transceiver_addr: address) acquires AdminConfig, TransceiversStore, TransceiverToIndexStore {
+    public entry fun add_adapter(admin: &signer, integrator_addr: address, adapter_addr: address) acquires AdminConfig, AdaptersStore, AdapterToIndexStore {
         // MUST check that the caller is the current admin and there is not a pending transfer.
         let admin_config = &AdminConfig[integrator_addr];
         assert!(admin_config.admin_addr.contains(&signer::address_of(admin)), E_NOT_AUTHORIZED);
         assert!(admin_config.pending_admin_addr.is_none(), E_ADMIN_TRANSFER_IN_PROGRESS);
-        let transceivers = &mut TransceiversStore[integrator_addr].transceivers;
-        // MUST check that `transceiverAddr` is not already in the array.
-        assert!(!vector::contains(transceivers, &transceiver_addr), E_ALREADY_REGISTERED);
+        let adapters = &mut AdaptersStore[integrator_addr].adapters;
+        // MUST check that `adapterAddr` is not already in the array.
+        assert!(!vector::contains(adapters, &adapter_addr), E_ALREADY_REGISTERED);
         // MUST check that the array would not surpass 128 entries.
-        let len = vector::length(transceivers);
-        assert!(len < MAX_TRANSCEIVERS, E_MAX_TRANSCEIVERS_REACHED);
-        // Appends the `transceiverAddr` to the Integrator's array of Transceivers. THIS IS NOT REVERSIBLE. Once a transceiver is added for an Integrator, it cannot be removed.
-        // Note: When a Transceiver is added, it is not enabled for sending or receiving on any chain.
-        vector::push_back(transceivers, transceiver_addr);
-        table::add(&mut TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr, (len as u8));
+        let len = vector::length(adapters);
+        assert!(len < MAX_ADAPTERS, E_MAX_ADAPTERS_REACHED);
+        // Appends the `adapterAddr` to the Integrator's array of Adapters. THIS IS NOT REVERSIBLE. Once an adapter is added for an Integrator, it cannot be removed.
+        // Note: When an Adapter is added, it is not enabled for sending or receiving on any chain.
+        vector::push_back(adapters, adapter_addr);
+        table::add(&mut AdapterToIndexStore[integrator_addr].adapter_to_index, adapter_addr, (len as u8));
     }
 
-    public entry fun enable_send_transceiver(admin: &signer, integrator_addr: address, chain_id: u16, transceiver_addr: address) acquires AdminConfig, TransceiverToIndexStore, SendTransceiverStore {
+    public entry fun enable_send_adapter(admin: &signer, integrator_addr: address, chain_id: u16, adapter_addr: address) acquires AdminConfig, AdapterToIndexStore, SendAdapterStore {
         // MUST check that the caller is the current admin and there is not a pending transfer.
         let admin_config = &AdminConfig[integrator_addr];
         assert!(admin_config.admin_addr.contains(&signer::address_of(admin)), E_NOT_AUTHORIZED);
         assert!(admin_config.pending_admin_addr.is_none(), E_ADMIN_TRANSFER_IN_PROGRESS);
-        // MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
-        // The borrow will fail if the Transceiver was never added.
-        let index = table::borrow(&TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr);
-        let bitmap = table::borrow_mut_with_default(&mut SendTransceiverStore[integrator_addr].per_chain_transceiver_bitmap, chain_id, 0);
-        // MUST check that the `transceiverAddr` is currently disabled for sending to the given chain.
-        // Enables the Transceiver for sending to the given chain.
+        // MUST check that the `adapterAddr` is in the Integrator's array of Adapters.
+        // The borrow will fail if the Adapter was never added.
+        let index = table::borrow(&AdapterToIndexStore[integrator_addr].adapter_to_index, adapter_addr);
+        let bitmap = table::borrow_mut_with_default(&mut SendAdapterStore[integrator_addr].per_chain_adapter_bitmap, chain_id, 0);
+        // MUST check that the `adapterAddr` is currently disabled for sending to the given chain.
+        // Enables the Adapter for sending to the given chain.
         *bitmap = bitmap::enable(*bitmap, *index);
     }
     
-    public entry fun disable_send_transceiver(admin: &signer, integrator_addr: address, chain_id: u16, transceiver_addr: address) acquires AdminConfig, TransceiverToIndexStore, SendTransceiverStore {
+    public entry fun disable_send_adapter(admin: &signer, integrator_addr: address, chain_id: u16, adapter_addr: address) acquires AdminConfig, AdapterToIndexStore, SendAdapterStore {
         // MUST check that the caller is the current admin and there is not a pending transfer.
         let admin_config = &AdminConfig[integrator_addr];
         assert!(admin_config.admin_addr.contains(&signer::address_of(admin)), E_NOT_AUTHORIZED);
         assert!(admin_config.pending_admin_addr.is_none(), E_ADMIN_TRANSFER_IN_PROGRESS);
-        // MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
-        // The borrow will fail if the Transceiver was never added.
-        let index = table::borrow(&TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr);
-        let bitmap = table::borrow_mut_with_default(&mut SendTransceiverStore[integrator_addr].per_chain_transceiver_bitmap, chain_id, 0);
-        // MUST check that the `transceiverAddr` is currently enabled for sending to the given chain.
-        // Disables the Transceiver for sending to the given chain.
+        // MUST check that the `adapterAddr` is in the Integrator's array of Adapters.
+        // The borrow will fail if the Adapter was never added.
+        let index = table::borrow(&AdapterToIndexStore[integrator_addr].adapter_to_index, adapter_addr);
+        let bitmap = table::borrow_mut_with_default(&mut SendAdapterStore[integrator_addr].per_chain_adapter_bitmap, chain_id, 0);
+        // MUST check that the `adapterAddr` is currently enabled for sending to the given chain.
+        // Disables the Adapter for sending to the given chain.
         *bitmap = bitmap::disable(*bitmap, *index);
     }
 
-    public entry fun enable_recv_transceiver(admin: &signer, integrator_addr: address, chain_id: u16, transceiver_addr: address) acquires AdminConfig, TransceiverToIndexStore, RecvTransceiverStore {
+    public entry fun enable_recv_adapter(admin: &signer, integrator_addr: address, chain_id: u16, adapter_addr: address) acquires AdminConfig, AdapterToIndexStore, RecvAdapterStore {
         // MUST check that the caller is the current admin and there is not a pending transfer.
         let admin_config = &AdminConfig[integrator_addr];
         assert!(admin_config.admin_addr.contains(&signer::address_of(admin)), E_NOT_AUTHORIZED);
         assert!(admin_config.pending_admin_addr.is_none(), E_ADMIN_TRANSFER_IN_PROGRESS);
-        // MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
-        let index = table::borrow(&TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr);
-        let bitmap = table::borrow_mut_with_default(&mut RecvTransceiverStore[integrator_addr].per_chain_transceiver_bitmap, chain_id, 0);
-        // MUST check that the `transceiverAddr` is currently disabled for receiving from the given chain.
-        // Enables the Transceiver for receiving from the given chain.
+        // MUST check that the `adapterAddr` is in the Integrator's array of Adapters.
+        let index = table::borrow(&AdapterToIndexStore[integrator_addr].adapter_to_index, adapter_addr);
+        let bitmap = table::borrow_mut_with_default(&mut RecvAdapterStore[integrator_addr].per_chain_adapter_bitmap, chain_id, 0);
+        // MUST check that the `adapterAddr` is currently disabled for receiving from the given chain.
+        // Enables the Adapter for receiving from the given chain.
         *bitmap = bitmap::enable(*bitmap, *index);
     }
     
-    public entry fun disable_recv_transceiver(admin: &signer, integrator_addr: address, chain_id: u16, transceiver_addr: address) acquires AdminConfig, TransceiverToIndexStore, RecvTransceiverStore {
+    public entry fun disable_recv_adapter(admin: &signer, integrator_addr: address, chain_id: u16, adapter_addr: address) acquires AdminConfig, AdapterToIndexStore, RecvAdapterStore {
         // MUST check that the caller is the current admin and there is not a pending transfer.
         let admin_config = &AdminConfig[integrator_addr];
         assert!(admin_config.admin_addr.contains(&signer::address_of(admin)), E_NOT_AUTHORIZED);
         assert!(admin_config.pending_admin_addr.is_none(), E_ADMIN_TRANSFER_IN_PROGRESS);
-        // MUST check that the `transceiverAddr` is in the Integrator's array of Transceivers.
-        let index = table::borrow(&TransceiverToIndexStore[integrator_addr].transceiver_to_index, transceiver_addr);
-        let bitmap = table::borrow_mut_with_default(&mut RecvTransceiverStore[integrator_addr].per_chain_transceiver_bitmap, chain_id, 0);
-        // MUST check that the `transceiverAddr` is currently enabled for receiving from the given chain.
-        // Disables the Transceiver for receiving from the given chain.
+        // MUST check that the `adapterAddr` is in the Integrator's array of Adapters.
+        let index = table::borrow(&AdapterToIndexStore[integrator_addr].adapter_to_index, adapter_addr);
+        let bitmap = table::borrow_mut_with_default(&mut RecvAdapterStore[integrator_addr].per_chain_adapter_bitmap, chain_id, 0);
+        // MUST check that the `adapterAddr` is currently enabled for receiving from the given chain.
+        // Disables the Adapter for receiving from the given chain.
         *bitmap = bitmap::disable(*bitmap, *index);
     }
 
