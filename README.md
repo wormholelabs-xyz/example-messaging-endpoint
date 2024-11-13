@@ -52,8 +52,8 @@ Any implementation should prioritize
 - Pass-through parameters specific to an Adapter.
 - Message execution.
 - Generically solving relaying on all runtimes.
-- Arbitrarily large size messages.
 - Advanced messaging patterns, such as efficient 1-n messaging.
+- Dynamic Adapter requirements for the same chain, e.g. between the same chains, sometimes sending via 1 adapter and other times sending via 2. If this is desired, separate sending contracts can be used.
 - Time-lock administrative functions. Since the admin can be another on-chain contract, time locks or any other desired governance restrictions can be performed there.
 
 ## Overview
@@ -62,43 +62,49 @@ Any implementation should prioritize
 ---
 title: Sending a message
 ---
-flowchart TD
-    A1[Integrator 1] -->|"sendMessage(chain1)"| Endpoint
-    A2[Integrator 2] ~~~ Endpoint
-    A3[Integrator 3] ~~~ Endpoint
-    subgraph Endpoint
-        direction LR
-        B[[Endpoint]] -->|"getConfig(sender)"| BS[("
-            Adapters: [1,3]
-            SendConfig[chain1]: [0,1]
-        ")]
-    end
-    Endpoint[[Endpoint]] --> C1[Adapter 1]
-    Endpoint[[Endpoint]] ~~~ C2[Adapter 2]
-    Endpoint[[Endpoint]] --> C3[Adapter 3]
+sequenceDiagram
+		participant C as Client
+		box blue Source Chain
+		  participant I as Integrator Contract
+		  participant E as Endpoint
+      participant A1 as Adapter 1
+      participant A2 as Adapter 2
+		end
+    C->>I: sendMessage(dstChain)
+    I->>E: endpoint.sendMessage(dstChain, dstAddress, payloadHash)
+    E->>E: getConfig(msg.sender, dstChain)
+    E->>A1: a1.sendMessage
+    E->>A2: a2.sendMessage
+    E-->>I: sequence
 ```
 
 ```mermaid
 ---
 title: Receiving a message
 ---
-flowchart TD
-    A1[Integrator 1] -.->|"receiveMessage(digest)"| Endpoint
-    A2[Integrator 2] ~~~ Endpoint
-    A3[Integrator 3] ~~~ Endpoint
-    subgraph Endpoint
-        direction LR
-        B[[Endpoint]] -->|"updateStatus"| BS[("
-            Adapters: [1,3]
-            RecvConfig[chainId]: [0,1]
-            Received[recipient][digest]: [0]
-        ")]
+sequenceDiagram
+		participant R as Relayer(s)
+		box purple Destination Chain
+      participant A1 as Adapter 1
+      participant A2 as Adapter 2
+		  participant I as Integrator Contract
+      participant E as Endpoint
+		end
+    par relay for adapter 1
+    R->>A1: attestMessage
+    A1->>E: attestMessage
+    E->>E: getConfig(msg.sender, srcChain)
+    E->>E: updateStatus(msg.sender, ...)
+    and relay for adapter 2
+    R->>A2: attestMessage
+    A2->>E: attestMessage
+    E->>E: getConfig(msg.sender, srcChain)
+    E->>E: updateStatus(msg.sender, ...)
     end
-    Endpoint[[Endpoint]] ~~~ C1[Adapter 1]
-    C1[Adapter 1] -->|"attestMessage"| Endpoint[[Endpoint]]
-    Endpoint[[Endpoint]] ~~~ C2[Adapter 2]
-    Endpoint[[Endpoint]] ~~~ C3[Adapter 1]
-    C3[Adapter 3] -.-> Endpoint[[Endpoint]]
+    R->>I: receiveMessage
+    I->>E: endpoint.receiveMessage
+    E->>E: setStatus
+    E-->>I: enabledBitmap, attestedBitmap
 ```
 
 ## Detailed Design
