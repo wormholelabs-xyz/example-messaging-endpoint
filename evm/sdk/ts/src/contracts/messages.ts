@@ -7,7 +7,7 @@ export async function sendMessage(
   dstChain: number,
   dstAddr: string,
   payloadHash: string,
-  refundAddress: string
+  refundAddress: string,
 ): Promise<bigint> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -28,7 +28,7 @@ export async function attestMessage(
   sequence: number,
   dstChain: number,
   dstAddr: string,
-  payloadHash: string
+  payloadHash: string,
 ): Promise<void> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -40,7 +40,7 @@ export async function attestMessage(
     sequence,
     dstChain,
     dstAddr,
-    payloadHash
+    payloadHash,
   );
 }
 
@@ -50,7 +50,7 @@ export async function recvMessage(
   srcChain: number,
   srcAddr: string,
   sequence: number,
-  payloadHash: string
+  payloadHash: string,
 ): Promise<{
   enabledBitmap: bigint;
   attestedBitmap: bigint;
@@ -63,13 +63,13 @@ export async function recvMessage(
     srcChain,
     srcAddr,
     sequence,
-    payloadHash
+    payloadHash,
   );
   const [enabledBitmap, attestedBitmap] = result.data;
 
   // Convert the values to bigint
   return {
     enabledBitmap: BigInt(enabledBitmap),
-    attestedBitmap: BigInt(attestedBitmap)
+    attestedBitmap: BigInt(attestedBitmap),
   };
 }

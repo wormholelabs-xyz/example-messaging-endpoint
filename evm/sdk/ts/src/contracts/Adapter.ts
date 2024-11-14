@@ -5,7 +5,7 @@ export async function addAdapter(
   contractAddress: string,
   signer: ethers.Signer,
   integrator: string,
-  adapter: string
+  adapter: string,
 ): Promise<bigint> {
   console.log("Contract Address:", contractAddress);
   console.log("Signer:", signer);
@@ -31,7 +31,7 @@ export async function enableSendAdapter(
   provider: ethers.Signer,
   integrator: string,
   chain: number,
-  adapter: string
+  adapter: string,
 ): Promise<void> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -44,7 +44,7 @@ export async function enableRecvAdapter(
   provider: ethers.Signer,
   integrator: string,
   chain: number,
-  adapter: string
+  adapter: string,
 ): Promise<void> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -57,7 +57,7 @@ export async function disableSendAdapter(
   provider: ethers.Signer,
   integrator: string,
   chain: number,
-  adapter: string
+  adapter: string,
 ): Promise<void> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -70,7 +70,7 @@ export async function disableRecvAdapter(
   provider: ethers.Signer,
   integrator: string,
   chain: number,
-  adapter: string
+  adapter: string,
 ): Promise<void> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -82,7 +82,7 @@ export async function getAdapterIndex(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
   integrator: string,
-  adapter: string
+  adapter: string,
 ): Promise<bigint> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -96,7 +96,7 @@ export async function getSendAdaptersByChain(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
   integrator: string,
-  chain: number
+  chain: number,
 ): Promise<string[]> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -110,7 +110,7 @@ export async function getRecvAdaptersByChain(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
   integrator: string,
-  chain: number
+  chain: number,
 ): Promise<string[]> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -123,7 +123,7 @@ export async function getRecvAdaptersByChain(
 export async function getAdapters(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
-  integrator: string
+  integrator: string,
 ): Promise<string[]> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -137,7 +137,7 @@ export async function getAdapterByIndex(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
   integrator: string,
-  index: bigint
+  index: bigint,
 ): Promise<string> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);

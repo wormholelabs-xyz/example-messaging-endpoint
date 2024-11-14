@@ -2,17 +2,17 @@ import { ethers } from "ethers";
 import {
   addAdapter,
   getAdapterByIndex,
-  getAdapterIndex
+  getAdapterIndex,
 } from "../contracts/Adapter";
 import * as dotenv from "dotenv";
 dotenv.config();
 
 (async () => {
   const baseProvider = new ethers.JsonRpcProvider(
-    "https://base-sepolia-rpc.publicnode.com"
+    "https://base-sepolia-rpc.publicnode.com",
   );
   const sepoliaProvider = new ethers.JsonRpcProvider(
-    "https://rpc-sepolia.rockx.com"
+    "https://rpc-sepolia.rockx.com",
   );
   const privateKey = process.env.PRIVATE_KEY;
   if (!privateKey) {
@@ -38,7 +38,7 @@ dotenv.config();
     sepoliaRouter,
     wallet,
     sepoliaIntegrator,
-    0n
+    0n,
   );
   console.log("Trans:", trans);
   // console.log("Index:", index);

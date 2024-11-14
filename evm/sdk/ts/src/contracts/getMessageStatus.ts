@@ -8,7 +8,7 @@ export async function getMessageStatus(
   srcAddr: string,
   sequence: number,
   dstAddr: string,
-  payloadHash: string
+  payloadHash: string,
 ): Promise<{
   enabledBitmap: ethers.BigNumberish;
   attestedBitmap: ethers.BigNumberish;

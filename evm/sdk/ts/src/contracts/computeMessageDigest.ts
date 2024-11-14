@@ -9,7 +9,7 @@ export async function computeMessageDigest(
   sequence: number,
   dstChain: number,
   dstAddr: string,
-  payloadHash: string
+  payloadHash: string,
 ): Promise<string> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -21,7 +21,7 @@ export async function computeMessageDigest(
     sequence,
     dstChain,
     dstAddr,
-    payloadHash
+    payloadHash,
   );
 
   return digest;

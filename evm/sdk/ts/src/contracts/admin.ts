@@ -4,7 +4,7 @@ import { Endpoint__factory } from "../abi";
 export async function getAdmin(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
-  integrator: string
+  integrator: string,
 ): Promise<string> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -18,7 +18,7 @@ export async function getAdmin(
 export async function getPendingAdmin(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
-  integrator: string
+  integrator: string,
 ): Promise<string> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -33,7 +33,7 @@ export async function updateAdmin(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
   integrator: string,
-  admin: string
+  admin: string,
 ): Promise<void> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -46,7 +46,7 @@ export async function transferAdmin(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
   integrator: string,
-  admin: string
+  admin: string,
 ): Promise<void> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -58,7 +58,7 @@ export async function transferAdmin(
 export async function claimAdmin(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
-  integrator: string
+  integrator: string,
 ): Promise<void> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
@@ -70,7 +70,7 @@ export async function claimAdmin(
 export async function discardAdmin(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
-  integrator: string
+  integrator: string,
 ): Promise<void> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
