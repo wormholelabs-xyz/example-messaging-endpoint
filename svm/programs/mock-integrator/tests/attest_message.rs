@@ -19,7 +19,9 @@ use solana_sdk::{
 };
 use universal_address::UniversalAddress;
 
-async fn setup_test_environment() -> (
+async fn setup_test_environment(
+    chain_id: u16,
+) -> (
     ProgramTestContext,
     Keypair,
     Keypair,
@@ -33,7 +35,6 @@ async fn setup_test_environment() -> (
     let payer = context.payer.insecure_clone();
     let admin = Keypair::new();
     let integrator_program_id = mock_integrator::id();
-    let chain_id: u16 = 2;
 
     let (integrator_config_pda, _) = IntegratorConfig::pda(&integrator_program_id);
     let (integrator_chain_config_pda, _) =
@@ -105,7 +106,7 @@ async fn test_attest_message_success() {
         adapter_info_pda,
         adapter_pda,
         chain_id,
-    ) = setup_test_environment().await;
+    ) = setup_test_environment(2).await;
 
     let src_chain: u16 = chain_id;
     let src_addr = UniversalAddress::from_bytes([1u8; 32]);
@@ -168,7 +169,7 @@ async fn test_attest_message_after_exec() {
         adapter_info_pda,
         adapter_pda,
         chain_id,
-    ) = setup_test_environment().await;
+    ) = setup_test_environment(2).await;
 
     let src_chain: u16 = chain_id;
     let src_addr = UniversalAddress::from_bytes([1u8; 32]);
@@ -246,7 +247,7 @@ async fn test_attest_message_duplicate_attestation() {
         adapter_info_pda,
         adapter_pda,
         chain_id,
-    ) = setup_test_environment().await;
+    ) = setup_test_environment(2).await;
 
     let src_chain: u16 = chain_id;
     let src_addr = UniversalAddress::from_bytes([1u8; 32]);
@@ -299,8 +300,7 @@ async fn test_attest_message_duplicate_attestation() {
 }
 
 #[tokio::test]
-async fn test_attest_message_zero_chain_id() {
-    // Setup similar to the success test
+async fn test_attest_message_invalid_destination_chain() {
     let (
         mut context,
         payer,
@@ -310,12 +310,12 @@ async fn test_attest_message_zero_chain_id() {
         adapter_info_pda,
         adapter_pda,
         chain_id,
-    ) = setup_test_environment().await;
+    ) = setup_test_environment(2).await;
 
     let src_chain: u16 = chain_id;
     let src_addr = UniversalAddress::from_bytes([1u8; 32]);
     let sequence: u64 = 1;
-    let dst_chain = 0;
+    let dst_chain = 3; // Invalid destination chain
     let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
     let payload_hash = [3u8; 32];
 
@@ -339,7 +339,7 @@ async fn test_attest_message_zero_chain_id() {
         result.unwrap_err().unwrap(),
         TransactionError::InstructionError(
             0,
-            InstructionError::Custom(EndpointError::InvalidChainId.into())
+            InstructionError::Custom(EndpointError::InvalidDestinationChain.into())
         )
     );
 }

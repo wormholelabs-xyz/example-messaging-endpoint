@@ -1,7 +1,11 @@
 use anchor_lang::prelude::*;
 use universal_address::UniversalAddress;
 
-use crate::{error::EndpointError, state::AttestationInfo};
+use crate::{
+    error::EndpointError,
+    event::MessageReceived,
+    state::{AttestationInfo, IntegratorChainConfig},
+};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct RecvMessageArgs {
@@ -14,6 +18,7 @@ pub struct RecvMessageArgs {
     pub payload_hash: [u8; 32],
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args: RecvMessageArgs)]
 pub struct RecvMessage<'info> {
@@ -28,6 +33,18 @@ pub struct RecvMessage<'info> {
         seeds::program = args.integrator_program_id
     )]
     pub integrator_program_pda: Signer<'info>,
+
+    /// The integrator chain config account
+    /// This is required to read the enabled_bitmap from
+    #[account(
+        seeds = [
+            IntegratorChainConfig::SEED_PREFIX,
+            args.integrator_program_id.as_ref(),
+            args.src_chain.to_be_bytes().as_ref()
+        ],
+        bump = integrator_chain_config.bump,
+    )]
+    pub integrator_chain_config: Account<'info, IntegratorChainConfig>,
 
     /// The attestation info account
     /// This throws when there is no attestation as there is no account initialized yet
@@ -51,32 +68,37 @@ pub struct RecvMessage<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// This instruction is called to receive a message that has been attested to.
-/// It marks the message as executed and returns the enabled receive adapters
-/// for the source chain along with the attestations.
+/// Receives a message that has been attested to in the endpoint program
+///
+/// This function performs the following steps:
+/// 1. Checks if the message has already been executed.
+/// 2. Marks the message as executed.
+/// 3. Emits a MessageReceived event.
 ///
 /// # Arguments
 ///
-/// * `ctx` - The context of the instruction, containing the accounts involved.
-/// * `args` - The arguments for the instruction, including:
+/// * `ctx` - The context of the instruction, containing the accounts
+/// * `args` - The arguments for the recv_message instruction, including:
 ///   * `integrator_program_pda_bump`: The bump seed for the integrator program PDA.
 ///   * `src_chain`: The source chain ID.
 ///   * `src_addr`: The source address as a UniversalAddress.
 ///   * `sequence`: The sequence number of the message.
 ///   * `dst_chain`: The destination chain ID.
-///   * `dst_addr`: The destination address as a UniversalAddress.
+///   * `integrator_program_id`: The public key of the integrator program.
 ///   * `payload_hash`: The hash of the message payload.
 ///
 /// # Returns
 ///
-/// A tuple containing:
-/// * The bitmap of enabled receive adapters for the source chain.
-/// * The bitmap of adapters that have attested to the message.
+/// Returns `Ok(())` if the message is successfully received, or an error if it fails
 ///
 /// # Errors
 ///
 /// This function will return an error if:
-/// * The message has already been executed (EndpointError::AlreadyExecuted).
+/// * The message has already been executed (EndpointError::AlreadyExecuted)
+///
+/// # Events
+///
+/// Emits a `MessageReceived` event
 ///
 /// # Notes
 ///
@@ -95,6 +117,22 @@ pub fn recv_message(ctx: Context<RecvMessage>, _args: RecvMessageArgs) -> Result
 
     // Mark the message as executed
     attestation_info.executed = true;
+
+    emit_cpi!(MessageReceived {
+        message_hash: attestation_info.message_hash,
+        src_chain: attestation_info.src_chain,
+        src_addr: attestation_info.src_addr,
+        sequence: attestation_info.sequence,
+        dst_chain: attestation_info.dst_chain,
+        dst_addr: attestation_info.dst_addr,
+        payload_hash: attestation_info.payload_hash,
+        enabled_bitmap: ctx
+            .accounts
+            .integrator_chain_config
+            .recv_adapter_bitmap
+            .as_value(),
+        attested_bitmap: attestation_info.attested_adapters.as_value(),
+    });
 
     // Return the enabled receive Adapters for that chain along with the attestations
     Ok(())

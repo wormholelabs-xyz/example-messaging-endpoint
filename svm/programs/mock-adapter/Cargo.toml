@@ -9,13 +9,15 @@ crate-type = ["cdylib", "lib"]
 name = "mock_adapter"
 
 [features]
-default = []
+default = ["solana"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
 idl-build = ["anchor-lang/idl-build"]
-test-sbf = ["no-entrypoint"]
+solana = []
+test-sbf = ["no-entrypoint", "solana"]
+
 
 [dependencies]
 anchor-lang = { workspace = true }

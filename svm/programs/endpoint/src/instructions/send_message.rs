@@ -3,6 +3,7 @@ use universal_address::UniversalAddress;
 
 use crate::{
     error::EndpointError,
+    event::MessageSent,
     state::{IntegratorChainConfig, OutboxMessage, SequenceTracker},
 };
 
@@ -15,6 +16,7 @@ pub struct SendMessageArgs {
     pub payload_hash: [u8; 32],
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args: SendMessageArgs)]
 pub struct SendMessage<'info> {
@@ -61,9 +63,13 @@ pub struct SendMessage<'info> {
     pub system_program: Program<'info, System>,
 }
 
-/// This instruction creates a new outbox message.
-/// It checks if there are any enabled send adapters for the destination chain and initializes
-/// the outbox message with the provided information.
+/// Creates a new outbox message and initializes it with the provided information.
+///
+/// This function performs the following steps:
+/// 1. Checks if there are any enabled send adapters for the destination chain.
+/// 2. Initializes a new `OutboxMessage` account with the provided information.
+/// 3. Increments the sequence number in the `SequenceTracker` account.
+/// 4. Emits a `MessageSent` event with details about the sent message.
 ///
 /// # Arguments
 ///
@@ -84,6 +90,10 @@ pub struct SendMessage<'info> {
 ///
 /// * Initializes a new `OutboxMessage` account.
 /// * Increments the sequence number in the `SequenceTracker` account.
+///
+/// # Events
+///
+/// Emits a `MessageSent` event
 pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<()> {
     // Check if there are any enabled send adapters for destination chain
     require!(
@@ -103,6 +113,14 @@ pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<
         payload_hash: args.payload_hash,
         outstanding_adapters: ctx.accounts.integrator_chain_config.send_adapter_bitmap,
         refund_recipient: ctx.accounts.payer.key(),
+    });
+
+    emit_cpi!(MessageSent {
+        sender: UniversalAddress::from(args.integrator_program_id),
+        sequence: ctx.accounts.sequence_tracker.sequence,
+        recipient: args.dst_addr,
+        recipient_chain: args.dst_chain,
+        payload_digest: args.payload_hash,
     });
 
     Ok(())

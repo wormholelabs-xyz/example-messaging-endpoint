@@ -17,9 +17,14 @@ pub async fn transfer_admin(
     integrator_config: Pubkey,
     integrator_program_id: Pubkey,
 ) -> Result<(), BanksClientError> {
+    let (event_authority, _) =
+        Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
+
     let accounts = TransferAdmin {
         admin: admin.pubkey(),
         integrator_config,
+        event_authority,
+        program: endpoint::id(),
     };
 
     let args = endpoint::instructions::TransferAdminArgs {
@@ -42,9 +47,14 @@ pub async fn claim_admin(
     payer: &Keypair,
     integrator_config: Pubkey,
 ) -> Result<(), BanksClientError> {
+    let (event_authority, _) =
+        Pubkey::find_program_address(&[b"__event_authority"], &endpoint::id());
+
     let accounts = ClaimAdmin {
         new_admin: new_admin.pubkey(),
         integrator_config,
+        event_authority,
+        program: endpoint::id(),
     };
 
     let ix = Instruction {

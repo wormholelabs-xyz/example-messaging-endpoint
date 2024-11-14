@@ -3,7 +3,9 @@ use universal_address::UniversalAddress;
 
 use crate::{
     error::EndpointError,
+    event::MessageAttestedTo,
     state::{AdapterInfo, AttestationInfo, IntegratorChainConfig},
+    CHAIN_ID,
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -18,6 +20,7 @@ pub struct AttestMessageArgs {
     pub payload_hash: [u8; 32],
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args: AttestMessageArgs)]
 pub struct AttestMessage<'info> {
@@ -107,7 +110,17 @@ pub struct AttestMessage<'info> {
 /// # Returns
 ///
 /// Returns `Ok(())` if the attestation is successful
+///
+/// # Events
+///
+/// Emits a `MessageAttestedTo` event
 pub fn attest_message(ctx: Context<AttestMessage>, args: AttestMessageArgs) -> Result<()> {
+    // Validate that the destination chain is this program's chain
+    require!(
+        args.dst_chain == CHAIN_ID,
+        EndpointError::InvalidDestinationChain
+    );
+
     let adapter_info = &ctx.accounts.adapter_info;
     let integrator_chain_config = &ctx.accounts.integrator_chain_config;
     let attestation_info = &mut ctx.accounts.attestation_info;
@@ -149,6 +162,18 @@ pub fn attest_message(ctx: Context<AttestMessage>, args: AttestMessageArgs) -> R
     attestation_info
         .attested_adapters
         .set(adapter_info.index, true)?;
+
+    emit_cpi!(MessageAttestedTo {
+        message_hash: attestation_info.message_hash,
+        src_chain: args.src_chain,
+        src_addr: args.src_addr,
+        sequence: args.sequence,
+        dst_chain: args.dst_chain,
+        dst_addr: UniversalAddress::from_pubkey(&args.integrator_program_id),
+        payload_hash: args.payload_hash,
+        attested_bitmap: attestation_info.attested_adapters.as_value(),
+        attesting_adapter: UniversalAddress::from_pubkey(&args.adapter_program_id),
+    });
 
     Ok(())
 }

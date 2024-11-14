@@ -9,17 +9,18 @@ crate-type = ["cdylib", "lib"]
 name = "endpoint"
 
 [features]
-default = []
+default = ["solana"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
-no-log-ix-name = []
 idl-build = ["anchor-lang/idl-build"]
-test-sbf = []
+solana = []
+test-sbf = ["solana"]
 
 [dependencies]
-anchor-lang = { workspace = true, features = ["init-if-needed"] }
+anchor-lang = { workspace = true, features = ["init-if-needed", "event-cpi"] }
 bitmaps = "3.2.1"
+cfg-if = { workspace = true }
 universal-address = { workspace = true }
 
 [dev-dependencies]

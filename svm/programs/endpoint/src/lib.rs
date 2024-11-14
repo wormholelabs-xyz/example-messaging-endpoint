@@ -1,13 +1,22 @@
 use anchor_lang::prelude::*;
 
 pub mod error;
+pub mod event;
 pub mod instructions;
 pub mod state;
 pub mod utils;
 
 use instructions::*;
 
-declare_id!("7qtLhNMdb9dNAWwFvNBMok64EJrS1toY9TQoedVhU1xp");
+declare_id!("FMPF1RnXz1vvZ6eovoEQqMPXYRUgYqFKFMXzTJkbWWVD");
+
+cfg_if::cfg_if! {
+    if #[cfg(feature = "solana")] {
+        pub const CHAIN_ID: u16 = 1;
+    } else {
+        compile_error!("The 'solana' feature must be enabled.");
+    }
+}
 
 /// The main program module for the Endpoint
 #[program]

@@ -7,9 +7,13 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-mock-integrator = "B86KSKnHBRiJeDcP7vwaXuxfkqfChZmYKBqh4dkLYEpj"
-mock-adapter = "4ZiURKmq17KrwY3K2KxxzqttzytxQsqAcMy374QUi7tx"
-endpoint = "7qtLhNMdb9dNAWwFvNBMok64EJrS1toY9TQoedVhU1xp"
+mock_integrator = "661Ly6gSCDiGWzC4tKJhS8tqXNWJU6yfbhxNKC4gPF5t"
+mock_adapter = "5k8XySmYJ6nQTF8ZFZtRoevjCx9Y9PS5MT9oJDLNA162"
+endpoint = "FMPF1RnXz1vvZ6eovoEQqMPXYRUgYqFKFMXzTJkbWWVD"
+
+[test.validator]
+# Deactivate the "bpf_account_data_direct_mapping" feature for testing
+deactivate_feature = ["EenyoWx9UMXYKpR8mW5Jmfmy2fRjzUtM7NduYMY8bx33"]
 
 [registry]
 url = "https://api.apr.dev"

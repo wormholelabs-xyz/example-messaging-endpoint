@@ -44,4 +44,7 @@ pub enum EndpointError {
 
     #[msg("Message Hash is invalid")]
     InvalidMessageHash,
+
+    #[msg("Invalid Destination Chain Id")]
+    InvalidDestinationChain,
 }

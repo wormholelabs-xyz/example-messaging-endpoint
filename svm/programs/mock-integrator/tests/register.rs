@@ -1,7 +1,11 @@
 #![cfg(feature = "test-sbf")]
 
+use std::println;
+
+use endpoint::event::IntegratorRegistered;
 use endpoint::state::{IntegratorConfig, SequenceTracker};
 use solana_program_test::*;
+use solana_sdk::pubkey::Pubkey;
 use solana_sdk::{
     instruction::InstructionError, signature::Keypair, signer::Signer,
     system_instruction::SystemError, transaction::TransactionError,
@@ -14,7 +18,7 @@ use crate::common::setup::{get_account, setup};
 use instructions::register::register;
 
 #[tokio::test]
-async fn test_invoke_register() {
+async fn test_invoke_register_success() {
     let mut context = setup().await;
     let payer = context.payer.insecure_clone();
     let admin = Keypair::new();

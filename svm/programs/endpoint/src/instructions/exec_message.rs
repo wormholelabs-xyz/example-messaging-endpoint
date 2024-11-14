@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use universal_address::UniversalAddress;
 
-use crate::{error::EndpointError, state::AttestationInfo};
+use crate::{error::EndpointError, event::MessageExecuted, state::AttestationInfo};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct ExecMessageArgs {
@@ -14,6 +14,7 @@ pub struct ExecMessageArgs {
     pub payload_hash: [u8; 32],
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args: ExecMessageArgs)]
 pub struct ExecMessage<'info> {
@@ -55,9 +56,11 @@ pub struct ExecMessage<'info> {
 
 /// Executes a message in the endpoint program
 ///
-/// This function is responsible for marking a message as executed. It checks if the message
-/// has already been executed, initializes the attestation info if it's newly created,
-/// and then marks the message as executed.
+/// This function is responsible for marking a message as executed. It performs the following steps:
+/// 1. Checks if the message has already been executed.
+/// 2. Initializes the attestation info if it's newly created.
+/// 3. Marks the message as executed.
+/// 4. Emits a MessageExecuted event.
 ///
 /// # Arguments
 ///
@@ -74,6 +77,15 @@ pub struct ExecMessage<'info> {
 /// # Returns
 ///
 /// Returns `Ok(())` if the message is successfully executed, or an error if it fails
+///
+/// # Errors
+///
+/// This function will return an error if:
+/// * The message has already been executed (EndpointError::AlreadyExecuted)
+///
+/// # Events
+///
+/// Emits a `MessageExecuted` event
 pub fn exec_message(ctx: Context<ExecMessage>, args: ExecMessageArgs) -> Result<()> {
     let attestation_info = &mut ctx.accounts.attestation_info;
 
@@ -95,6 +107,16 @@ pub fn exec_message(ctx: Context<ExecMessage>, args: ExecMessageArgs) -> Result<
 
     // Mark the message as executed
     attestation_info.executed = true;
+
+    emit_cpi!(MessageExecuted {
+        message_hash: attestation_info.message_hash,
+        src_chain: args.src_chain,
+        src_addr: args.src_addr,
+        sequence: args.sequence,
+        dst_chain: args.dst_chain,
+        dst_addr: UniversalAddress::from_pubkey(&args.integrator_program_id),
+        payload_hash: args.payload_hash,
+    });
 
     Ok(())
 }
