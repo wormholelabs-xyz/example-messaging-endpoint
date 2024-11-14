@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { Router__factory } from "../abi";
+import { Endpoint__factory } from "../abi";
 
 export async function getMessageStatus(
   contractAddress: string,
@@ -8,17 +8,17 @@ export async function getMessageStatus(
   srcAddr: string,
   sequence: number,
   dstAddr: string,
-  payloadHash: string,
+  payloadHash: string
 ): Promise<{
   enabledBitmap: ethers.BigNumberish;
   attestedBitmap: ethers.BigNumberish;
   executed: boolean;
 }> {
-  // Use Router__factory to create a typed instance of the Router contract
-  const router = Router__factory.connect(contractAddress, provider);
+  // Use Endpoint__factory to create a typed instance of the Endpoint contract
+  const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the getMessageStatus function and destructure the result
-  const [enabledBitmap, attestedBitmap, executed] = await router[
+  const [enabledBitmap, attestedBitmap, executed] = await endpoint[
     "getMessageStatus(uint16,bytes32,uint64,bytes32,bytes32)"
   ](srcChain, srcAddr, sequence, dstAddr, payloadHash);
 

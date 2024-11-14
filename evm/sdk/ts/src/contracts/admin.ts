@@ -1,16 +1,16 @@
 import { ethers } from "ethers";
-import { Router__factory } from "../abi";
+import { Endpoint__factory } from "../abi";
 
 export async function getAdmin(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
-  integrator: string,
+  integrator: string
 ): Promise<string> {
-  // Use Router__factory to create a typed instance of the Router contract
-  const router = Router__factory.connect(contractAddress, provider);
+  // Use Endpoint__factory to create a typed instance of the Endpoint contract
+  const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the getAdmin function
-  const admin = await router["getAdmin"](integrator);
+  const admin = await endpoint["getAdmin"](integrator);
 
   return admin;
 }
@@ -18,13 +18,13 @@ export async function getAdmin(
 export async function getPendingAdmin(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
-  integrator: string,
+  integrator: string
 ): Promise<string> {
-  // Use Router__factory to create a typed instance of the Router contract
-  const router = Router__factory.connect(contractAddress, provider);
+  // Use Endpoint__factory to create a typed instance of the Endpoint contract
+  const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the getPendingAdmin function
-  const admin = await router["getPendingAdmin"](integrator);
+  const admin = await endpoint["getPendingAdmin"](integrator);
 
   return admin;
 }
@@ -33,48 +33,48 @@ export async function updateAdmin(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
   integrator: string,
-  admin: string,
+  admin: string
 ): Promise<void> {
-  // Use Router__factory to create a typed instance of the Router contract
-  const router = Router__factory.connect(contractAddress, provider);
+  // Use Endpoint__factory to create a typed instance of the Endpoint contract
+  const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the updateAdmin function
-  await router["updateAdmin"](integrator, admin);
+  await endpoint["updateAdmin"](integrator, admin);
 }
 
 export async function transferAdmin(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
   integrator: string,
-  admin: string,
+  admin: string
 ): Promise<void> {
-  // Use Router__factory to create a typed instance of the Router contract
-  const router = Router__factory.connect(contractAddress, provider);
+  // Use Endpoint__factory to create a typed instance of the Endpoint contract
+  const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the transferAdmin function
-  await router["transferAdmin"](integrator, admin);
+  await endpoint["transferAdmin"](integrator, admin);
 }
 
 export async function claimAdmin(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
-  integrator: string,
+  integrator: string
 ): Promise<void> {
-  // Use Router__factory to create a typed instance of the Router contract
-  const router = Router__factory.connect(contractAddress, provider);
+  // Use Endpoint__factory to create a typed instance of the Endpoint contract
+  const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the claimAdmin function
-  await router["claimAdmin"](integrator);
+  await endpoint["claimAdmin"](integrator);
 }
 
 export async function discardAdmin(
   contractAddress: string,
   provider: ethers.Provider | ethers.Signer,
-  integrator: string,
+  integrator: string
 ): Promise<void> {
-  // Use Router__factory to create a typed instance of the Router contract
-  const router = Router__factory.connect(contractAddress, provider);
+  // Use Endpoint__factory to create a typed instance of the Endpoint contract
+  const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the discardAdmin function
-  await router["discardAdmin"](integrator);
+  await endpoint["discardAdmin"](integrator);
 }

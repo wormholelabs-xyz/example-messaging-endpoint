@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { Router__factory } from "../abi";
+import { Endpoint__factory } from "../abi";
 
 export async function sendMessage(
   contractAddress: string,
@@ -7,13 +7,13 @@ export async function sendMessage(
   dstChain: number,
   dstAddr: string,
   payloadHash: string,
-  refundAddress: string,
+  refundAddress: string
 ): Promise<bigint> {
-  // Use Router__factory to create a typed instance of the Router contract
-  const router = Router__factory.connect(contractAddress, provider);
+  // Use Endpoint__factory to create a typed instance of the Endpoint contract
+  const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the getMessageStatus function and destructure the result
-  const result: ethers.ContractTransactionResponse = await router[
+  const result: ethers.ContractTransactionResponse = await endpoint[
     "sendMessage"
   ](dstChain, dstAddr, payloadHash, refundAddress);
 
@@ -28,19 +28,19 @@ export async function attestMessage(
   sequence: number,
   dstChain: number,
   dstAddr: string,
-  payloadHash: string,
+  payloadHash: string
 ): Promise<void> {
-  // Use Router__factory to create a typed instance of the Router contract
-  const router = Router__factory.connect(contractAddress, provider);
+  // Use Endpoint__factory to create a typed instance of the Endpoint contract
+  const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the getMessageStatus function and destructure the result
-  await router["attestMessage"](
+  await endpoint["attestMessage"](
     srcChain,
     srcAddr,
     sequence,
     dstChain,
     dstAddr,
-    payloadHash,
+    payloadHash
   );
 }
 
@@ -50,26 +50,26 @@ export async function recvMessage(
   srcChain: number,
   srcAddr: string,
   sequence: number,
-  payloadHash: string,
+  payloadHash: string
 ): Promise<{
   enabledBitmap: bigint;
   attestedBitmap: bigint;
 }> {
-  // Use Router__factory to create a typed instance of the Router contract
-  const router = Router__factory.connect(contractAddress, provider);
+  // Use Endpoint__factory to create a typed instance of the Endpoint contract
+  const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the getMessageStatus function and destructure the result
-  const result = await router["recvMessage"](
+  const result = await endpoint["recvMessage"](
     srcChain,
     srcAddr,
     sequence,
-    payloadHash,
+    payloadHash
   );
   const [enabledBitmap, attestedBitmap] = result.data;
 
   // Convert the values to bigint
   return {
     enabledBitmap: BigInt(enabledBitmap),
-    attestedBitmap: BigInt(attestedBitmap),
+    attestedBitmap: BigInt(attestedBitmap)
   };
 }
