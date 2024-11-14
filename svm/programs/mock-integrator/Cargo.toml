@@ -9,16 +9,14 @@ crate-type = ["cdylib", "lib"]
 name = "mock_integrator"
 
 [features]
-default = ["solana-mainnet"]
+default = ["solana"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
 no-log-ix-name = []
 idl-build = ["anchor-lang/idl-build"]
-solana-mainnet = []
-solana-devnet = []
-solana-localnet = []
-test-sbf = ["no-entrypoint", "solana-localnet"]
+solana = []
+test-sbf = ["no-entrypoint", "solana"]
 
 [dependencies]
 anchor-lang = { workspace = true }

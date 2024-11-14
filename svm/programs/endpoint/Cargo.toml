@@ -9,15 +9,13 @@ crate-type = ["cdylib", "lib"]
 name = "endpoint"
 
 [features]
-default = ["solana-mainnet"]
+default = ["solana"]
 cpi = ["no-entrypoint"]
 no-entrypoint = []
 no-idl = []
 idl-build = ["anchor-lang/idl-build"]
-solana-mainnet = []
-solana-devnet = []
-solana-localnet = []
-test-sbf = ["solana-localnet"]
+solana = []
+test-sbf = ["solana"]
 
 [dependencies]
 anchor-lang = { workspace = true, features = ["init-if-needed", "event-cpi"] }
