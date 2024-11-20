@@ -467,12 +467,7 @@ abstract contract AdapterRegistry {
     function getRecvAdaptersByChain(address integrator, uint16 chain) public view returns (address[] memory result) {
         address[] memory allAdapters = _getRegisteredAdaptersStorage()[integrator];
         // Count number of bits set in the bitmap so we can calculate the size of the result array.
-        uint128 bitmap = _getEnabledRecvAdaptersBitmapForChain(integrator, chain);
-        uint8 count = 0;
-        while (bitmap != 0) {
-            bitmap &= bitmap - 1;
-            count++;
-        }
+        uint8 count = _getNumEnabledRecvAdaptersForChain(integrator, chain);
         result = new address[](count);
         uint256 len = 0;
         uint256 arrayLength = allAdapters.length;
