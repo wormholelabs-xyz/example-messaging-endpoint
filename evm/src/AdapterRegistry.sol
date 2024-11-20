@@ -470,8 +470,8 @@ abstract contract AdapterRegistry {
         uint128 bitmap = _getEnabledRecvAdaptersBitmapForChain(integrator, chain);
         uint8 count = 0;
         while (bitmap != 0) {
-            count += uint8(bitmap & 1);
-            bitmap >>= 1;
+            bitmap &= bitmap - 1;
+            count++;
         }
         result = new address[](count);
         uint256 len = 0;
@@ -494,8 +494,8 @@ abstract contract AdapterRegistry {
     function _getNumEnabledRecvAdaptersForChain(address integrator, uint16 chain) public view returns (uint8 result) {
         uint128 bitmap = _getEnabledRecvAdaptersBitmapForChain(integrator, chain);
         while (bitmap != 0) {
-            result += uint8(bitmap & 1);
-            bitmap >>= 1;
+            bitmap &= bitmap - 1;
+            result++;
         }
     }
 }
