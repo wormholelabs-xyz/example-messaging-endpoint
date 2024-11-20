@@ -486,4 +486,16 @@ abstract contract AdapterRegistry {
             }
         }
     }
+
+    /// @notice Returns the number of enabled receive adapters for the given integrator and chain.
+    /// @param integrator The integrator address.
+    /// @param chain The Wormhole chain ID for the desired adapters.
+    /// @return result The number of enabled receive adapters for that chain.
+    function _getNumEnabledRecvAdaptersForChain(address integrator, uint16 chain) public view returns (uint8 result) {
+        uint128 bitmap = _getEnabledRecvAdaptersBitmapForChain(integrator, chain);
+        while (bitmap != 0) {
+            result += uint8(bitmap & 1);
+            bitmap >>= 1;
+        }
+    }
 }
