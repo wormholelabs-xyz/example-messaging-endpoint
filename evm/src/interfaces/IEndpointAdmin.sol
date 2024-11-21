@@ -54,4 +54,9 @@ interface IEndpointAdmin {
     /// @param adapter The address of the Adapter contract.
     /// @param chain The chain ID of the Adapter contract.
     function disableRecvAdapter(address integrator, uint16 chain, address adapter) external;
+
+    /// @notice Returns the number enabled receive adapters for the given chain.
+    /// @param integrator The address of the integrator contract.
+    /// @param chain The chain ID of the Adapter contract.
+    function getNumEnabledRecvAdaptersForChain(address integrator, uint16 chain) external view returns (uint8 count);
 }
