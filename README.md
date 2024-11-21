@@ -280,7 +280,7 @@ The Endpoint MUST contain the following functionality for an Integrator:
   - Increments the Integrator's sequence and performs the steps to send the message or prepare it for sending, as applicable.
   - If Adapters must pull outgoing messages in the given implementation (via `pickUpMessage`), the Endpoint MUST set the current enabled Send Adapters as the Outstanding Adapters for that message.
 - `getMessageStatus(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash)` → `enabledBitmap, attestedBitmap, numAttested, executed`
-  - Returns the enabled receive Adapters for that chain along with the attestations and the executed flag.
+  - Returns the enabled receive Adapters for that chain along with the attestation information and the executed flag.
 - `recvMessage(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash)` → `enabledBitmap, attestedBitmap, numAttested`
   - MUST check that at least one Adapter has attested.
   - MUST revert if already executed.

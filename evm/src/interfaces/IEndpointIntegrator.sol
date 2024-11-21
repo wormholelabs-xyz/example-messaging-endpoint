@@ -48,7 +48,7 @@ interface IEndpointIntegrator is IMessageSequence {
     /// @param sequence The sequence number of the message.
     /// @param dstAddr The destination address of the message.
     /// @param payloadHash The keccak256 of payload from the integrator.
-    /// @return (uint128, uint128, uint8, bool) The enabled bitmap, the attested bitmap, the number of attestations, if the message was executed.
+    /// @return (uint128, uint128, uint8, bool) The enabled bitmap, the attested bitmap, the number of attestations, and if the message was executed.
     function getMessageStatus(
         uint16 srcChain,
         UniversalAddress srcAddr,
@@ -63,7 +63,7 @@ interface IEndpointIntegrator is IMessageSequence {
     /// @param srcAddr The universal address of the message.
     /// @param sequence The sequence number of the message.
     /// @param payloadHash The keccak256 of payload from the integrator.
-    /// @return (uint128, uint128, uint8, bool) The enabled bitmap, the attested bitmap, the number of attestations, if the message was executed.
+    /// @return (uint128, uint128, uint8, bool) The enabled bitmap, the attested bitmap, the number of attestations, and if the message was executed.
     function getMessageStatus(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash)
         external
         view
