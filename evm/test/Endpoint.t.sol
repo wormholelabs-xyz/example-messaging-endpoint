@@ -537,11 +537,13 @@ contract EndpointTest is Test {
 
         // This receive should work.
         vm.startPrank(integrator);
-        (uint128 enabledBitmap, uint128 attestedBitmap) = endpoint.recvMessage(2, sourceIntegrator, 1, payloadHash);
+        (uint128 enabledBitmap, uint128 attestedBitmap, uint8 numAttested) =
+            endpoint.recvMessage(2, sourceIntegrator, 1, payloadHash);
 
         // Make sure it return the right bitmaps.
         require(enabledBitmap == 0x03, "Enabled bitmap is wrong");
         require(attestedBitmap == 0x02, "Attested bitmap is wrong");
+        require(numAttested == 1, "Num attested is wrong");
 
         // But doing it again should revert.
         vm.expectRevert(abi.encodeWithSelector(Endpoint.AlreadyExecuted.selector));
@@ -561,10 +563,11 @@ contract EndpointTest is Test {
 
         // Nothing is attested, yet.
         vm.startPrank(integrator);
-        (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) =
+        (uint128 enabledBitmap, uint128 attestedBitmap, uint8 numAttested, bool executed) =
             endpoint.getMessageStatus(2, sourceIntegrator, 1, destIntegrator, payloadHash);
         require(enabledBitmap == 0, "Enabled bitmap is wrong1");
         require(attestedBitmap == 0, "Attested bitmap is wrong1");
+        require(numAttested == 0, "Num attested is wrong1");
         require(executed == false, "executed flag is wrong1");
 
         // Now enable some adapters so we can attest.
@@ -577,19 +580,21 @@ contract EndpointTest is Test {
         endpoint.enableRecvAdapter(integrator, 3, address(adapter3));
 
         vm.startPrank(userB);
-        (enabledBitmap, attestedBitmap, executed) =
+        (enabledBitmap, attestedBitmap, numAttested, executed) =
             endpoint.getMessageStatus(2, sourceIntegrator, 1, destIntegrator, payloadHash);
         // 00000011 bitmap = 3 decimal
         require(enabledBitmap == 3, "Enabled bitmap is wrong2");
         require(attestedBitmap == 0, "Attested bitmap is wrong2");
+        require(numAttested == 0, "Num attested is wrong2");
         require(executed == false, "executed flag is wrong2");
 
         // Should get the same values as above
         vm.startPrank(integrator);
-        (enabledBitmap, attestedBitmap, executed) =
+        (enabledBitmap, attestedBitmap, numAttested, executed) =
             endpoint.getMessageStatus(2, sourceIntegrator, 1, destIntegrator, payloadHash);
         require(enabledBitmap == 3, "Enabled bitmap is wrong4");
         require(attestedBitmap == 0, "Attested bitmap is wrong4");
+        require(numAttested == 0, "Num attested is wrong4");
         require(executed == false, "executed flag is wrong4");
 
         // Attest
@@ -598,17 +603,20 @@ contract EndpointTest is Test {
 
         // Should now have a non zero value for attested bitmap
         vm.startPrank(integrator);
-        (enabledBitmap, attestedBitmap, executed) =
+        (enabledBitmap, attestedBitmap, numAttested, executed) =
             endpoint.getMessageStatus(2, sourceIntegrator, 1, destIntegrator, payloadHash);
         require(enabledBitmap == 3, "Enabled bitmap is wrong5");
         // 00000010 bitmap = 2 decimal
         require(attestedBitmap == 2, "Attested bitmap is wrong5");
+        require(numAttested == 1, "Num attested is wrong5");
         require(executed == false, "executed flag is wrong5");
 
         // Test the second version of getMessageStatus.
-        (enabledBitmap, attestedBitmap, executed) = endpoint.getMessageStatus(2, sourceIntegrator, 1, payloadHash);
+        (enabledBitmap, attestedBitmap, numAttested, executed) =
+            endpoint.getMessageStatus(2, sourceIntegrator, 1, payloadHash);
         require(enabledBitmap == 3, "Enabled bitmap is wrong6");
         require(attestedBitmap == 2, "Attested bitmap is wrong6");
+        require(numAttested == 1, "Num attested is wrong6");
         require(executed == false, "executed flag is wrong6");
     }
 
@@ -636,10 +644,11 @@ contract EndpointTest is Test {
 
         // Double check the parameters.
         vm.startPrank(dstIntegrator);
-        (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) =
+        (uint128 enabledBitmap, uint128 attestedBitmap, uint8 numAttested, bool executed) =
             endpoint.getMessageStatus(srcChain, srcAddr, sequence, dstAddr, payloadHash);
         require(enabledBitmap == 0x01, "Enabled bitmap is wrong");
         require(attestedBitmap == 0x01, "Attested bitmap is wrong");
+        require(numAttested == 1, "Num attested is wrong");
         require(executed == false, "executed flag is wrong");
     }
 
@@ -651,13 +660,14 @@ contract EndpointTest is Test {
         uint64 sequence = 1;
         uint128 enabledBitmap;
         uint128 attestedBitmap;
+        uint8 numAttested;
         bool executed;
 
         // Register the integrator and set the admin.
         vm.startPrank(integrator);
         endpoint.register(admin);
 
-        (enabledBitmap, attestedBitmap, executed) = endpoint.getMessageStatus(
+        (enabledBitmap, attestedBitmap, numAttested, executed) = endpoint.getMessageStatus(
             chain1,
             UniversalAddressLibrary.fromAddress(address(adapter1)),
             sequence,
@@ -666,7 +676,7 @@ contract EndpointTest is Test {
         );
         require(executed == false, "executed flag should be false before execMessage");
         endpoint.execMessage(chain1, UniversalAddressLibrary.fromAddress(address(adapter1)), sequence, payloadHash);
-        (enabledBitmap, attestedBitmap, executed) = endpoint.getMessageStatus(
+        (enabledBitmap, attestedBitmap, numAttested, executed) = endpoint.getMessageStatus(
             chain1,
             UniversalAddressLibrary.fromAddress(address(adapter1)),
             sequence,

@@ -27,11 +27,11 @@ interface IEndpointIntegrator is IMessageSequence {
     /// @param srcAddr The universal address of the peer on the sending chain.
     /// @param sequence The sequence number of the message (per integrator).
     /// @param payloadHash The keccak256 of payload from the integrator.
-    /// @return (uint128, uint128) The enabled bitmap, and the attested bitmap, respectively.
+    /// @return (uint128, uint128, uint8) The enabled bitmap, the attested bitmap, and the number of attestations, respectively.
     function recvMessage(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash)
         external
         payable
-        returns (uint128, uint128);
+        returns (uint128, uint128, uint8);
 
     /// @notice Executes a message without requiring any attestations.
     /// @param srcChain The Wormhole chain ID of the sender.
@@ -48,14 +48,14 @@ interface IEndpointIntegrator is IMessageSequence {
     /// @param sequence The sequence number of the message.
     /// @param dstAddr The destination address of the message.
     /// @param payloadHash The keccak256 of payload from the integrator.
-    /// @return (uint128, uint128, bool) The enabled bitmap, the attested bitmap, if the message was executed.
+    /// @return (uint128, uint128, uint8, bool) The enabled bitmap, the attested bitmap, the number of attestations, and if the message was executed.
     function getMessageStatus(
         uint16 srcChain,
         UniversalAddress srcAddr,
         uint64 sequence,
         UniversalAddress dstAddr,
         bytes32 payloadHash
-    ) external view returns (uint128, uint128, bool);
+    ) external view returns (uint128, uint128, uint8, bool);
 
     /// @notice Retrieves the status of a message.
     /// @dev This version is expected to be called by the integrator on the destination chain.
@@ -63,11 +63,11 @@ interface IEndpointIntegrator is IMessageSequence {
     /// @param srcAddr The universal address of the message.
     /// @param sequence The sequence number of the message.
     /// @param payloadHash The keccak256 of payload from the integrator.
-    /// @return (uint128, uint128, bool) The enabled bitmap, the attested bitmap, if the message was executed.
+    /// @return (uint128, uint128, uint8, bool) The enabled bitmap, the attested bitmap, the number of attestations, and if the message was executed.
     function getMessageStatus(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash)
         external
         view
-        returns (uint128, uint128, bool);
+        returns (uint128, uint128, uint8, bool);
 
     /// @notice Retrieves the quote for message delivery.
     /// @dev This version does not need to be called by the integrator.
