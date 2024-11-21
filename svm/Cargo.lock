@@ -1497,7 +1497,7 @@ dependencies = [
  "solana-program-test",
  "solana-sdk",
  "tokio",
- "universal-address",
+ "universal-address 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2392,7 +2392,7 @@ version = "0.1.0"
 dependencies = [
  "anchor-lang",
  "endpoint",
- "universal-address",
+ "universal-address 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2406,7 +2406,7 @@ dependencies = [
  "solana-program-test",
  "solana-sdk",
  "tokio",
- "universal-address",
+ "universal-address 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -5736,6 +5736,15 @@ checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 [[package]]
 name = "universal-address"
 version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+]
+
+[[package]]
+name = "universal-address"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f5a7a961cad0921dd50f95fa94dafdbac0e8ffef1446b7f595d928ee6b7181b"
 dependencies = [
  "anchor-lang",
 ]

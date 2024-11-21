@@ -82,10 +82,10 @@ async fn test_exec_message_success() {
     let (mut context, payer, _, _, chain_id) = setup_test_environment().await;
 
     let src_chain: u16 = chain_id;
-    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let src_addr = [1u8; 32];
     let sequence: u64 = 1;
     let dst_chain = 1;
-    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let dst_addr = mock_integrator::id().to_bytes();
     let payload_hash = [3u8; 32];
 
     let result = exec_message(
@@ -127,10 +127,10 @@ async fn test_exec_message_duplicate_execution() {
     let (mut context, payer, _, _, chain_id) = setup_test_environment().await;
 
     let src_chain: u16 = chain_id;
-    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let src_addr = [1u8; 32];
     let sequence: u64 = 1;
     let dst_chain = 1;
-    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let dst_addr = mock_integrator::id().to_bytes();
     let payload_hash = [3u8; 32];
 
     // First execution (should succeed)
@@ -175,10 +175,10 @@ async fn test_exec_message_zero_chain_id() {
     let (mut context, payer, _, _, chain_id) = setup_test_environment().await;
 
     let src_chain: u16 = chain_id;
-    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let src_addr = [1u8; 32];
     let sequence: u64 = 1;
     let dst_chain = 0;
-    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let dst_addr = mock_integrator::id().to_bytes();
     let payload_hash = [3u8; 32];
 
     // First execution (should succeed)

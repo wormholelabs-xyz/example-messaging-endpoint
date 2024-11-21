@@ -7,7 +7,7 @@ use crate::utils::bitmap::Bitmap;
 #[account]
 pub struct OutboxMessage {
     /// The sending integrator as a 32-byte universal address
-    pub src_addr: UniversalAddress,
+    pub src_addr: [u8; 32],
 
     /// The sequence number of the message
     pub sequence: u64,
@@ -16,7 +16,7 @@ pub struct OutboxMessage {
     pub dst_chain: u16,
 
     /// The destination address as a 32-byte universal address
-    pub dst_addr: UniversalAddress,
+    pub dst_addr: [u8; 32],
 
     /// The keccak256 of an arbitrary payload (32 bytes)
     pub payload_hash: [u8; 32],
