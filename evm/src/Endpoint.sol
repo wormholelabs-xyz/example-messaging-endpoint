@@ -184,6 +184,7 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
 
     struct AttestationInfo {
         bool executed; // replay protection
+        uint8 numAttested; // number of bits set in attestedAdapters
         uint128 attestedAdapters; // bitmap corresponding to perIntegratorAdapters
     }
 
@@ -453,6 +454,7 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
 
         // set the bit in perIntegratorAttestations[dstAddr][digest] corresponding to msg.sender
         attestationInfo.attestedAdapters = updatedAdapters;
+        attestationInfo.numAttested++;
         emit MessageAttestedTo(
             computeMessageDigest(srcChain, srcAddr, sequence, dstChain, dstAddr, payloadHash),
             srcChain,
@@ -470,7 +472,7 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
     function recvMessage(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash)
         external
         payable
-        returns (uint128 enabledBitmap, uint128 attestedBitmap)
+        returns (uint128 enabledBitmap, uint128 attestedBitmap, uint8 numAttested)
     {
         enabledBitmap = _getEnabledRecvAdaptersBitmapForChain(msg.sender, srcChain);
         if (enabledBitmap == 0) {
@@ -496,6 +498,7 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
         // set the executed flag in perIntegratorAttestations[dstAddr][digest]
         attestationInfo.executed = true;
         attestedBitmap = attestationInfo.attestedAdapters;
+        numAttested = attestationInfo.numAttested;
 
         emit MessageReceived(
             messageDigest, srcChain, srcAddr, sequence, ourChain, dstAddr, payloadHash, enabledBitmap, attestedBitmap
@@ -506,7 +509,7 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
     function getMessageStatus(uint16 srcChain, UniversalAddress srcAddr, uint64 sequence, bytes32 payloadHash)
         external
         view
-        returns (uint128 enabledBitmap, uint128 attestedBitmap, bool executed)
+        returns (uint128 enabledBitmap, uint128 attestedBitmap, uint8 numAttested, bool executed)
     {
         return _getMessageStatus(
             srcChain, srcAddr, sequence, UniversalAddressLibrary.fromAddress(msg.sender), msg.sender, payloadHash
@@ -520,7 +523,7 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
         uint64 sequence,
         UniversalAddress dstAddr,
         bytes32 payloadHash
-    ) external view returns (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) {
+    ) external view returns (uint128 enabledBitmap, uint128 attestedBitmap, uint8 numAttested, bool executed) {
         return _getMessageStatus(srcChain, srcAddr, sequence, dstAddr, dstAddr.toAddress(), payloadHash);
     }
 
@@ -592,6 +595,7 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
     /// @param payloadHash The keccak256 of payload from the integrator
     /// @return enabledBitmap A bitmap indicating enabled receive adapters for the destination address.
     /// @return attestedBitmap A bitmap indicating attested adapters for the message.
+    /// @return numAttested The number of attestations.
     /// @return executed A boolean indicating if the message has been executed.
     function _getMessageStatus(
         uint16 srcChain,
@@ -600,7 +604,7 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
         UniversalAddress dstUAddr,
         address dstAddr,
         bytes32 payloadHash
-    ) internal view returns (uint128 enabledBitmap, uint128 attestedBitmap, bool executed) {
+    ) internal view returns (uint128 enabledBitmap, uint128 attestedBitmap, uint8 numAttested, bool executed) {
         enabledBitmap = _getEnabledRecvAdaptersBitmapForChain(dstAddr, srcChain);
         // compute the message digest
         bytes32 messageDigest = computeMessageDigest(srcChain, srcAddr, sequence, ourChain, dstUAddr, payloadHash);
@@ -608,6 +612,8 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
         AttestationInfo storage attestationInfo = _getAttestationInfoStorage()[dstAddr][messageDigest];
 
         attestedBitmap = attestationInfo.attestedAdapters;
+
+        numAttested = attestationInfo.numAttested;
 
         executed = attestationInfo.executed;
     }
