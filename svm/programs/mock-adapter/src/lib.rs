@@ -3,7 +3,6 @@ use endpoint::cpi::accounts::{AttestMessage, PickUpMessage};
 use endpoint::instructions::{AttestMessageArgs, PickUpMessageArgs};
 use endpoint::program::Endpoint;
 use endpoint::{self};
-use universal_address::UniversalAddress;
 
 // Declare the program ID for the mock adapter
 declare_id!("5k8XySmYJ6nQTF8ZFZtRoevjCx9Y9PS5MT9oJDLNA162");
@@ -127,7 +126,7 @@ impl<'info> InvokePickUpMessage<'info> {
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct InvokeAttestMessageArgs {
     pub src_chain: u16,
-    pub src_addr: UniversalAddress,
+    pub src_addr: [u8; 32],
     pub sequence: u64,
     pub dst_chain: u16,
     pub integrator_program_id: Pubkey,

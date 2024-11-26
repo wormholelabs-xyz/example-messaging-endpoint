@@ -1,6 +1,5 @@
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::keccak;
-use universal_address::UniversalAddress;
 
 use crate::error::EndpointError;
 use crate::utils::bitmap::Bitmap;
@@ -19,7 +18,7 @@ pub struct AttestationInfo {
     pub src_chain: u16,
 
     /// Source address (32 bytes)
-    pub src_addr: UniversalAddress,
+    pub src_addr: [u8; 32],
 
     /// Sequence number
     pub sequence: u64,
@@ -28,13 +27,16 @@ pub struct AttestationInfo {
     pub dst_chain: u16,
 
     /// Destination address (32 bytes)
-    pub dst_addr: UniversalAddress,
+    pub dst_addr: [u8; 32],
 
     /// Payload hash (32 bytes)
     pub payload_hash: [u8; 32],
 
     /// Replay protection flag
     pub executed: bool,
+
+    /// Number of adapters that have attested to this message
+    pub num_attested: u8,
 
     /// The bitmap of receive-enabled adapters for this source chain that have attested to the message
     pub attested_adapters: Bitmap,
@@ -47,10 +49,10 @@ impl AttestationInfo {
     pub fn new(
         bump: u8,
         src_chain: u16,
-        src_addr: UniversalAddress,
+        src_addr: [u8; 32],
         sequence: u64,
         dst_chain: u16,
-        dst_addr: UniversalAddress,
+        dst_addr: [u8; 32],
         payload_hash: [u8; 32],
     ) -> Result<Self> {
         // Check that neither chain ID is 0
@@ -69,6 +71,7 @@ impl AttestationInfo {
             payload_hash,
             message_hash: [0; 32],
             executed: false,
+            num_attested: 0,
             attested_adapters: Bitmap::new(),
         };
 
@@ -90,18 +93,18 @@ impl AttestationInfo {
 
     pub fn compute_message_hash(
         src_chain: u16,
-        src_addr: UniversalAddress,
+        src_addr: [u8; 32],
         sequence: u64,
         dst_chain: u16,
-        dst_addr: UniversalAddress,
+        dst_addr: [u8; 32],
         payload_hash: [u8; 32],
     ) -> [u8; 32] {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&src_chain.to_be_bytes());
-        bytes.extend_from_slice(&src_addr.to_bytes());
+        bytes.extend_from_slice(&src_addr);
         bytes.extend_from_slice(&sequence.to_be_bytes());
         bytes.extend_from_slice(&dst_chain.to_be_bytes());
-        bytes.extend_from_slice(&dst_addr.to_bytes());
+        bytes.extend_from_slice(&dst_addr);
         bytes.extend_from_slice(&payload_hash);
 
         keccak::hash(&bytes).to_bytes()
@@ -120,18 +123,18 @@ mod tests {
     fn test_compute_message_hash() {
         // Mock data
         let src_chain: u16 = 2;
-        let src_addr = UniversalAddress::from_bytes([
+        let src_addr = [
             0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78,
             0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56,
             0x78, 0x90, 0x12, 0x34,
-        ]);
+        ];
         let sequence: u64 = 42;
         let dst_chain: u16 = 1;
-        let dst_addr = UniversalAddress::from_bytes([
+        let dst_addr = [
             0x98, 0x76, 0x54, 0x32, 0x10, 0x98, 0x76, 0x54, 0x32, 0x10, 0x98, 0x76, 0x54, 0x32,
             0x10, 0x98, 0x76, 0x54, 0x32, 0x10, 0x98, 0x76, 0x54, 0x32, 0x10, 0x98, 0x76, 0x54,
             0x32, 0x10, 0x98, 0x76,
-        ]);
+        ];
         let payload_hash: [u8; 32] = [
             0xaa, 0xbb, 0xcc, 0xdd, 0xaa, 0xbb, 0xcc, 0xdd, 0xaa, 0xbb, 0xcc, 0xdd, 0xaa, 0xbb,
             0xcc, 0xdd, 0xaa, 0xbb, 0xcc, 0xdd, 0xaa, 0xbb, 0xcc, 0xdd, 0xaa, 0xbb, 0xcc, 0xdd,

@@ -11,7 +11,7 @@ use crate::{
 pub struct RecvMessageArgs {
     pub integrator_program_pda_bump: u8,
     pub src_chain: u16,
-    pub src_addr: UniversalAddress,
+    pub src_addr: [u8; 32],
     pub sequence: u64,
     pub dst_chain: u16,
     pub integrator_program_id: Pubkey,
@@ -57,7 +57,7 @@ pub struct RecvMessage<'info> {
                 args.src_addr,
                 args.sequence,
                 args.dst_chain,
-                UniversalAddress::from_pubkey(&args.integrator_program_id),
+                args.integrator_program_id.to_bytes(),
                 args.payload_hash
             )
         ],
@@ -121,10 +121,10 @@ pub fn recv_message(ctx: Context<RecvMessage>, _args: RecvMessageArgs) -> Result
     emit_cpi!(MessageReceived {
         message_hash: attestation_info.message_hash,
         src_chain: attestation_info.src_chain,
-        src_addr: attestation_info.src_addr,
+        src_addr: UniversalAddress::from_bytes(attestation_info.src_addr),
         sequence: attestation_info.sequence,
         dst_chain: attestation_info.dst_chain,
-        dst_addr: attestation_info.dst_addr,
+        dst_addr: UniversalAddress::from_bytes(attestation_info.dst_addr),
         payload_hash: attestation_info.payload_hash,
         enabled_bitmap: ctx
             .accounts

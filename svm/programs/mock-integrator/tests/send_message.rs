@@ -131,12 +131,12 @@ async fn test_send_message_success() {
     let outbox_msg: OutboxMessage =
         get_account(&mut context.banks_client, outbox_message.pubkey()).await;
     assert_eq!(
-        outbox_msg.src_addr,
-        UniversalAddress::from(mock_integrator::id())
+        &outbox_msg.src_addr[..],
+        &mock_integrator::id().to_bytes()[..]
     );
     assert_eq!(outbox_msg.sequence, 0);
     assert_eq!(outbox_msg.dst_chain, chain_id);
-    assert_eq!(outbox_msg.dst_addr, dst_addr);
+    assert_eq!(outbox_msg.dst_addr, dst_addr.to_bytes());
     assert_eq!(outbox_msg.payload_hash, payload_hash);
     assert_eq!(outbox_msg.outstanding_adapters.as_value(), 1);
 }

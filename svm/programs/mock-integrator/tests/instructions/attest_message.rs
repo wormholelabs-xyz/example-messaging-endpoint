@@ -18,10 +18,10 @@ pub async fn attest_message(
     adapter_pda: Pubkey,
     integrator_chain_config: Pubkey,
     src_chain: u16,
-    src_addr: UniversalAddress,
+    src_addr: [u8; 32],
     sequence: u64,
     dst_chain: u16,
-    dst_addr: UniversalAddress,
+    dst_addr: [u8; 32],
     payload_hash: [u8; 32],
 ) -> Result<(), BanksClientError> {
     let message_hash = AttestationInfo::compute_message_hash(

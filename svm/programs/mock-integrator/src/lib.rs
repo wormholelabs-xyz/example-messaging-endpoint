@@ -48,7 +48,7 @@ pub mod mock_integrator {
                 integrator_program_id: crate::ID,
                 integrator_program_pda_bump: ctx.bumps.integrator_program_pda,
                 dst_chain: args.dst_chain,
-                dst_addr: args.dst_addr,
+                dst_addr: args.dst_addr.to_bytes(),
                 payload_hash: args.payload_hash,
             },
         )?;

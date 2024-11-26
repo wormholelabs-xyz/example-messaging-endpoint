@@ -13,7 +13,7 @@ pub struct AttestMessageArgs {
     pub adapter_program_id: Pubkey,
     pub adapter_pda_bump: u8,
     pub src_chain: u16,
-    pub src_addr: UniversalAddress,
+    pub src_addr: [u8; 32],
     pub sequence: u64,
     pub dst_chain: u16,
     pub integrator_program_id: Pubkey,
@@ -70,7 +70,7 @@ pub struct AttestMessage<'info> {
                 args.src_addr,
                 args.sequence,
                 args.dst_chain,
-                UniversalAddress::from_pubkey(&args.integrator_program_id),
+                args.integrator_program_id.to_bytes(),
                 args.payload_hash
             )
         ],
@@ -88,6 +88,7 @@ pub struct AttestMessage<'info> {
 /// 2. Initializes the attestation info account if it's newly created.
 /// 3. Checks if the adapter has already attested to this message.
 /// 4. Marks the adapter as having attested to the message.
+/// 5. Increases the number of attested in `attestation_info`.
 ///
 /// # Arguments
 ///
@@ -144,7 +145,7 @@ pub fn attest_message(ctx: Context<AttestMessage>, args: AttestMessageArgs) -> R
             args.src_addr,
             args.sequence,
             args.dst_chain,
-            UniversalAddress::from_pubkey(&args.integrator_program_id),
+            args.integrator_program_id.to_bytes(),
             args.payload_hash,
         )?);
     }
@@ -163,10 +164,13 @@ pub fn attest_message(ctx: Context<AttestMessage>, args: AttestMessageArgs) -> R
         .attested_adapters
         .set(adapter_info.index, true)?;
 
+    // Increment the number of attestations (saturates at 255)
+    attestation_info.num_attested = attestation_info.num_attested.saturating_add(1);
+
     emit_cpi!(MessageAttestedTo {
         message_hash: attestation_info.message_hash,
         src_chain: args.src_chain,
-        src_addr: args.src_addr,
+        src_addr: UniversalAddress::from_bytes(args.src_addr),
         sequence: args.sequence,
         dst_chain: args.dst_chain,
         dst_addr: UniversalAddress::from_pubkey(&args.integrator_program_id),

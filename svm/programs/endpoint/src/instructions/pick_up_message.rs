@@ -4,6 +4,7 @@ use crate::{
     state::{AdapterInfo, OutboxMessage},
 };
 use anchor_lang::prelude::*;
+use universal_address::UniversalAddress;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct PickUpMessageArgs {
@@ -28,7 +29,7 @@ pub struct PickUpMessage<'info> {
     #[account(
         seeds = [
             AdapterInfo::SEED_PREFIX,
-            outbox_message.src_addr.to_pubkey().as_ref(),
+            outbox_message.src_addr.as_ref(),
             args.adapter_program_id.as_ref(),
         ],
         bump = adapter_info.bump,
@@ -105,10 +106,10 @@ pub fn pick_up_message(ctx: Context<PickUpMessage>, args: PickUpMessageArgs) -> 
         .set(adapter_index, false)?;
 
     emit_cpi!(MessagePickedUp {
-        src_addr: outbox_message.src_addr,
+        src_addr: UniversalAddress::from_bytes(outbox_message.src_addr),
         sequence: outbox_message.sequence,
         dst_chain: outbox_message.dst_chain,
-        dst_addr: outbox_message.dst_addr,
+        dst_addr: UniversalAddress::from_bytes(outbox_message.dst_addr),
         payload_hash: outbox_message.payload_hash,
         adapter: args.adapter_program_id,
         remaining_adapters: outbox_message.outstanding_adapters.as_value(),

@@ -7,7 +7,6 @@ use solana_sdk::{
     pubkey::Pubkey,
     signer::{keypair::Keypair, Signer},
 };
-use universal_address::UniversalAddress;
 
 use crate::common::execute_transaction::execute_transaction;
 
@@ -16,7 +15,7 @@ pub async fn recv_message(
     payer: &Keypair,
     attestation_info: Pubkey,
     src_chain: u16,
-    src_addr: UniversalAddress,
+    src_addr: [u8; 32],
     sequence: u64,
     dst_chain: u16,
     payload_hash: [u8; 32],

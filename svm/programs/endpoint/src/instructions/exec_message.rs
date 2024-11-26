@@ -7,7 +7,7 @@ use crate::{error::EndpointError, event::MessageExecuted, state::AttestationInfo
 pub struct ExecMessageArgs {
     pub integrator_program_pda_bump: u8,
     pub src_chain: u16,
-    pub src_addr: UniversalAddress,
+    pub src_addr: [u8; 32],
     pub sequence: u64,
     pub dst_chain: u16,
     pub integrator_program_id: Pubkey,
@@ -43,7 +43,7 @@ pub struct ExecMessage<'info> {
                 args.src_addr,
                 args.sequence,
                 args.dst_chain,
-                UniversalAddress::from_pubkey(&args.integrator_program_id),
+                args.integrator_program_id.to_bytes(),
                 args.payload_hash
             )
         ],
@@ -100,7 +100,7 @@ pub fn exec_message(ctx: Context<ExecMessage>, args: ExecMessageArgs) -> Result<
             args.src_addr,
             args.sequence,
             args.dst_chain,
-            UniversalAddress::from_pubkey(&args.integrator_program_id),
+            args.integrator_program_id.to_bytes(),
             args.payload_hash,
         )?);
     }
@@ -111,7 +111,7 @@ pub fn exec_message(ctx: Context<ExecMessage>, args: ExecMessageArgs) -> Result<
     emit_cpi!(MessageExecuted {
         message_hash: attestation_info.message_hash,
         src_chain: args.src_chain,
-        src_addr: args.src_addr,
+        src_addr: UniversalAddress::from_bytes(args.src_addr),
         sequence: args.sequence,
         dst_chain: args.dst_chain,
         dst_addr: UniversalAddress::from_pubkey(&args.integrator_program_id),

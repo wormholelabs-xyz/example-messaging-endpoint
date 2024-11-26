@@ -3,6 +3,9 @@ name = "universal-address"
 version = "0.1.0"
 edition = "2021"
 description = "Universal address format for cross-chain messaging"
+license = "Apache-2.0"
+repository = "https://github.com/wormholelabs-xyz/example-messaging-endpoint"
+authors = ["Bing <bingyu.yap.21@gmail.com>"]
 
 [dependencies]
 anchor-lang = "0.30.1"

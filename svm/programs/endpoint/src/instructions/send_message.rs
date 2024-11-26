@@ -12,7 +12,7 @@ pub struct SendMessageArgs {
     pub integrator_program_id: Pubkey,
     pub integrator_program_pda_bump: u8,
     pub dst_chain: u16,
-    pub dst_addr: UniversalAddress,
+    pub dst_addr: [u8; 32],
     pub payload_hash: [u8; 32],
 }
 
@@ -106,7 +106,7 @@ pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<
 
     // Create and initialize the outbox message
     ctx.accounts.outbox_message.set_inner(OutboxMessage {
-        src_addr: UniversalAddress::from(args.integrator_program_id),
+        src_addr: args.integrator_program_id.to_bytes(),
         sequence: ctx.accounts.sequence_tracker.next_sequence(),
         dst_chain: args.dst_chain,
         dst_addr: args.dst_addr,
@@ -118,7 +118,7 @@ pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<
     emit_cpi!(MessageSent {
         sender: UniversalAddress::from(args.integrator_program_id),
         sequence: ctx.accounts.sequence_tracker.sequence,
-        recipient: args.dst_addr,
+        recipient: UniversalAddress::from_bytes(args.dst_addr),
         recipient_chain: args.dst_chain,
         payload_digest: args.payload_hash,
     });

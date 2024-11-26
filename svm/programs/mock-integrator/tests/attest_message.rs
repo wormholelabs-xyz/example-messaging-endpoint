@@ -17,7 +17,6 @@ use solana_program_test::*;
 use solana_sdk::{
     instruction::InstructionError, signature::Keypair, transaction::TransactionError,
 };
-use universal_address::UniversalAddress;
 
 async fn setup_test_environment(
     chain_id: u16,
@@ -109,10 +108,10 @@ async fn test_attest_message_success() {
     ) = setup_test_environment(2).await;
 
     let src_chain: u16 = chain_id;
-    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let src_addr = [1u8; 32];
     let sequence: u64 = 1;
     let dst_chain = 1;
-    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let dst_addr = mock_integrator::id().to_bytes();
     let payload_hash = [3u8; 32];
 
     let result = attest_message(
@@ -149,6 +148,7 @@ async fn test_attest_message_success() {
     assert_eq!(attestation_info.dst_chain, dst_chain);
     assert_eq!(attestation_info.dst_addr, dst_addr);
     assert_eq!(attestation_info.payload_hash, payload_hash);
+    assert_eq!(attestation_info.num_attested, 1);
 
     // Verify that the adapter's bit is set in the attested_adapters bitmap
     let adapter_info: AdapterInfo = get_account(&mut context.banks_client, adapter_info_pda).await;
@@ -172,10 +172,10 @@ async fn test_attest_message_after_exec() {
     ) = setup_test_environment(2).await;
 
     let src_chain: u16 = chain_id;
-    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let src_addr = [1u8; 32];
     let sequence: u64 = 1;
     let dst_chain = 1;
-    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let dst_addr = mock_integrator::id().to_bytes();
     let payload_hash = [3u8; 32];
 
     // First execution (should succeed)
@@ -250,10 +250,10 @@ async fn test_attest_message_duplicate_attestation() {
     ) = setup_test_environment(2).await;
 
     let src_chain: u16 = chain_id;
-    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let src_addr = [1u8; 32];
     let sequence: u64 = 1;
     let dst_chain = 1;
-    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let dst_addr = mock_integrator::id().to_bytes();
     let payload_hash = [3u8; 32];
 
     // First attestation (should succeed)
@@ -313,10 +313,10 @@ async fn test_attest_message_invalid_destination_chain() {
     ) = setup_test_environment(2).await;
 
     let src_chain: u16 = chain_id;
-    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let src_addr = [1u8; 32];
     let sequence: u64 = 1;
     let dst_chain = 3; // Invalid destination chain
-    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let dst_addr = mock_integrator::id().to_bytes();
     let payload_hash = [3u8; 32];
 
     let result = attest_message(

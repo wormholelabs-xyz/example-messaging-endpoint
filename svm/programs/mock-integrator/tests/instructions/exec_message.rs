@@ -7,7 +7,6 @@ use solana_sdk::{
     pubkey::Pubkey,
     signer::{keypair::Keypair, Signer},
 };
-use universal_address::UniversalAddress;
 
 use crate::common::execute_transaction::execute_transaction;
 
@@ -15,10 +14,10 @@ pub async fn exec_message(
     context: &mut ProgramTestContext,
     payer: &Keypair,
     src_chain: u16,
-    src_addr: UniversalAddress,
+    src_addr: [u8; 32],
     sequence: u64,
     dst_chain: u16,
-    dst_addr: UniversalAddress,
+    dst_addr: [u8; 32],
     payload_hash: [u8; 32],
 ) -> Result<(), BanksClientError> {
     let (integrator_program_pda, integrator_program_pda_bump) =
