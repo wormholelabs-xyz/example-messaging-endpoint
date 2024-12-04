@@ -46,7 +46,12 @@ contract AdapterImpl is IAdapter {
         return "test";
     }
 
-    function quoteDeliveryPrice(uint16 /*recipientChain*/ ) public view override returns (uint256) {
+    function quoteDeliveryPrice(uint16, /*recipientChain*/ bytes calldata /*instructions*/ )
+        public
+        view
+        override
+        returns (uint256)
+    {
         return _deliveryPrice;
     }
 
@@ -60,7 +65,8 @@ contract AdapterImpl is IAdapter {
         uint16, // recipientChain,
         UniversalAddress, // recipientAddress,
         bytes32, // payloadHash,
-        address // refundAddress
+        address, // refundAddress
+        bytes calldata // instructions
     ) public payable override {
         messagesSent += 1;
     }
