@@ -16,3 +16,6 @@ docs/
 
 # Flattened source
 flattened
+
+# Ignore generated files
+sdk/ts/src/abi/*
