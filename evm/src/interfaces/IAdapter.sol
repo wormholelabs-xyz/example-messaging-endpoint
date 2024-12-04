@@ -14,8 +14,9 @@ interface IAdapter {
 
     /// @notice Fetch the delivery price for a given recipient chain transfer.
     /// @param recipientChain The Wormhole chain ID of the target chain.
+    /// @param instructions The instructions specific to this adapter. May be null.
     /// @return deliveryPrice The cost of delivering a message to the recipient chain in this chain's native token.
-    function quoteDeliveryPrice(uint16 recipientChain) external view returns (uint256);
+    function quoteDeliveryPrice(uint16 recipientChain, bytes calldata instructions) external view returns (uint256);
 
     /// @dev Send a message to another chain.
     /// @param srcAddr The universal address of the sender.
@@ -24,12 +25,14 @@ interface IAdapter {
     /// @param dstAddr The universal address of the recipient.
     /// @param payloadHash The hash of the message to be sent to the recipient chain.
     /// @param refundAddr The address of the refund recipient.
+    /// @param instructions The instructions specific to this adapter. May be null.
     function sendMessage(
         UniversalAddress srcAddr,
         uint64 sequence,
         uint16 dstChain,
         UniversalAddress dstAddr,
         bytes32 payloadHash,
-        address refundAddr
+        address refundAddr,
+        bytes calldata instructions
     ) external payable;
 }

@@ -393,11 +393,12 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
         // get the next sequence number for msg.sender
         sequence = _useMessageSequence(msg.sender);
         for (uint256 i = 0; i < len;) {
+            bytes memory adapterInstructions; // TODO: Pass this in.
             // quote the delivery price
-            uint256 deliveryPrice = IAdapter(sendAdapters[i]).quoteDeliveryPrice(dstChain);
+            uint256 deliveryPrice = IAdapter(sendAdapters[i]).quoteDeliveryPrice(dstChain, adapterInstructions);
             // call sendMessage
             IAdapter(sendAdapters[i]).sendMessage{value: deliveryPrice}(
-                sender, sequence, dstChain, dstAddr, payloadHash, refundAddress
+                sender, sequence, dstChain, dstAddr, payloadHash, refundAddress, adapterInstructions
             );
             unchecked {
                 ++i;
@@ -577,7 +578,8 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
         uint256 len = sendAdapters.length;
         totalCost = 0;
         for (uint256 i = 0; i < len;) {
-            totalCost += IAdapter(sendAdapters[i]).quoteDeliveryPrice(dstChain);
+            bytes memory adapterInstructions; // TODO: Pass this in.
+            totalCost += IAdapter(sendAdapters[i]).quoteDeliveryPrice(dstChain, adapterInstructions);
             unchecked {
                 ++i;
             }
