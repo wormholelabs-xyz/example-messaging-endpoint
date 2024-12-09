@@ -24,7 +24,7 @@ contract ConcreteAdapterRegistry is AdapterRegistry {
     function getEnabledSendAdaptersBitmapForChain(address integrator, uint16 chain)
         public
         view
-        returns (address[] memory adapters)
+        returns (PerSendAdapterInfo[] memory adapters)
     {
         return _getEnabledSendAdaptersArrayForChain(integrator, chain);
     }
@@ -298,9 +298,9 @@ contract AdapterRegistryTest is Test {
         adapterRegistry.addAdapter(me, adapter3);
         adapterRegistry.enableSendAdapter(me, chain2, adapter3);
         adapterRegistry.addAdapter(me, adapter4);
-        address[] memory chain1Addrs = adapterRegistry.getSendAdaptersByChain(me, chain1);
+        AdapterRegistry.PerSendAdapterInfo[] memory chain1Addrs = adapterRegistry.getSendAdaptersByChain(me, chain1);
         require(chain1Addrs.length == 2, "Wrong number of adapters enabled on chain one");
-        address[] memory chain2Addrs = adapterRegistry.getSendAdaptersByChain(me, chain2);
+        AdapterRegistry.PerSendAdapterInfo[] memory chain2Addrs = adapterRegistry.getSendAdaptersByChain(me, chain2);
         require(chain2Addrs.length == 1, "Wrong number of adapters enabled on chain two");
         adapterRegistry.enableSendAdapter(me, chain2, adapter4);
         adapterRegistry.disableSendAdapter(me, chain2, adapter3);

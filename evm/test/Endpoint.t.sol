@@ -239,7 +239,7 @@ contract EndpointTest is Test {
         vm.expectEmit(true, true, false, true);
         emit AdapterRegistry.AdapterAdded(integrator, taddr2, 2);
         endpoint.addAdapter(integrator, taddr2);
-        address[] memory adapters = endpoint.getSendAdaptersByChain(integrator, 1);
+        AdapterRegistry.PerSendAdapterInfo[] memory adapters = endpoint.getSendAdaptersByChain(integrator, 1);
         require(adapters.length == 1, "Wrong number of adapters enabled on chain one, should be 1");
         // Enable another adapter on chain one and one on chain two.
         vm.expectEmit(true, true, false, true);
@@ -255,11 +255,14 @@ contract EndpointTest is Test {
         // And verify they got set properly.
         adapters = endpoint.getSendAdaptersByChain(integrator, 1);
         require(adapters.length == 2, "Wrong number of adapters enabled on chain one");
-        require(adapters[0] == taddr1, "Wrong adapter one on chain one");
-        require(adapters[1] == taddr2, "Wrong adapter two on chain one");
+        require(adapters[0].addr == taddr1, "Wrong adapter one on chain one");
+        require(adapters[0].index == 0, "Wrong adapter index one on chain one");
+        require(adapters[1].addr == taddr2, "Wrong adapter two on chain one");
+        require(adapters[1].index == 1, "Wrong adapter index two on chain one");
         adapters = endpoint.getSendAdaptersByChain(integrator, 2);
         require(adapters.length == 1, "Wrong number of adapters enabled on chain two");
-        require(adapters[0] == taddr3, "Wrong adapter one on chain two");
+        require(adapters[0].addr == taddr3, "Wrong adapter one on chain two");
+        require(adapters[0].index == 2, "Wrong adapter index one on chain two");
         vm.expectEmit(true, true, false, true);
         emit AdapterRegistry.SendAdapterDisabledForChain(integrator, 2, taddr3);
         endpoint.disableSendAdapter(integrator, 2, taddr3);
