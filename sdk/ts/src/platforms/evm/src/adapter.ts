@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { Endpoint__factory } from "../../../../evm/sdk/ts/src/abi";
+import { Endpoint__factory } from "../../../../../../evm/sdk/ts/src/abi";
 
 export async function addAdapter(
   endpointAddr: string,
