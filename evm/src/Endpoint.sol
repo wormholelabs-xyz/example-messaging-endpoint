@@ -384,7 +384,7 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
         returns (uint64 sequence)
     {
         // get the enabled send adapters for [msg.sender][dstChain]
-        address[] memory sendAdapters = getSendAdaptersByChain(msg.sender, dstChain);
+        PerSendAdapterInfo[] memory sendAdapters = getSendAdaptersByChain(msg.sender, dstChain);
         uint256 len = sendAdapters.length;
         if (len == 0) {
             revert AdapterNotEnabled();
@@ -395,9 +395,9 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
         for (uint256 i = 0; i < len;) {
             bytes memory adapterInstructions; // TODO: Pass this in.
             // quote the delivery price
-            uint256 deliveryPrice = IAdapter(sendAdapters[i]).quoteDeliveryPrice(dstChain, adapterInstructions);
+            uint256 deliveryPrice = IAdapter(sendAdapters[i].addr).quoteDeliveryPrice(dstChain, adapterInstructions);
             // call sendMessage
-            IAdapter(sendAdapters[i]).sendMessage{value: deliveryPrice}(
+            IAdapter(sendAdapters[i].addr).sendMessage{value: deliveryPrice}(
                 sender, sequence, dstChain, dstAddr, payloadHash, refundAddress, adapterInstructions
             );
             unchecked {
@@ -574,12 +574,12 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
     /// @param dstChain The Wormhole chain ID of the recipient.
     /// @return totalCost The total cost of delivering a message to the recipient chain in this chain's native token.
     function _quoteDeliveryPrice(address integrator, uint16 dstChain) internal view returns (uint256 totalCost) {
-        address[] memory sendAdapters = getSendAdaptersByChain(integrator, dstChain);
+        PerSendAdapterInfo[] memory sendAdapters = getSendAdaptersByChain(integrator, dstChain);
         uint256 len = sendAdapters.length;
         totalCost = 0;
         for (uint256 i = 0; i < len;) {
             bytes memory adapterInstructions; // TODO: Pass this in.
-            totalCost += IAdapter(sendAdapters[i]).quoteDeliveryPrice(dstChain, adapterInstructions);
+            totalCost += IAdapter(sendAdapters[i].addr).quoteDeliveryPrice(dstChain, adapterInstructions);
             unchecked {
                 ++i;
             }
