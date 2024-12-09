@@ -1,6 +1,10 @@
 import * as anchor from "@coral-xyz/anchor";
-import { Endpoint } from "../idls/endpoint";
-import EndpointIdl from "../idls/endpoint.json";
+import { Endpoint } from "../../idls/endpoint";
+import EndpointIdl from "../../idls/endpoint.json";
+import {
+  deriveIntegratorChainConfigPDA,
+  deriveIntegratorConfigPDA,
+} from "./helpers";
 
 export async function addAdapter(
   integrator: string,
@@ -228,33 +232,6 @@ export async function getSendAdaptersByChain(
     adapters.push(allAdapters[index]);
   }
   return adapters;
-}
-
-async function deriveIntegratorConfigPDA(
-  integratorProgramId: anchor.web3.PublicKey,
-  programId: anchor.web3.PublicKey,
-): Promise<[anchor.web3.PublicKey, number]> {
-  return anchor.web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("integrator_config"), integratorProgramId.toBuffer()],
-    programId,
-  );
-}
-
-async function deriveIntegratorChainConfigPDA(
-  integratorProgramId: anchor.web3.PublicKey,
-  programId: anchor.web3.PublicKey,
-  chain: number,
-): Promise<[anchor.web3.PublicKey, number]> {
-  const chainBuffer = Buffer.alloc(2);
-  chainBuffer.writeUInt16BE(chain);
-  return anchor.web3.PublicKey.findProgramAddressSync(
-    [
-      Buffer.from("integrator_chain_config"), // Constant seed
-      integratorProgramId.toBuffer(), // Integrator program ID
-      chainBuffer, // Chain ID
-    ],
-    programId, // Program ID for the endpoint program
-  );
 }
 
 function getSetBitIndices(bitmap: number): number[] {

@@ -1,28 +1,30 @@
 import { ethers } from "ethers";
-import { Endpoint__factory } from "../abi";
+import { Endpoint__factory } from "../../../../../../evm/sdk/ts/src/abi";
 
 export async function claimAdmin(
   contractAddress: string,
-  provider: ethers.Provider | ethers.Signer,
+  provider: ethers.Signer,
   integrator: string,
-): Promise<void> {
+): Promise<ethers.ContractTransactionResponse> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the claimAdmin function
-  await endpoint["claimAdmin"](integrator);
+  const tx = await endpoint["claimAdmin"](integrator);
+  return tx;
 }
 
 export async function discardAdmin(
   contractAddress: string,
-  provider: ethers.Provider | ethers.Signer,
+  provider: ethers.Signer,
   integrator: string,
-): Promise<void> {
+): Promise<ethers.ContractTransactionResponse> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the discardAdmin function
-  await endpoint["discardAdmin"](integrator);
+  const tx = await endpoint["discardAdmin"](integrator);
+  return tx;
 }
 
 export async function getAdmin(
@@ -53,28 +55,43 @@ export async function getPendingAdmin(
   return admin;
 }
 
+export async function register(
+  contractAddress: string,
+  provider: ethers.Signer,
+  initialAdmin: string,
+): Promise<ethers.ContractTransactionResponse> {
+  // Use Endpoint__factory to create a typed instance of the Endpoint contract
+  const endpoint = Endpoint__factory.connect(contractAddress, provider);
+
+  // Call the register function
+  const tx = await endpoint["register"](initialAdmin);
+  return tx;
+}
+
 export async function transferAdmin(
   contractAddress: string,
-  provider: ethers.Provider | ethers.Signer,
+  provider: ethers.Signer,
   integrator: string,
   admin: string,
-): Promise<void> {
+): Promise<ethers.ContractTransactionResponse> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the transferAdmin function
-  await endpoint["transferAdmin"](integrator, admin);
+  const tx = await endpoint["transferAdmin"](integrator, admin);
+  return tx;
 }
 
 export async function updateAdmin(
   contractAddress: string,
-  provider: ethers.Provider | ethers.Signer,
+  provider: ethers.Signer,
   integrator: string,
   admin: string,
-): Promise<void> {
+): Promise<ethers.ContractTransactionResponse> {
   // Use Endpoint__factory to create a typed instance of the Endpoint contract
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the updateAdmin function
-  await endpoint["updateAdmin"](integrator, admin);
+  const tx = await endpoint["updateAdmin"](integrator, admin);
+  return tx;
 }

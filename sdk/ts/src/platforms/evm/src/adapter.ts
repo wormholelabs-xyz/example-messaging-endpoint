@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { Endpoint__factory } from "../../../../evm/sdk/ts/src/abi";
+import { Endpoint__factory } from "../../../../../../evm/sdk/ts/src/abi";
 
 export async function addAdapter(
   endpointAddr: string,
@@ -16,13 +16,15 @@ export async function addAdapter(
   }
 
   const endpoint = Endpoint__factory.connect(endpointAddr, signer);
-  console.log("Endpoint:", endpointAddr);
+  console.log("Endpoint:", endpoint);
 
-  const result: ethers.ContractTransactionResponse = await endpointAddr[
+  const result: ethers.ContractTransactionResponse = await endpoint[
     "addAdapter"
   ](integrator, adapter);
+  await result.wait();
+  console.log("result:", result);
 
-  return BigInt(result.index);
+  return BigInt(result.value);
 }
 
 export async function disableRecvAdapter(
@@ -31,13 +33,16 @@ export async function disableRecvAdapter(
   integrator: string,
   chain: number,
   adapter: string,
-): Promise<void> {
+): Promise<ethers.ContractTransactionResponse> {
   if (!ethers.isAddress(integrator) || !ethers.isAddress(adapter)) {
     throw new Error("Invalid address format for integrator or adapter.");
   }
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
-  await endpoint["disableRecvAdapter"](integrator, chain, adapter);
+  const result: ethers.ContractTransactionResponse = await endpoint[
+    "disableRecvAdapter"
+  ](integrator, chain, adapter);
+  return result;
 }
 
 export async function disableSendAdapter(
@@ -46,13 +51,16 @@ export async function disableSendAdapter(
   integrator: string,
   chain: number,
   adapter: string,
-): Promise<void> {
+): Promise<ethers.ContractTransactionResponse> {
   if (!ethers.isAddress(integrator) || !ethers.isAddress(adapter)) {
     throw new Error("Invalid address format for integrator or adapter.");
   }
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
-  await endpoint["disableSendAdapter"](integrator, chain, adapter);
+  const result: ethers.ContractTransactionResponse = await endpoint[
+    "disableSendAdapter"
+  ](integrator, chain, adapter);
+  return result;
 }
 
 export async function enableRecvAdapter(
@@ -61,13 +69,16 @@ export async function enableRecvAdapter(
   integrator: string,
   chain: number,
   adapter: string,
-): Promise<void> {
+): Promise<ethers.ContractTransactionResponse> {
   if (!ethers.isAddress(integrator) || !ethers.isAddress(adapter)) {
     throw new Error("Invalid address format for integrator or adapter.");
   }
   const endpoint = Endpoint__factory.connect(endpointAddress, provider);
 
-  await endpoint["enableRecvAdapter"](integrator, chain, adapter);
+  const result: ethers.ContractTransactionResponse = await endpoint[
+    "enableRecvAdapter"
+  ](integrator, chain, adapter);
+  return result;
 }
 
 export async function enableSendAdapter(
@@ -76,13 +87,16 @@ export async function enableSendAdapter(
   integrator: string,
   chain: number,
   adapter: string,
-): Promise<void> {
+): Promise<ethers.ContractTransactionResponse> {
   if (!ethers.isAddress(integrator) || !ethers.isAddress(adapter)) {
     throw new Error("Invalid address format for integrator or adapter.");
   }
   const endpoint = Endpoint__factory.connect(endpointAddress, provider);
 
-  await endpoint["enableSendAdapter"](integrator, chain, adapter);
+  const result: ethers.ContractTransactionResponse = await endpoint[
+    "enableSendAdapter"
+  ](integrator, chain, adapter);
+  return result;
 }
 
 export async function getAdapterByIndex(

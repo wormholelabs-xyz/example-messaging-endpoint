@@ -18,7 +18,7 @@ import {
   getAdapters as getAdaptersEvm,
   getRecvAdaptersByChain as getRecvAdaptersByChainEvm,
   getSendAdaptersByChain as getSendAdaptersByChainEvm,
-} from "./platforms/evm";
+} from "./platforms/evm/src/adapter";
 import {
   addAdapter as addAdapterSolana,
   disableRecvAdapter as disableRecvAdapterSolana,
@@ -30,7 +30,7 @@ import {
   getAdapters as getAdaptersSolana,
   getRecvAdaptersByChain as getRecvAdaptersByChainSolana,
   getSendAdaptersByChain as getSendAdaptersByChainSolana,
-} from "./platforms/solana";
+} from "./platforms/solana/adapter";
 import { ethers } from "ethers";
 
 export async function addAdapter(
