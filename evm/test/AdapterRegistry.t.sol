@@ -166,7 +166,7 @@ contract AdapterRegistryTest is Test {
         assertEq(adapterRegistry.getEnabledRecvAdaptersBitmapForChain(integrator1, zeroChain), 0);
     }
 
-    // This is a redudant test, as the previous tests already cover this
+    // This is a redundant test, as the previous tests already cover this
     function test5() public view {
         // Send side
         assertEq(adapterRegistry.getRegisteredAdaptersStorage(integrator1).length, 0);
