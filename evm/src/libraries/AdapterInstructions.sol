@@ -38,7 +38,7 @@ library AdapterInstructions {
     /// @notice Encodes an adapter instruction.
     /// @param instruction The instruction to be encoded.
     /// @return encoded The encoded bytes, where the first byte is the index and the next two bytes are the instruction length.
-    function encodeInstruction(Instruction memory instruction) public pure returns (bytes memory encoded) {
+    function encodeInstruction(Instruction calldata instruction) public pure returns (bytes memory encoded) {
         if (instruction.payload.length > type(uint16).max) {
             revert PayloadTooLong(instruction.payload.length);
         }
@@ -49,7 +49,7 @@ library AdapterInstructions {
     /// @notice Encodes an array of adapter instructions.
     /// @param instructions The array of instructions to be encoded.
     /// @return address The encoded bytes, where the first byte is the number of entries.
-    function encodeInstructions(Instruction[] memory instructions) public pure returns (bytes memory) {
+    function encodeInstructions(Instruction[] calldata instructions) public pure returns (bytes memory) {
         if (instructions.length > type(uint8).max) {
             revert TooManyInstructions();
         }
@@ -69,7 +69,7 @@ library AdapterInstructions {
     /// @notice Parses a byte array into an adapter instruction.
     /// @param encoded The encoded instruction.
     /// @return instruction The parsed instruction.
-    function parseInstruction(bytes memory encoded) public pure returns (Instruction memory instruction) {
+    function parseInstruction(bytes calldata encoded) public pure returns (Instruction memory instruction) {
         uint256 offset = 0;
         (instruction, offset) = parseInstructionUnchecked(encoded, offset);
         encoded.checkLength(offset);
@@ -80,7 +80,7 @@ library AdapterInstructions {
     /// @param offset The current offset into the encoded buffer.
     /// @return instruction The parsed instruction.
     /// @return nextOffset The next index into the array (used for further parsing).
-    function parseInstructionUnchecked(bytes memory encoded, uint256 offset)
+    function parseInstructionUnchecked(bytes calldata encoded, uint256 offset)
         public
         pure
         returns (Instruction memory instruction, uint256 nextOffset)
@@ -95,7 +95,7 @@ library AdapterInstructions {
     /// @param encoded The encoded instructions.
     /// @param numRegisteredAdapters The total number of registered adapters.
     /// @return instructions A sparse array of adapter instructions, where the index into the array is the adapter index.
-    function parseInstructions(bytes memory encoded, uint256 numRegisteredAdapters)
+    function parseInstructions(bytes calldata encoded, uint256 numRegisteredAdapters)
         public
         pure
         returns (Instruction[] memory instructions)

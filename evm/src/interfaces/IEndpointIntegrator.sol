@@ -15,12 +15,16 @@ interface IEndpointIntegrator is IMessageSequence {
     /// @param dstChain The Wormhole chain ID of the recipient.
     /// @param dstAddr The universal address of the peer on the recipient chain.
     /// @param payloadHash keccak256 of a message to be sent to the recipient chain.
-    /// @return uint64 The sequence number of the message.
     /// @param refundAddress The source chain refund address passed to the Adapter.
-    function sendMessage(uint16 dstChain, UniversalAddress dstAddr, bytes32 payloadHash, address refundAddress)
-        external
-        payable
-        returns (uint64);
+    /// @param adapterInstructions An array of adapter instructions to be passed into the adapters.
+    /// @return uint64 The sequence number of the message.
+    function sendMessage(
+        uint16 dstChain,
+        UniversalAddress dstAddr,
+        bytes32 payloadHash,
+        address refundAddress,
+        bytes calldata adapterInstructions
+    ) external payable returns (uint64);
 
     /// @notice Receives a message and marks it as executed.
     /// @param srcChain The Wormhole chain ID of the sender.
@@ -74,13 +78,17 @@ interface IEndpointIntegrator is IMessageSequence {
     /// @dev This sums up all the individual sendAdapter's quoteDeliveryPrice calls.
     /// @param integrator The address of the integrator.
     /// @param dstChain The Wormhole chain ID of the recipient.
+    /// @param adapterInstructions An array of adapter instructions to be passed into the adapters.
     /// @return uint256 The total cost of delivering a message to the recipient chain in this chain's native token.
-    function quoteDeliveryPrice(address integrator, uint16 dstChain) external returns (uint256);
+    function quoteDeliveryPrice(address integrator, uint16 dstChain, bytes calldata adapterInstructions)
+        external
+        returns (uint256);
 
     /// @notice Retrieves the quote for message delivery.
     /// @dev This version must be called by the integrator.
     /// @dev This sums up all the individual sendAdapter's quoteDeliveryPrice calls.
     /// @param dstChain The Wormhole chain ID of the recipient.
+    /// @param adapterInstructions An array of adapter instructions to be passed into the adapters.
     /// @return uint256 The total cost of delivering a message to the recipient chain in this chain's native token.
-    function quoteDeliveryPrice(uint16 dstChain) external view returns (uint256);
+    function quoteDeliveryPrice(uint16 dstChain, bytes calldata adapterInstructions) external view returns (uint256);
 }
