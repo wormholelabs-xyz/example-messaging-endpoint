@@ -2,9 +2,15 @@ import { jest, expect, test } from "@jest/globals";
 import { ethers } from "ethers";
 import {
   addAdapter,
+  disableRecvAdapter,
+  disableSendAdapter,
+  enableRecvAdapter,
+  enableSendAdapter,
   getAdapterByIndex,
   getAdapterIndex,
   getAdapters,
+  getRecvAdaptersByChain,
+  getSendAdaptersByChain,
 } from "../src/adapter";
 
 jest.setTimeout(180000);
@@ -76,6 +82,76 @@ describe("EVM Adapter Tests", () => {
       // Since no adapters have been added, should be empty
       expect(adapters.length).toBe(1);
       expect(adapters[0]).toBe(whGuardiansAdapter);
+    });
+  });
+  describe("enable/disable adapter functions", () => {
+    test("enable adapters", async () => {
+      const sendChain = 42;
+      let tx = await enableSendAdapter(
+        anvilEthRouter,
+        anvilEthSigner,
+        anvilEthSigner.address,
+        sendChain,
+        whGuardiansAdapter,
+      );
+      await tx.wait();
+      const sendAdapters = await getSendAdaptersByChain(
+        anvilEthRouter,
+        anvilEthSigner,
+        anvilEthSigner.address,
+        sendChain,
+      );
+      expect(sendAdapters.length).toBe(1);
+      expect(sendAdapters[0]).toBe(whGuardiansAdapter);
+      tx = await enableRecvAdapter(
+        anvilEthRouter,
+        anvilEthSigner,
+        anvilEthSigner.address,
+        sendChain,
+        whGuardiansAdapter,
+      );
+      await tx.wait();
+      const recvAdapters = await getRecvAdaptersByChain(
+        anvilEthRouter,
+        anvilEthSigner,
+        anvilEthSigner.address,
+        sendChain,
+      );
+      expect(recvAdapters.length).toBe(1);
+      expect(recvAdapters[0]).toBe(whGuardiansAdapter);
+    });
+    test("disable adapters", async () => {
+      const sendChain = 42;
+      let tx = await disableSendAdapter(
+        anvilEthRouter,
+        anvilEthSigner,
+        anvilEthSigner.address,
+        sendChain,
+        whGuardiansAdapter,
+      );
+      await tx.wait();
+      const sendAdapters = await getSendAdaptersByChain(
+        anvilEthRouter,
+        anvilEthSigner,
+        anvilEthSigner.address,
+        sendChain,
+      );
+      expect(sendAdapters.length).toBe(0);
+      tx = await disableRecvAdapter(
+        anvilEthRouter,
+        anvilEthSigner,
+        anvilEthSigner.address,
+        sendChain,
+        whGuardiansAdapter,
+      );
+      await tx.wait();
+      const recvAdapters = await getRecvAdaptersByChain(
+        anvilEthRouter,
+        anvilEthSigner,
+        anvilEthSigner.address,
+        sendChain,
+      );
+      expect(recvAdapters.length).toBe(0);
     });
   });
 });
