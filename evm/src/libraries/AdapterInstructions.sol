@@ -15,12 +15,11 @@ library AdapterInstructions {
     /// @param size The size of the payload.
     error PayloadTooLong(uint256 size);
 
-    /// @notice Error thrown when an Adapter instruction index
-    ///         is greater than the number of registered Adapters
-    /// @dev We index from 0 so if providedIndex == numAdapters then we're out-of-bounds too
+    /// @notice Error thrown when an Adapter instruction index is greater than the number of registered Adapters.
+    /// @dev We index from 0 so if providedIndex == numAdapters then we're out-of-bounds too.
     /// @dev Selector 0x689f5016.
-    /// @param providedIndex The index specified in the instruction
-    /// @param numAdapters The number of registered Adapters
+    /// @param providedIndex The index specified in the instruction.
+    /// @param numAdapters The number of registered Adapters.
     error InvalidInstructionIndex(uint256 providedIndex, uint256 numAdapters);
 
     /// @dev Variable-length Adapter-specific instruction that can be passed by the integrator to the endpoint
@@ -100,9 +99,8 @@ library AdapterInstructions {
         pure
         returns (Instruction[] memory instructions)
     {
-        // We allocate an array with the length of the number of registered Adapters
-        // This gives us the flexibility to not have to pass instructions for Adapters that
-        // don't need them.
+        // We allocate an array with the length of the number of registered Adapters.
+        // This gives us the flexibility to not have to pass instructions for Adapters that don't need them.
         instructions = new Instruction[](numRegisteredAdapters);
 
         if (encoded.length == 0) {
