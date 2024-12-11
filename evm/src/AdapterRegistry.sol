@@ -11,6 +11,12 @@ abstract contract AdapterRegistry {
         uint8 index; // the index into the integrator's adapters array
     }
 
+    /// @dev Data maintained for each send adapter enabled for an integrator and chain.
+    struct PerSendAdapterInfo {
+        address addr;
+        uint8 index;
+    }
+
     /// @dev Bitmap encoding the enabled adapters.
     struct _EnabledAdapterBitmap {
         uint128 bitmap; // MAX_ADAPTERS = 128
@@ -76,7 +82,7 @@ abstract contract AdapterRegistry {
     error AdapterAlreadyDisabled(address adapter);
 
     /// @notice Error when the number of registered adapters
-    ///         exceeeds (MAX_ADAPTERS = 128).
+    ///         exceeds (MAX_ADAPTERS = 128).
     /// @dev Selector: 0x5bde12c0.
     error TooManyAdapters();
 
@@ -143,7 +149,7 @@ abstract contract AdapterRegistry {
     function _getPerChainSendAdapterArrayStorage()
         private
         pure
-        returns (mapping(address => mapping(uint16 => address[])) storage $)
+        returns (mapping(address => mapping(uint16 => PerSendAdapterInfo[])) storage $)
     {
         uint256 slot = uint256(ENABLED_SEND_ADAPTER_ARRAY_SLOT);
         assembly ("memory-safe") {
@@ -235,9 +241,10 @@ abstract contract AdapterRegistry {
         if (_isSendAdapterEnabledForChain(integrator, chain, adapter)) {
             revert AdapterAlreadyEnabled(adapter);
         }
-        mapping(address => mapping(uint16 => address[])) storage sendAdapterArray =
+        uint8 index = _getAdapterInfosStorage()[integrator][adapter].index;
+        mapping(address => mapping(uint16 => PerSendAdapterInfo[])) storage sendAdapterArray =
             _getPerChainSendAdapterArrayStorage();
-        sendAdapterArray[integrator][chain].push(adapter);
+        sendAdapterArray[integrator][chain].push(PerSendAdapterInfo({addr: adapter, index: index}));
         emit SendAdapterEnabledForChain(integrator, chain, adapter);
     }
 
@@ -268,16 +275,16 @@ abstract contract AdapterRegistry {
         internal
         onlyRegisteredAdapter(integrator, chain, adapter)
     {
-        mapping(address => mapping(uint16 => address[])) storage enabledSendAdapters =
+        mapping(address => mapping(uint16 => PerSendAdapterInfo[])) storage enabledSendAdapters =
             _getPerChainSendAdapterArrayStorage();
-        address[] storage adapters = enabledSendAdapters[integrator][chain];
+        PerSendAdapterInfo[] storage adapters = enabledSendAdapters[integrator][chain];
 
         // Get the index of the disabled adapter in the enabled adapters array
         // and replace it with the last element in the array.
         uint256 len = adapters.length;
         bool found = false;
         for (uint256 i = 0; i < len;) {
-            if (adapters[i] == adapter) {
+            if (adapters[i].addr == adapter) {
                 // Swap the last element with the element to be removed
                 adapters[i] = adapters[len - 1];
                 // Remove the last element
@@ -342,10 +349,10 @@ abstract contract AdapterRegistry {
         view
         returns (bool)
     {
-        address[] storage adapters = _getPerChainSendAdapterArrayStorage()[integrator][chain];
+        PerSendAdapterInfo[] storage adapters = _getPerChainSendAdapterArrayStorage()[integrator][chain];
         uint256 length = adapters.length;
         for (uint256 i = 0; i < length;) {
-            if (adapters[i] == adapter) {
+            if (adapters[i].addr == adapter) {
                 return true;
             }
             unchecked {
@@ -388,7 +395,7 @@ abstract contract AdapterRegistry {
         internal
         view
         virtual
-        returns (address[] storage array)
+        returns (PerSendAdapterInfo[] storage array)
     {
         if (chain == 0) {
             revert InvalidChain(chain);
@@ -453,7 +460,11 @@ abstract contract AdapterRegistry {
     /// @param integrator The integrator address.
     /// @param chain The Wormhole chain ID for the desired adapters.
     /// @return result The enabled send side adapters for the given integrator and chain.
-    function getSendAdaptersByChain(address integrator, uint16 chain) public view returns (address[] memory result) {
+    function getSendAdaptersByChain(address integrator, uint16 chain)
+        public
+        view
+        returns (PerSendAdapterInfo[] memory result)
+    {
         if (chain == 0) {
             revert InvalidChain(chain);
         }

@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import "./interfaces/IEndpointAdmin.sol";
 import "./interfaces/IEndpointIntegrator.sol";
 import "./interfaces/IEndpointAdapter.sol";
+import "./libraries/AdapterInstructions.sol";
 import "./MessageSequence.sol";
 import "./AdapterRegistry.sol";
 import "./interfaces/IAdapter.sol";
@@ -378,13 +379,41 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
     // =============== Message functions =======================================================
 
     /// @inheritdoc IEndpointIntegrator
-    function sendMessage(uint16 dstChain, UniversalAddress dstAddr, bytes32 payloadHash, address refundAddress)
-        external
-        payable
-        returns (uint64 sequence)
-    {
+    function sendMessage(
+        uint16 dstChain,
+        UniversalAddress dstAddr,
+        bytes32 payloadHash,
+        address refundAddress,
+        bytes calldata adapterInstructions
+    ) external payable returns (uint64 sequence) {
+        return _sendMessage(
+            SendMessageArgs({
+                dstChain: dstChain,
+                dstAddr: dstAddr,
+                payloadHash: payloadHash,
+                refundAddress: refundAddress,
+                adapterInstructions: adapterInstructions
+            })
+        );
+    }
+
+    /// @dev Used to get around "stack too deep.
+    struct SendMessageArgs {
+        uint16 dstChain;
+        UniversalAddress dstAddr;
+        bytes32 payloadHash;
+        address refundAddress;
+        bytes adapterInstructions;
+    }
+
+    function _sendMessage(SendMessageArgs memory args) internal returns (uint64 sequence) {
+        // Parse the adapter instructions so we can pass the appropriate one to each adapter.
+        AdapterInstructions.Instruction[] memory adapterInst = AdapterInstructions.parseInstructions(
+            args.adapterInstructions, _getRegisteredAdaptersStorage()[msg.sender].length
+        );
+
         // get the enabled send adapters for [msg.sender][dstChain]
-        address[] memory sendAdapters = getSendAdaptersByChain(msg.sender, dstChain);
+        PerSendAdapterInfo[] memory sendAdapters = getSendAdaptersByChain(msg.sender, args.dstChain);
         uint256 len = sendAdapters.length;
         if (len == 0) {
             revert AdapterNotEnabled();
@@ -393,12 +422,19 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
         // get the next sequence number for msg.sender
         sequence = _useMessageSequence(msg.sender);
         for (uint256 i = 0; i < len;) {
-            bytes memory adapterInstructions; // TODO: Pass this in.
             // quote the delivery price
-            uint256 deliveryPrice = IAdapter(sendAdapters[i]).quoteDeliveryPrice(dstChain, adapterInstructions);
+            uint256 deliveryPrice = IAdapter(sendAdapters[i].addr).quoteDeliveryPrice(
+                args.dstChain, adapterInst[sendAdapters[i].index].payload
+            );
             // call sendMessage
-            IAdapter(sendAdapters[i]).sendMessage{value: deliveryPrice}(
-                sender, sequence, dstChain, dstAddr, payloadHash, refundAddress, adapterInstructions
+            IAdapter(sendAdapters[i].addr).sendMessage{value: deliveryPrice}(
+                sender,
+                sequence,
+                args.dstChain,
+                args.dstAddr,
+                args.payloadHash,
+                args.refundAddress,
+                adapterInst[sendAdapters[i].index].payload
             );
             unchecked {
                 ++i;
@@ -406,12 +442,12 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
         }
 
         emit MessageSent(
-            computeMessageDigest(ourChain, sender, sequence, dstChain, dstAddr, payloadHash),
+            computeMessageDigest(ourChain, sender, sequence, args.dstChain, args.dstAddr, args.payloadHash),
             sender,
             sequence,
-            dstAddr,
-            dstChain,
-            payloadHash
+            args.dstAddr,
+            args.dstChain,
+            args.payloadHash
         );
     }
 
@@ -544,13 +580,17 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
     }
 
     /// @inheritdoc IEndpointIntegrator
-    function quoteDeliveryPrice(address integrator, uint16 dstChain) external view returns (uint256) {
-        return _quoteDeliveryPrice(integrator, dstChain);
+    function quoteDeliveryPrice(address integrator, uint16 dstChain, bytes calldata adapterInstructions)
+        external
+        view
+        returns (uint256)
+    {
+        return _quoteDeliveryPrice(integrator, dstChain, adapterInstructions);
     }
 
     /// @inheritdoc IEndpointIntegrator
-    function quoteDeliveryPrice(uint16 dstChain) external view returns (uint256) {
-        return _quoteDeliveryPrice(msg.sender, dstChain);
+    function quoteDeliveryPrice(uint16 dstChain, bytes calldata adapterInstructions) external view returns (uint256) {
+        return _quoteDeliveryPrice(msg.sender, dstChain, adapterInstructions);
     }
 
     // =============== Internal ==============================================================
@@ -572,14 +612,24 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
     /// @dev This sums up all the individual sendAdapter's quoteDeliveryPrice calls.
     /// @param integrator The address of the integrator.
     /// @param dstChain The Wormhole chain ID of the recipient.
+    /// @param adapterInstructions An array of adapter instructions to be passed into the adapters.
     /// @return totalCost The total cost of delivering a message to the recipient chain in this chain's native token.
-    function _quoteDeliveryPrice(address integrator, uint16 dstChain) internal view returns (uint256 totalCost) {
-        address[] memory sendAdapters = getSendAdaptersByChain(integrator, dstChain);
+    function _quoteDeliveryPrice(address integrator, uint16 dstChain, bytes calldata adapterInstructions)
+        internal
+        view
+        returns (uint256 totalCost)
+    {
+        // Parse the adapter instructions so we can pass the appropriate one to each adapter.
+        AdapterInstructions.Instruction[] memory adapterInst = AdapterInstructions.parseInstructions(
+            adapterInstructions, _getRegisteredAdaptersStorage()[integrator].length
+        );
+
+        PerSendAdapterInfo[] memory sendAdapters = getSendAdaptersByChain(integrator, dstChain);
         uint256 len = sendAdapters.length;
         totalCost = 0;
         for (uint256 i = 0; i < len;) {
-            bytes memory adapterInstructions; // TODO: Pass this in.
-            totalCost += IAdapter(sendAdapters[i]).quoteDeliveryPrice(dstChain, adapterInstructions);
+            totalCost +=
+                IAdapter(sendAdapters[i].addr).quoteDeliveryPrice(dstChain, adapterInst[sendAdapters[i].index].payload);
             unchecked {
                 ++i;
             }
