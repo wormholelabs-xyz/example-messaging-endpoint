@@ -10,7 +10,8 @@ export async function claimAdmin(
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the claimAdmin function
-  const tx = await endpoint["claimAdmin"](integrator);
+  // const tx = await endpoint["claimAdmin"](integrator);
+  const tx = await endpoint.claimAdmin(integrator);
   return tx;
 }
 
@@ -23,7 +24,7 @@ export async function discardAdmin(
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the discardAdmin function
-  const tx = await endpoint["discardAdmin"](integrator);
+  const tx = await endpoint.discardAdmin(integrator);
   return tx;
 }
 
@@ -36,7 +37,7 @@ export async function getAdmin(
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the getAdmin function
-  const admin = await endpoint["getAdmin"](integrator);
+  const admin = await endpoint.getAdmin(integrator);
 
   return admin;
 }
@@ -50,7 +51,7 @@ export async function getPendingAdmin(
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the getPendingAdmin function
-  const admin = await endpoint["getPendingAdmin"](integrator);
+  const admin = await endpoint.getPendingAdmin(integrator);
 
   return admin;
 }
@@ -64,7 +65,7 @@ export async function register(
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the register function
-  const tx = await endpoint["register"](initialAdmin);
+  const tx = await endpoint.register(initialAdmin);
   return tx;
 }
 
@@ -78,7 +79,7 @@ export async function transferAdmin(
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the transferAdmin function
-  const tx = await endpoint["transferAdmin"](integrator, admin);
+  const tx = await endpoint.transferAdmin(integrator, admin);
   return tx;
 }
 
@@ -92,6 +93,6 @@ export async function updateAdmin(
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
   // Call the updateAdmin function
-  const tx = await endpoint["updateAdmin"](integrator, admin);
+  const tx = await endpoint.updateAdmin(integrator, admin);
   return tx;
 }

@@ -18,9 +18,10 @@ export async function addAdapter(
   const endpoint = Endpoint__factory.connect(endpointAddr, signer);
   console.log("Endpoint:", endpoint);
 
-  const result: ethers.ContractTransactionResponse = await endpoint[
-    "addAdapter"
-  ](integrator, adapter);
+  const result: ethers.ContractTransactionResponse = await endpoint.addAdapter(
+    integrator,
+    adapter,
+  );
   await result.wait();
   console.log("result:", result);
 
@@ -39,9 +40,8 @@ export async function disableRecvAdapter(
   }
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
-  const result: ethers.ContractTransactionResponse = await endpoint[
-    "disableRecvAdapter"
-  ](integrator, chain, adapter);
+  const result: ethers.ContractTransactionResponse =
+    await endpoint.disableRecvAdapter(integrator, chain, adapter);
   return result;
 }
 
@@ -57,9 +57,8 @@ export async function disableSendAdapter(
   }
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
-  const result: ethers.ContractTransactionResponse = await endpoint[
-    "disableSendAdapter"
-  ](integrator, chain, adapter);
+  const result: ethers.ContractTransactionResponse =
+    await endpoint.disableSendAdapter(integrator, chain, adapter);
   return result;
 }
 
@@ -75,9 +74,8 @@ export async function enableRecvAdapter(
   }
   const endpoint = Endpoint__factory.connect(endpointAddress, provider);
 
-  const result: ethers.ContractTransactionResponse = await endpoint[
-    "enableRecvAdapter"
-  ](integrator, chain, adapter);
+  const result: ethers.ContractTransactionResponse =
+    await endpoint.enableRecvAdapter(integrator, chain, adapter);
   return result;
 }
 
@@ -93,9 +91,8 @@ export async function enableSendAdapter(
   }
   const endpoint = Endpoint__factory.connect(endpointAddress, provider);
 
-  const result: ethers.ContractTransactionResponse = await endpoint[
-    "enableSendAdapter"
-  ](integrator, chain, adapter);
+  const result: ethers.ContractTransactionResponse =
+    await endpoint.enableSendAdapter(integrator, chain, adapter);
   return result;
 }
 
@@ -107,7 +104,7 @@ export async function getAdapterByIndex(
 ): Promise<string> {
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
-  const adapter = await endpoint["getAdapterByIndex"](integrator, index);
+  const adapter = await endpoint.getAdapterByIndex(integrator, index);
 
   return adapter;
 }
@@ -120,7 +117,7 @@ export async function getAdapterIndex(
 ): Promise<bigint> {
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
-  const index = await endpoint["getAdapterIndex"](integrator, adapter);
+  const index = await endpoint.getAdapterIndex(integrator, adapter);
 
   return BigInt(index);
 }
@@ -135,7 +132,7 @@ export async function getAdapters(
   }
 
   const endpoint = Endpoint__factory.connect(endpointAddress, provider);
-  const adapters = await endpoint["getAdapters"](integrator);
+  const adapters = await endpoint.getAdapters(integrator);
 
   return adapters;
 }
@@ -148,7 +145,7 @@ export async function getRecvAdaptersByChain(
 ): Promise<string[]> {
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
-  const adapters = await endpoint["getRecvAdaptersByChain"](integrator, chain);
+  const adapters = await endpoint.getRecvAdaptersByChain(integrator, chain);
 
   return adapters;
 }
@@ -161,7 +158,7 @@ export async function getSendAdaptersByChain(
 ): Promise<string[]> {
   const endpoint = Endpoint__factory.connect(contractAddress, provider);
 
-  const adapters = await endpoint["getSendAdaptersByChain"](integrator, chain);
+  const adapters = await endpoint.getSendAdaptersByChain(integrator, chain);
 
   return adapters;
 }
