@@ -28,7 +28,7 @@ contract TestIntegrator {
         address refundAddress = address(this);
         bytes32 payloadHash = keccak256("hello, world");
         IEndpointIntegrator(endpoint).sendMessage(
-            chain, UniversalAddressLibrary.fromAddress(dstAddr), payloadHash, refundAddress
+            chain, UniversalAddressLibrary.fromAddress(dstAddr), payloadHash, refundAddress, new bytes(0)
         );
     }
 

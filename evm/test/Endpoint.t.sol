@@ -7,6 +7,7 @@ import "../src/libraries/UniversalAddress.sol";
 import {Endpoint} from "../src/Endpoint.sol";
 import {AdapterRegistry} from "../src/AdapterRegistry.sol";
 import {IAdapter} from "../src/interfaces/IAdapter.sol";
+import "../src/libraries/AdapterInstructions.sol";
 
 contract EndpointImpl is Endpoint {
     uint16 public constant OurChainId = 0x2714;
@@ -239,7 +240,7 @@ contract EndpointTest is Test {
         vm.expectEmit(true, true, false, true);
         emit AdapterRegistry.AdapterAdded(integrator, taddr2, 2);
         endpoint.addAdapter(integrator, taddr2);
-        address[] memory adapters = endpoint.getSendAdaptersByChain(integrator, 1);
+        AdapterRegistry.PerSendAdapterInfo[] memory adapters = endpoint.getSendAdaptersByChain(integrator, 1);
         require(adapters.length == 1, "Wrong number of adapters enabled on chain one, should be 1");
         // Enable another adapter on chain one and one on chain two.
         vm.expectEmit(true, true, false, true);
@@ -255,11 +256,14 @@ contract EndpointTest is Test {
         // And verify they got set properly.
         adapters = endpoint.getSendAdaptersByChain(integrator, 1);
         require(adapters.length == 2, "Wrong number of adapters enabled on chain one");
-        require(adapters[0] == taddr1, "Wrong adapter one on chain one");
-        require(adapters[1] == taddr2, "Wrong adapter two on chain one");
+        require(adapters[0].addr == taddr1, "Wrong adapter one on chain one");
+        require(adapters[0].index == 0, "Wrong adapter index one on chain one");
+        require(adapters[1].addr == taddr2, "Wrong adapter two on chain one");
+        require(adapters[1].index == 1, "Wrong adapter index two on chain one");
         adapters = endpoint.getSendAdaptersByChain(integrator, 2);
         require(adapters.length == 1, "Wrong number of adapters enabled on chain two");
-        require(adapters[0] == taddr3, "Wrong adapter one on chain two");
+        require(adapters[0].addr == taddr3, "Wrong adapter one on chain two");
+        require(adapters[0].index == 2, "Wrong adapter index one on chain two");
         vm.expectEmit(true, true, false, true);
         emit AdapterRegistry.SendAdapterDisabledForChain(integrator, 2, taddr3);
         endpoint.disableSendAdapter(integrator, 2, taddr3);
@@ -347,11 +351,13 @@ contract EndpointTest is Test {
         vm.expectEmit(true, true, false, true);
         emit Endpoint.IntegratorRegistered(address(integrator), address(admin));
         endpoint.register(admin);
+        bytes memory insts = defaultInsts();
 
         // Sending with no adapters should revert.
         vm.startPrank(integrator);
         vm.expectRevert(abi.encodeWithSelector(Endpoint.AdapterNotEnabled.selector));
-        uint64 sequence = endpoint.sendMessage(2, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr);
+        uint64 sequence =
+            endpoint.sendMessage(2, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr, insts);
 
         // Now enable some adapters.
         vm.startPrank(admin);
@@ -377,7 +383,8 @@ contract EndpointTest is Test {
         // Only an integrator can call send.
         vm.startPrank(userA);
         vm.expectRevert(abi.encodeWithSelector(Endpoint.AdapterNotEnabled.selector));
-        sequence = endpoint.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr);
+        sequence =
+            endpoint.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr, insts);
 
         // Send a message on chain two. It should go out on the first two adapters, but not the third one.
         vm.startPrank(integrator);
@@ -397,24 +404,34 @@ contract EndpointTest is Test {
             chain,
             payloadHash
         );
-        sequence = endpoint.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr);
+        sequence =
+            endpoint.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr, insts);
         require(sequence == 0, "Sequence number is wrong");
         require(adapter1.getMessagesSent() == 1, "Failed to send a message on adapter 1");
         require(adapter2.getMessagesSent() == 1, "Failed to send a message on adapter 2");
         require(adapter3.getMessagesSent() == 0, "Should not have sent a message on adapter 3");
 
-        sequence = endpoint.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr);
+        sequence =
+            endpoint.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr, insts);
         require(sequence == 1, "Second sequence number is wrong");
         require(adapter1.getMessagesSent() == 2, "Failed to send second message on adapter 1");
         require(adapter2.getMessagesSent() == 2, "Failed to send second message on adapter 2");
         require(adapter3.getMessagesSent() == 0, "Should not have sent second message on adapter 3");
 
         vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidChain.selector, zeroChain));
-        sequence = endpoint.sendMessage(zeroChain, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr);
+        sequence =
+            endpoint.sendMessage(zeroChain, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr, insts);
         require(sequence == 0, "Failed sequence number is wrong"); // 0 because of the revert
 
-        sequence = endpoint.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr);
+        sequence =
+            endpoint.sendMessage(chain, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr, insts);
         require(sequence == 2, "Third sequence number is wrong");
+
+        // Should be able to send with no adapter instructions.
+        sequence = endpoint.sendMessage(
+            chain, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr, new bytes(0)
+        );
+        require(sequence == 3, "Fourth sequence number is wrong");
     }
 
     function test_attestMessage() public {
@@ -726,28 +743,35 @@ contract EndpointTest is Test {
         adapter1.setDeliveryPrice(100);
         adapter2.setDeliveryPrice(200);
         adapter3.setDeliveryPrice(300);
+        bytes memory insts = defaultInsts();
 
         // Now enable some adapters.
         vm.startPrank(admin);
         endpoint.addAdapter(integrator, address(adapter1));
         endpoint.enableSendAdapter(integrator, chain, address(adapter1));
-        uint256 price = endpoint.quoteDeliveryPrice(integrator, chain);
+        uint256 price = endpoint.quoteDeliveryPrice(integrator, chain, insts);
         require(price == 100, "Single price is wrong");
         endpoint.addAdapter(integrator, address(adapter2));
         endpoint.enableSendAdapter(integrator, chain, address(adapter2));
-        price = endpoint.quoteDeliveryPrice(integrator, chain);
+        price = endpoint.quoteDeliveryPrice(integrator, chain, insts);
         require(price == 300, "Double price is wrong");
         endpoint.addAdapter(integrator, address(adapter3));
         endpoint.enableSendAdapter(integrator, 3, address(adapter3));
-        price = endpoint.quoteDeliveryPrice(integrator, chain);
+        price = endpoint.quoteDeliveryPrice(integrator, chain, insts);
         require(price == 300, "Triple price is wrong");
         vm.startPrank(integrator);
-        price = endpoint.quoteDeliveryPrice(chain);
+        price = endpoint.quoteDeliveryPrice(chain, insts);
         require(price == 300, "Triple price is wrong");
     }
 
     function test_getNumEnabledRecvAdaptersForChain() public view {
         // This function is actually tested in the AdapterRegistry tests. Just call it here for code coverage.
         require(endpoint.getNumEnabledRecvAdaptersForChain(address(0x01), 2) == 0, "Count should be zero");
+    }
+
+    /// @dev Builds empty adapter instructions.
+    function defaultInsts() public pure returns (bytes memory encoded) {
+        AdapterInstructions.Instruction[] memory insts = new AdapterInstructions.Instruction[](0);
+        encoded = AdapterInstructions.encodeInstructions(insts);
     }
 }
