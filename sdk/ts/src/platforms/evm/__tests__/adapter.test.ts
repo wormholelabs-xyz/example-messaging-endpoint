@@ -24,7 +24,7 @@ const whGuardiansAdapter = "0x8564C314028B778C968E11485E4bD6aC13CF0eeF";
 
 describe("EVM Adapter Tests", () => {
   describe("get adapter", () => {
-    test.skip("getAdapters()", async () => {
+    test("getAdapters()", async () => {
       const adapters = await getAdapters(
         anvilEthRouter,
         anvilEthSigner,
@@ -35,7 +35,7 @@ describe("EVM Adapter Tests", () => {
     });
   });
   describe("add adapter", () => {
-    test.skip("addAdapter()", async () => {
+    test("addAdapter()", async () => {
       const index: bigint = await addAdapter(
         anvilEthRouter,
         anvilEthSigner,

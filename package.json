@@ -19,7 +19,8 @@
   },
   "scripts": {
     "build:abi": "cd evm && forge build && typechain --target=ethers-v6 --out-dir=sdk/ts/src/abi \"out/!(test).sol/*.json\"",
-    "build:sdk": "cd evm/sdk/ts/src && tsc"
+    "build:sdk": "cd evm/sdk/ts/src && tsc",
+    "test": "cd sdk && jest"
   },
   "type": "module"
 }
