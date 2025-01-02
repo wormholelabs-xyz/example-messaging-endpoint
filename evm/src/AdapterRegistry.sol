@@ -1,111 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.19;
 
+import "./interfaces/IAdapterRegistry.sol";
+
 /// @title AdapterRegistry
 /// @notice This contract is responsible for handling the registration of Adapters.
-abstract contract AdapterRegistry {
-    /// @dev Information about registered adapters.
-    struct AdapterInfo {
-        // whether this adapter is registered
-        bool registered;
-        uint8 index; // the index into the integrator's adapters array
-    }
-
-    /// @dev Data maintained for each send adapter enabled for an integrator and chain.
-    struct PerSendAdapterInfo {
-        address addr;
-        uint8 index;
-    }
-
-    /// @dev Bitmap encoding the enabled adapters.
-    struct _EnabledAdapterBitmap {
-        uint128 bitmap; // MAX_ADAPTERS = 128
-    }
-
+abstract contract AdapterRegistry is IAdapterRegistry {
     uint8 constant MAX_ADAPTERS = 128;
-
-    // =============== Events ===============================================
-
-    /// @notice Emitted when an adapter is added.
-    /// @dev Topic0
-    ///      0xac0e1ca21680593c8e6fcd302536c12420131dbf0e8ee4b29e529e8a81469f21.
-    /// @param integrator The address of the integrator.
-    /// @param adapter The address of the adapter.
-    /// @param adaptersNum The current number of adapters.
-    event AdapterAdded(address integrator, address adapter, uint8 adaptersNum);
-
-    /// @notice Emitted when a send side adapter is enabled for a chain.
-    /// @dev Topic0
-    ///      0x857691e2cf3b85361da0572fc891250016a03bf7921f5dbb9c34ca3d80591336.
-    /// @param integrator The address of the integrator.
-    /// @param chain The Wormhole chain ID on which this adapter is enabled.
-    /// @param adapter The address of the adapter.
-    event SendAdapterEnabledForChain(address integrator, uint16 chain, address adapter);
-
-    /// @notice Emitted when a receive side adapter is enabled for a chain.
-    /// @dev Topic0
-    ///      0x3649cec96e246496c67087fabed01d3a6c510fec6bfcd3103dd2aedd1b637acc.
-    /// @param integrator The address of the integrator.
-    /// @param chain The Wormhole chain ID on which this adapter is enabled.
-    /// @param adapter The address of the adapter.
-    event RecvAdapterEnabledForChain(address integrator, uint16 chain, address adapter);
-
-    /// @notice Emitted when a send side adapter is removed from the endpoint.
-    /// @dev Topic0
-    ///      0xf5794741500b506041917ff318a1635659dbe538238f4e60979e3f1d29ac021a.
-    /// @param integrator The address of the integrator.
-    /// @param chain The Wormhole chain ID on which this adapter is disabled.
-    /// @param adapter The address of the adapter.
-    event SendAdapterDisabledForChain(address integrator, uint16 chain, address adapter);
-
-    /// @notice Emitted when a receive side adapter is removed from the endpoint.
-    /// @dev Topic0
-    ///      0xcf88609c95c0469dbeb39cfeaa5dcb9b389a6ec8acca2d695dd3feb2f69cffde.
-    /// @param integrator The address of the integrator.
-    /// @param chain The Wormhole chain ID on which this adapter is disabled.
-    /// @param adapter The address of the adapter.
-    event RecvAdapterDisabledForChain(address integrator, uint16 chain, address adapter);
-
-    // =============== Errors ===============================================
-
-    /// @notice Error when the caller is not the adapter.
-    /// @dev Selector: 0xd8aa0b1c.
-    /// @param caller The address of the caller.
-    error CallerNotAdapter(address caller);
-
-    /// @notice Error when the adapter is the zero address.
-    /// @dev Selector: 0x4e2165a2.
-    error InvalidAdapterZeroAddress();
-
-    /// @notice Error when the adapter is disabled.
-    /// @dev Selector: 0x3b4742ca.
-    error AdapterAlreadyDisabled(address adapter);
-
-    /// @notice Error when the number of registered adapters
-    ///         exceeds (MAX_ADAPTERS = 128).
-    /// @dev Selector: 0x5bde12c0.
-    error TooManyAdapters();
-
-    /// @notice Error when attempting to use an unregistered adapter
-    ///         that is not registered.
-    /// @dev Selector: 0xc325a1ea.
-    /// @param adapter The address of the adapter.
-    error NonRegisteredAdapter(address adapter);
-
-    /// @notice Error when attempting to use an incorrect chain.
-    /// @dev Selector: 0x587c94c3.
-    /// @param chain The id of the incorrect chain.
-    error InvalidChain(uint16 chain);
-
-    /// @notice Error when attempting to register an adapter that is already register.
-    /// @dev Selector: 0x2296d41e.
-    /// @param adapter The address of the adapter.
-    error AdapterAlreadyRegistered(address adapter);
-
-    /// @notice Error when attempting to enable an adapter that is already enabled.
-    /// @dev Selector: 0xb7b944b2.
-    /// @param adapter The address of the adapter.
-    error AdapterAlreadyEnabled(address adapter);
 
     // =============== Storage ===============================================
 
@@ -130,6 +31,12 @@ abstract contract AdapterRegistry {
     ///      mapping(address => mapping(uint16 => uint128)).
     bytes32 private constant ENABLED_RECV_ADAPTER_BITMAP_SLOT =
         bytes32(uint256(keccak256("registry.recvAdapterBitmap")) - 1);
+
+    /// @dev Holds mapping of integrator address => array of chains with adapters enabled for sending.
+    bytes32 private constant SEND_ENABLED_CHAINS_SLOT = bytes32(uint256(keccak256("registry.sendEnabledChains")) - 1);
+
+    /// @dev Holds mapping of integrator address => array of chains with adapters enabled for receiving.
+    bytes32 private constant RECV_ENABLED_CHAINS_SLOT = bytes32(uint256(keccak256("registry.recvEnabledChains")) - 1);
 
     // =============== Mappings ===============================================
 
@@ -173,6 +80,15 @@ abstract contract AdapterRegistry {
     ///      Contains all registered adapters for this integrator.
     function _getRegisteredAdaptersStorage() internal pure returns (mapping(address => address[]) storage $) {
         uint256 slot = uint256(REGISTERED_ADAPTERS_SLOT);
+        assembly ("memory-safe") {
+            $.slot := slot
+        }
+    }
+
+    /// @dev Integrator address => chainID[] mapping.
+    ///      Contains all chains that have adapters enabled for this integrator.
+    function _getChainsEnabledStorage(bytes32 tag) internal pure returns (mapping(address => uint16[]) storage $) {
+        uint256 slot = uint256(tag);
         assembly ("memory-safe") {
             $.slot := slot
         }
@@ -242,9 +158,11 @@ abstract contract AdapterRegistry {
             revert AdapterAlreadyEnabled(adapter);
         }
         uint8 index = _getAdapterInfosStorage()[integrator][adapter].index;
-        mapping(address => mapping(uint16 => PerSendAdapterInfo[])) storage sendAdapterArray =
-            _getPerChainSendAdapterArrayStorage();
-        sendAdapterArray[integrator][chain].push(PerSendAdapterInfo({addr: adapter, index: index}));
+        PerSendAdapterInfo[] storage sendAdapterArray = _getPerChainSendAdapterArrayStorage()[integrator][chain];
+        if (sendAdapterArray.length == 0) {
+            _addEnabledChain(SEND_ENABLED_CHAINS_SLOT, integrator, chain);
+        }
+        sendAdapterArray.push(PerSendAdapterInfo({addr: adapter, index: index}));
         emit SendAdapterEnabledForChain(integrator, chain, adapter);
     }
 
@@ -261,9 +179,11 @@ abstract contract AdapterRegistry {
             revert AdapterAlreadyEnabled(adapter);
         }
         uint8 index = _getAdapterInfosStorage()[integrator][adapter].index;
-        mapping(address => mapping(uint16 => _EnabledAdapterBitmap)) storage _bitmaps =
-            _getPerChainRecvAdapterBitmapStorage();
-        _bitmaps[integrator][chain].bitmap |= uint128(1 << index);
+        _EnabledAdapterBitmap storage _bitmapEntry = _getPerChainRecvAdapterBitmapStorage()[integrator][chain];
+        if (_bitmapEntry.bitmap == 0) {
+            _addEnabledChain(RECV_ENABLED_CHAINS_SLOT, integrator, chain);
+        }
+        _bitmapEntry.bitmap |= uint128(1 << index);
         emit RecvAdapterEnabledForChain(integrator, chain, adapter);
     }
 
@@ -290,6 +210,9 @@ abstract contract AdapterRegistry {
                 // Remove the last element
                 adapters.pop();
                 found = true;
+                if (adapters.length == 0) {
+                    _removeEnabledChain(SEND_ENABLED_CHAINS_SLOT, integrator, chain);
+                }
                 break;
             }
             unchecked {
@@ -315,16 +238,18 @@ abstract contract AdapterRegistry {
         onlyRegisteredAdapter(integrator, chain, adapter)
     {
         mapping(address => mapping(address => AdapterInfo)) storage adapterInfos = _getAdapterInfosStorage();
-        mapping(address => mapping(uint16 => _EnabledAdapterBitmap)) storage _enabledAdapterBitmap =
-            _getPerChainRecvAdapterBitmapStorage();
+        _EnabledAdapterBitmap storage _bitmapEntry = _getPerChainRecvAdapterBitmapStorage()[integrator][chain];
 
         uint128 updatedEnabledAdapterBitmap =
-            _enabledAdapterBitmap[integrator][chain].bitmap & uint128(~(1 << adapterInfos[integrator][adapter].index));
+            _bitmapEntry.bitmap & uint128(~(1 << adapterInfos[integrator][adapter].index));
         // ensure that this actually changed the bitmap
-        if (updatedEnabledAdapterBitmap >= _enabledAdapterBitmap[integrator][chain].bitmap) {
+        if (updatedEnabledAdapterBitmap >= _bitmapEntry.bitmap) {
             revert AdapterAlreadyDisabled(adapter);
         }
-        _enabledAdapterBitmap[integrator][chain].bitmap = updatedEnabledAdapterBitmap;
+        _bitmapEntry.bitmap = updatedEnabledAdapterBitmap;
+        if (_bitmapEntry.bitmap == 0) {
+            _removeEnabledChain(RECV_ENABLED_CHAINS_SLOT, integrator, chain);
+        }
 
         emit RecvAdapterDisabledForChain(integrator, chain, adapter);
     }
@@ -421,33 +346,24 @@ abstract contract AdapterRegistry {
 
     // =============== EXTERNAL FUNCTIONS ========================================
 
-    /// @notice Returns all the registered adapter addresses for the given integrator.
-    /// @param integrator The integrator address.
-    /// @return result The registered adapters for the given integrator.
+    /// @inheritdoc IAdapterRegistry
     function getAdapters(address integrator) external view returns (address[] memory result) {
         result = _getRegisteredAdaptersStorage()[integrator];
     }
 
-    /// @notice Returns the queried adapter addresses.
-    /// @param integrator The integrator address.
-    /// @param index The index into the integrator's adapters array.
-    /// @return result The registered adapter address.
+    /// @inheritdoc IAdapterRegistry
     function getAdapterByIndex(address integrator, uint8 index) external view returns (address result) {
         result = _getRegisteredAdaptersStorage()[integrator][index];
     }
 
     // =============== PUBLIC GETTERS ========================================
 
-    /// @notice Returns the maximum number of adapters allowed.
-    /// @return uint8 The maximum number of adapters allowed.
-    function maxAdapters() public pure returns (uint8) {
+    /// @inheritdoc IAdapterRegistry
+    function maxAdapters() external pure returns (uint8) {
         return MAX_ADAPTERS;
     }
 
-    /// @notice Returns the queried adapter's index.
-    /// @param integrator The integrator address.
-    /// @param adapter The address of this adapter.
-    /// @return result The registered adapter index.
+    /// @inheritdoc IAdapterRegistry
     function getAdapterIndex(address integrator, address adapter) external view returns (uint8 result) {
         AdapterInfo storage info = _getAdapterInfosStorage()[integrator][adapter];
         if (!info.registered) {
@@ -456,10 +372,7 @@ abstract contract AdapterRegistry {
         return info.index;
     }
 
-    /// @notice Returns the enabled send side adapter addresses for the given integrator.
-    /// @param integrator The integrator address.
-    /// @param chain The Wormhole chain ID for the desired adapters.
-    /// @return result The enabled send side adapters for the given integrator and chain.
+    /// @inheritdoc IAdapterRegistry
     function getSendAdaptersByChain(address integrator, uint16 chain)
         public
         view
@@ -471,14 +384,11 @@ abstract contract AdapterRegistry {
         result = _getEnabledSendAdaptersArrayForChain(integrator, chain);
     }
 
-    /// @notice Returns the enabled receive side adapter addresses for the given integrator.
-    /// @param integrator The integrator address.
-    /// @param chain The Wormhole chain ID for the desired adapters.
-    /// @return result The enabled receive side adapters for the given integrator.
+    /// @inheritdoc IAdapterRegistry
     function getRecvAdaptersByChain(address integrator, uint16 chain) public view returns (address[] memory result) {
         address[] memory allAdapters = _getRegisteredAdaptersStorage()[integrator];
         // Count number of bits set in the bitmap so we can calculate the size of the result array.
-        uint8 count = _getNumEnabledRecvAdaptersForChain(integrator, chain);
+        uint8 count = getNumEnabledRecvAdaptersForChain(integrator, chain);
         result = new address[](count);
         uint256 len = 0;
         uint256 arrayLength = allAdapters.length;
@@ -493,15 +403,48 @@ abstract contract AdapterRegistry {
         }
     }
 
-    /// @notice Returns the number of enabled receive adapters for the given integrator and chain.
-    /// @param integrator The integrator address.
-    /// @param chain The Wormhole chain ID for the desired adapters.
-    /// @return result The number of enabled receive adapters for that chain.
-    function _getNumEnabledRecvAdaptersForChain(address integrator, uint16 chain) public view returns (uint8 result) {
+    /// @inheritdoc IAdapterRegistry
+    function getChainsEnabledForSend(address integrator) external view returns (uint16[] memory result) {
+        return _getChainsEnabledStorage(SEND_ENABLED_CHAINS_SLOT)[integrator];
+    }
+
+    /// @inheritdoc IAdapterRegistry
+    function getChainsEnabledForRecv(address integrator) external view returns (uint16[] memory result) {
+        return _getChainsEnabledStorage(RECV_ENABLED_CHAINS_SLOT)[integrator];
+    }
+
+    /// @inheritdoc IAdapterRegistry
+    /// @dev This is public because it is used within this contract.
+    function getNumEnabledRecvAdaptersForChain(address integrator, uint16 chain) public view returns (uint8 result) {
         uint128 bitmap = _getEnabledRecvAdaptersBitmapForChain(integrator, chain);
         while (bitmap != 0) {
             bitmap &= bitmap - 1;
             result++;
+        }
+    }
+
+    // =============== Implementations =======================================
+
+    /// @dev It is assumed that the chain is not already in the list. We can get away with this because the function is internal.
+    /// @dev Although this is a one line function, we have it for two reasons: (1) symmetry with remove, (2) simplifies testing.
+    ///      The assumption is that the compiler will inline it anyway.
+    function _addEnabledChain(bytes32 tag, address integrator, uint16 chain) internal {
+        _getChainsEnabledStorage(tag)[integrator].push(chain);
+    }
+
+    /// @dev It's not an error if the chain is not in the list.
+    function _removeEnabledChain(bytes32 tag, address integrator, uint16 chain) internal {
+        uint16[] storage chains = _getChainsEnabledStorage(tag)[integrator];
+        uint256 len = chains.length;
+        for (uint256 idx = 0; (idx < len);) {
+            if (chains[idx] == chain) {
+                chains[idx] = chains[len - 1];
+                chains.pop();
+                return;
+            }
+            unchecked {
+                ++idx;
+            }
         }
     }
 }

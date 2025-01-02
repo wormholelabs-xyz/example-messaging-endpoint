@@ -370,12 +370,6 @@ contract Endpoint is IEndpointAdmin, IEndpointIntegrator, IEndpointAdapter, Mess
         _disableRecvAdapter(integrator, chain, adapter);
     }
 
-    /// @inheritdoc IEndpointAdmin
-    function getNumEnabledRecvAdaptersForChain(address integrator, uint16 chain) external view returns (uint8 count) {
-        // Call the AdapterRegistry version.
-        return _getNumEnabledRecvAdaptersForChain(integrator, chain);
-    }
-
     // =============== Message functions =======================================================
 
     /// @inheritdoc IEndpointIntegrator
