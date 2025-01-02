@@ -1,0 +1,828 @@
+[
+  {
+    "inputs": [
+      { "internalType": "uint16", "name": "_ourChain", "type": "uint16" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "adapter", "type": "address" }
+    ],
+    "name": "AdapterAlreadyDisabled",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "adapter", "type": "address" }
+    ],
+    "name": "AdapterAlreadyEnabled",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "adapter", "type": "address" }
+    ],
+    "name": "AdapterAlreadyRegistered",
+    "type": "error"
+  },
+  { "inputs": [], "name": "AdapterNotEnabled", "type": "error" },
+  { "inputs": [], "name": "AdminTransferInProgress", "type": "error" },
+  { "inputs": [], "name": "AlreadyExecuted", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "caller", "type": "address" }
+    ],
+    "name": "CallerNotAdapter",
+    "type": "error"
+  },
+  { "inputs": [], "name": "CallerNotAuthorized", "type": "error" },
+  { "inputs": [], "name": "DuplicateMessageAttestation", "type": "error" },
+  { "inputs": [], "name": "IntegratorAlreadyRegistered", "type": "error" },
+  { "inputs": [], "name": "IntegratorNotRegistered", "type": "error" },
+  { "inputs": [], "name": "InvalidAdapterZeroAddress", "type": "error" },
+  { "inputs": [], "name": "InvalidAdminZeroAddress", "type": "error" },
+  {
+    "inputs": [{ "internalType": "uint16", "name": "chain", "type": "uint16" }],
+    "name": "InvalidChain",
+    "type": "error"
+  },
+  { "inputs": [], "name": "InvalidDestinationChain", "type": "error" },
+  { "inputs": [], "name": "NoAdminTransferInProgress", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "adapter", "type": "address" }
+    ],
+    "name": "NonRegisteredAdapter",
+    "type": "error"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "name": "NotAnEvmAddress",
+    "type": "error"
+  },
+  { "inputs": [], "name": "TooManyAdapters", "type": "error" },
+  { "inputs": [], "name": "UnknownMessageAttestation", "type": "error" },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "integrator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "adapter",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "adaptersNum",
+        "type": "uint8"
+      }
+    ],
+    "name": "AdapterAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "integrator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "oldAdmin",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminUpdateRequested",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "integrator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "oldAdmin",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newAdmin",
+        "type": "address"
+      }
+    ],
+    "name": "AdminUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "integrator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "admin",
+        "type": "address"
+      }
+    ],
+    "name": "IntegratorRegistered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "messageHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "srcChain",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "UniversalAddress",
+        "name": "srcAddr",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "sequence",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "dstChain",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "UniversalAddress",
+        "name": "dstAddr",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "payloadHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint128",
+        "name": "attestedBitmap",
+        "type": "uint128"
+      },
+      {
+        "indexed": false,
+        "internalType": "UniversalAddress",
+        "name": "attestingAdapter",
+        "type": "bytes32"
+      }
+    ],
+    "name": "MessageAttestedTo",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "messageHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "srcChain",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "UniversalAddress",
+        "name": "srcAddr",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "sequence",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "dstChain",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "UniversalAddress",
+        "name": "dstAddr",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "payloadHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint128",
+        "name": "enabledBitmap",
+        "type": "uint128"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint128",
+        "name": "attestedBitmap",
+        "type": "uint128"
+      }
+    ],
+    "name": "MessageReceived",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "messageDigest",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "UniversalAddress",
+        "name": "sender",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint64",
+        "name": "sequence",
+        "type": "uint64"
+      },
+      {
+        "indexed": false,
+        "internalType": "UniversalAddress",
+        "name": "recipient",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "recipientChain",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "payloadDigest",
+        "type": "bytes32"
+      }
+    ],
+    "name": "MessageSent",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "integrator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "chain",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "adapter",
+        "type": "address"
+      }
+    ],
+    "name": "RecvAdapterDisabledForChain",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "integrator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "chain",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "adapter",
+        "type": "address"
+      }
+    ],
+    "name": "RecvAdapterEnabledForChain",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "integrator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "chain",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "adapter",
+        "type": "address"
+      }
+    ],
+    "name": "SendAdapterDisabledForChain",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "integrator",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint16",
+        "name": "chain",
+        "type": "uint16"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "adapter",
+        "type": "address"
+      }
+    ],
+    "name": "SendAdapterEnabledForChain",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "ENDPOINT_VERSION",
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "uint16", "name": "chain", "type": "uint16" }
+    ],
+    "name": "_getNumEnabledRecvAdaptersForChain",
+    "outputs": [{ "internalType": "uint8", "name": "result", "type": "uint8" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "address", "name": "adapter", "type": "address" }
+    ],
+    "name": "addAdapter",
+    "outputs": [{ "internalType": "uint8", "name": "index", "type": "uint8" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint16", "name": "srcChain", "type": "uint16" },
+      {
+        "internalType": "UniversalAddress",
+        "name": "srcAddr",
+        "type": "bytes32"
+      },
+      { "internalType": "uint64", "name": "sequence", "type": "uint64" },
+      { "internalType": "uint16", "name": "dstChain", "type": "uint16" },
+      {
+        "internalType": "UniversalAddress",
+        "name": "dstAddr",
+        "type": "bytes32"
+      },
+      { "internalType": "bytes32", "name": "payloadHash", "type": "bytes32" }
+    ],
+    "name": "attestMessage",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" }
+    ],
+    "name": "claimAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint16", "name": "srcChain", "type": "uint16" },
+      {
+        "internalType": "UniversalAddress",
+        "name": "srcAddr",
+        "type": "bytes32"
+      },
+      { "internalType": "uint64", "name": "sequence", "type": "uint64" },
+      { "internalType": "uint16", "name": "dstChain", "type": "uint16" },
+      {
+        "internalType": "UniversalAddress",
+        "name": "dstAddr",
+        "type": "bytes32"
+      },
+      { "internalType": "bytes32", "name": "payloadHash", "type": "bytes32" }
+    ],
+    "name": "computeMessageDigest",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "uint16", "name": "chain", "type": "uint16" },
+      { "internalType": "address", "name": "adapter", "type": "address" }
+    ],
+    "name": "disableRecvAdapter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "uint16", "name": "chain", "type": "uint16" },
+      { "internalType": "address", "name": "adapter", "type": "address" }
+    ],
+    "name": "disableSendAdapter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" }
+    ],
+    "name": "discardAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "uint16", "name": "chain", "type": "uint16" },
+      { "internalType": "address", "name": "adapter", "type": "address" }
+    ],
+    "name": "enableRecvAdapter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "uint16", "name": "chain", "type": "uint16" },
+      { "internalType": "address", "name": "adapter", "type": "address" }
+    ],
+    "name": "enableSendAdapter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint16", "name": "srcChain", "type": "uint16" },
+      {
+        "internalType": "UniversalAddress",
+        "name": "srcAddr",
+        "type": "bytes32"
+      },
+      { "internalType": "uint64", "name": "sequence", "type": "uint64" },
+      { "internalType": "bytes32", "name": "payloadHash", "type": "bytes32" }
+    ],
+    "name": "execMessage",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "uint8", "name": "index", "type": "uint8" }
+    ],
+    "name": "getAdapterByIndex",
+    "outputs": [
+      { "internalType": "address", "name": "result", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "address", "name": "adapter", "type": "address" }
+    ],
+    "name": "getAdapterIndex",
+    "outputs": [{ "internalType": "uint8", "name": "result", "type": "uint8" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" }
+    ],
+    "name": "getAdapters",
+    "outputs": [
+      { "internalType": "address[]", "name": "result", "type": "address[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" }
+    ],
+    "name": "getAdmin",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint16", "name": "srcChain", "type": "uint16" },
+      {
+        "internalType": "UniversalAddress",
+        "name": "srcAddr",
+        "type": "bytes32"
+      },
+      { "internalType": "uint64", "name": "sequence", "type": "uint64" },
+      { "internalType": "bytes32", "name": "payloadHash", "type": "bytes32" }
+    ],
+    "name": "getMessageStatus",
+    "outputs": [
+      { "internalType": "uint128", "name": "enabledBitmap", "type": "uint128" },
+      {
+        "internalType": "uint128",
+        "name": "attestedBitmap",
+        "type": "uint128"
+      },
+      { "internalType": "uint8", "name": "numAttested", "type": "uint8" },
+      { "internalType": "bool", "name": "executed", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint16", "name": "srcChain", "type": "uint16" },
+      {
+        "internalType": "UniversalAddress",
+        "name": "srcAddr",
+        "type": "bytes32"
+      },
+      { "internalType": "uint64", "name": "sequence", "type": "uint64" },
+      {
+        "internalType": "UniversalAddress",
+        "name": "dstAddr",
+        "type": "bytes32"
+      },
+      { "internalType": "bytes32", "name": "payloadHash", "type": "bytes32" }
+    ],
+    "name": "getMessageStatus",
+    "outputs": [
+      { "internalType": "uint128", "name": "enabledBitmap", "type": "uint128" },
+      {
+        "internalType": "uint128",
+        "name": "attestedBitmap",
+        "type": "uint128"
+      },
+      { "internalType": "uint8", "name": "numAttested", "type": "uint8" },
+      { "internalType": "bool", "name": "executed", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "uint16", "name": "chain", "type": "uint16" }
+    ],
+    "name": "getNumEnabledRecvAdaptersForChain",
+    "outputs": [{ "internalType": "uint8", "name": "count", "type": "uint8" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" }
+    ],
+    "name": "getPendingAdmin",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "uint16", "name": "chain", "type": "uint16" }
+    ],
+    "name": "getRecvAdaptersByChain",
+    "outputs": [
+      { "internalType": "address[]", "name": "result", "type": "address[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "uint16", "name": "chain", "type": "uint16" }
+    ],
+    "name": "getSendAdaptersByChain",
+    "outputs": [
+      { "internalType": "address[]", "name": "result", "type": "address[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "maxAdapters",
+    "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "sender", "type": "address" }
+    ],
+    "name": "nextMessageSequence",
+    "outputs": [{ "internalType": "uint64", "name": "", "type": "uint64" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ourChain",
+    "outputs": [{ "internalType": "uint16", "name": "", "type": "uint16" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint16", "name": "dstChain", "type": "uint16" }
+    ],
+    "name": "quoteDeliveryPrice",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "uint16", "name": "dstChain", "type": "uint16" }
+    ],
+    "name": "quoteDeliveryPrice",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint16", "name": "srcChain", "type": "uint16" },
+      {
+        "internalType": "UniversalAddress",
+        "name": "srcAddr",
+        "type": "bytes32"
+      },
+      { "internalType": "uint64", "name": "sequence", "type": "uint64" },
+      { "internalType": "bytes32", "name": "payloadHash", "type": "bytes32" }
+    ],
+    "name": "recvMessage",
+    "outputs": [
+      { "internalType": "uint128", "name": "enabledBitmap", "type": "uint128" },
+      {
+        "internalType": "uint128",
+        "name": "attestedBitmap",
+        "type": "uint128"
+      },
+      { "internalType": "uint8", "name": "numAttested", "type": "uint8" }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "initialAdmin", "type": "address" }
+    ],
+    "name": "register",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint16", "name": "dstChain", "type": "uint16" },
+      {
+        "internalType": "UniversalAddress",
+        "name": "dstAddr",
+        "type": "bytes32"
+      },
+      { "internalType": "bytes32", "name": "payloadHash", "type": "bytes32" },
+      { "internalType": "address", "name": "refundAddress", "type": "address" }
+    ],
+    "name": "sendMessage",
+    "outputs": [
+      { "internalType": "uint64", "name": "sequence", "type": "uint64" }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "address", "name": "newAdmin", "type": "address" }
+    ],
+    "name": "transferAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "integrator", "type": "address" },
+      { "internalType": "address", "name": "newAdmin", "type": "address" }
+    ],
+    "name": "updateAdmin",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

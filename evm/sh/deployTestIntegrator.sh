@@ -28,5 +28,5 @@ fi
 forge create ./script/TestIntegrator.s.sol:TestIntegrator \
 	--rpc-url $RPC_URL \
 	--private-key $MNEMONIC \
-	--verify --chain $EVM_CHAIN_ID \
+	--broadcast --chain $EVM_CHAIN_ID \
   --constructor-args $ENDPOINT $PEER_CHAIN_ID $ADAPTER

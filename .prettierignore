@@ -1,3 +1,7 @@
 evm/cache/
 evm/lib/
 evm/out/
+evm/sdk/ts/src/abi/
+evm/sdk/ts/dist/
+svm/target/
+sdk/ts/src/idls/
