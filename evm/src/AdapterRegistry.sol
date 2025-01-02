@@ -346,33 +346,24 @@ abstract contract AdapterRegistry is IAdapterRegistry {
 
     // =============== EXTERNAL FUNCTIONS ========================================
 
-    /// @notice Returns all the registered adapter addresses for the given integrator.
-    /// @param integrator The integrator address.
-    /// @return result The registered adapters for the given integrator.
+    /// @inheritdoc IAdapterRegistry
     function getAdapters(address integrator) external view returns (address[] memory result) {
         result = _getRegisteredAdaptersStorage()[integrator];
     }
 
-    /// @notice Returns the queried adapter addresses.
-    /// @param integrator The integrator address.
-    /// @param index The index into the integrator's adapters array.
-    /// @return result The registered adapter address.
+    /// @inheritdoc IAdapterRegistry
     function getAdapterByIndex(address integrator, uint8 index) external view returns (address result) {
         result = _getRegisteredAdaptersStorage()[integrator][index];
     }
 
     // =============== PUBLIC GETTERS ========================================
 
-    /// @notice Returns the maximum number of adapters allowed.
-    /// @return uint8 The maximum number of adapters allowed.
-    function maxAdapters() public pure returns (uint8) {
+    /// @inheritdoc IAdapterRegistry
+    function maxAdapters() external pure returns (uint8) {
         return MAX_ADAPTERS;
     }
 
-    /// @notice Returns the queried adapter's index.
-    /// @param integrator The integrator address.
-    /// @param adapter The address of this adapter.
-    /// @return result The registered adapter index.
+    /// @inheritdoc IAdapterRegistry
     function getAdapterIndex(address integrator, address adapter) external view returns (uint8 result) {
         AdapterInfo storage info = _getAdapterInfosStorage()[integrator][adapter];
         if (!info.registered) {
@@ -381,10 +372,7 @@ abstract contract AdapterRegistry is IAdapterRegistry {
         return info.index;
     }
 
-    /// @notice Returns the enabled send side adapter addresses for the given integrator.
-    /// @param integrator The integrator address.
-    /// @param chain The Wormhole chain ID for the desired adapters.
-    /// @return result The enabled send side adapters for the given integrator and chain.
+    /// @inheritdoc IAdapterRegistry
     function getSendAdaptersByChain(address integrator, uint16 chain)
         public
         view
@@ -396,14 +384,11 @@ abstract contract AdapterRegistry is IAdapterRegistry {
         result = _getEnabledSendAdaptersArrayForChain(integrator, chain);
     }
 
-    /// @notice Returns the enabled receive side adapter addresses for the given integrator.
-    /// @param integrator The integrator address.
-    /// @param chain The Wormhole chain ID for the desired adapters.
-    /// @return result The enabled receive side adapters for the given integrator.
+    /// @inheritdoc IAdapterRegistry
     function getRecvAdaptersByChain(address integrator, uint16 chain) public view returns (address[] memory result) {
         address[] memory allAdapters = _getRegisteredAdaptersStorage()[integrator];
         // Count number of bits set in the bitmap so we can calculate the size of the result array.
-        uint8 count = _getNumEnabledRecvAdaptersForChain(integrator, chain);
+        uint8 count = getNumEnabledRecvAdaptersForChain(integrator, chain);
         result = new address[](count);
         uint256 len = 0;
         uint256 arrayLength = allAdapters.length;
@@ -418,27 +403,19 @@ abstract contract AdapterRegistry is IAdapterRegistry {
         }
     }
 
-    /// @notice Returns all the chains for which the integrator has adapters enabled for sending.
-    /// @dev The chain IDs are not guaranteed to be in order.
-    /// @param integrator The integrator address.
-    /// @return result The chains that have adapters enabled for sending for the given integrator.
-    function getChainsEnabledForSend(address integrator) public view returns (uint16[] memory result) {
+    /// @inheritdoc IAdapterRegistry
+    function getChainsEnabledForSend(address integrator) external view returns (uint16[] memory result) {
         return _getChainsEnabledStorage(SEND_ENABLED_CHAINS_SLOT)[integrator];
     }
 
-    /// @notice Returns all the chains for which the integrator has adapters enabled for receiving.
-    /// @dev The chain IDs are not guaranteed to be in order.
-    /// @param integrator The integrator address.
-    /// @return result The chains that have adapters enabled for receiving for the given integrator.
-    function getChainsEnabledForRecv(address integrator) public view returns (uint16[] memory result) {
+    /// @inheritdoc IAdapterRegistry
+    function getChainsEnabledForRecv(address integrator) external view returns (uint16[] memory result) {
         return _getChainsEnabledStorage(RECV_ENABLED_CHAINS_SLOT)[integrator];
     }
 
-    /// @notice Returns the number of enabled receive adapters for the given integrator and chain.
-    /// @param integrator The integrator address.
-    /// @param chain The Wormhole chain ID for the desired adapters.
-    /// @return result The number of enabled receive adapters for that chain.
-    function _getNumEnabledRecvAdaptersForChain(address integrator, uint16 chain) public view returns (uint8 result) {
+    /// @inheritdoc IAdapterRegistry
+    /// @dev This is public because it is used within this contract.
+    function getNumEnabledRecvAdaptersForChain(address integrator, uint16 chain) public view returns (uint8 result) {
         uint128 bitmap = _getEnabledRecvAdaptersBitmapForChain(integrator, chain);
         while (bitmap != 0) {
             bitmap &= bitmap - 1;
@@ -448,19 +425,11 @@ abstract contract AdapterRegistry is IAdapterRegistry {
 
     // =============== Implementations =======================================
 
-    /// @dev It's not an error if the chain is already in the list.
+    /// @dev It is assumed that the chain is not already in the list. We can get away with this because the function is internal.
+    /// @dev Although this is a one line function, we have it for two reasons: (1) symmetry with remove, (2) simplifies testing.
+    ///      The assumption is that the compiler will inline it anyway.
     function _addEnabledChain(bytes32 tag, address integrator, uint16 chain) internal {
-        uint16[] storage chains = _getChainsEnabledStorage(tag)[integrator];
-        uint256 len = chains.length;
-        for (uint256 idx = 0; (idx < len);) {
-            if (chains[idx] == chain) {
-                return;
-            }
-            unchecked {
-                ++idx;
-            }
-        }
-        chains.push(chain);
+        _getChainsEnabledStorage(tag)[integrator].push(chain);
     }
 
     /// @dev It's not an error if the chain is not in the list.

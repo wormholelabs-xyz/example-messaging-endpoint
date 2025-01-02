@@ -383,34 +383,34 @@ contract AdapterRegistryTest is Test {
     function test_getNumEnabledRecvAdaptersForChain() public {
         address me = address(this);
 
-        require(adapterRegistry._getNumEnabledRecvAdaptersForChain(me, 2) == 0, "Count should be zero to start with");
+        require(adapterRegistry.getNumEnabledRecvAdaptersForChain(me, 2) == 0, "Count should be zero to start with");
 
         // Adding an adapter and enabling it for sending shouldn't change the count.
         adapterRegistry.addAdapter(me, address(0x01));
         adapterRegistry.enableSendAdapter(me, 2, address(0x01));
-        require(adapterRegistry._getNumEnabledRecvAdaptersForChain(me, 2) == 0, "Count should still be zero");
+        require(adapterRegistry.getNumEnabledRecvAdaptersForChain(me, 2) == 0, "Count should still be zero");
 
         // But enabling it for receiving should.
         adapterRegistry.enableRecvAdapter(me, 2, address(0x01));
-        require(adapterRegistry._getNumEnabledRecvAdaptersForChain(me, 2) == 1, "Count should be one");
+        require(adapterRegistry.getNumEnabledRecvAdaptersForChain(me, 2) == 1, "Count should be one");
 
         // Adding and enabling a second adapter should increase the count.
         adapterRegistry.addAdapter(me, address(0x02));
         adapterRegistry.enableRecvAdapter(me, 2, address(0x02));
-        require(adapterRegistry._getNumEnabledRecvAdaptersForChain(me, 2) == 2, "Count should be two");
+        require(adapterRegistry.getNumEnabledRecvAdaptersForChain(me, 2) == 2, "Count should be two");
 
         // Adding and enabling an adapter on another chain should not increase the count.
         adapterRegistry.addAdapter(me, address(0x03));
         adapterRegistry.enableRecvAdapter(me, 3, address(0x03));
-        require(adapterRegistry._getNumEnabledRecvAdaptersForChain(me, 2) == 2, "Count should still be two");
+        require(adapterRegistry.getNumEnabledRecvAdaptersForChain(me, 2) == 2, "Count should still be two");
 
         // Disabling an adapter should decrease the count.
         adapterRegistry.disableRecvAdapter(me, 2, address(0x01));
-        require(adapterRegistry._getNumEnabledRecvAdaptersForChain(me, 2) == 1, "Count should drop to one");
+        require(adapterRegistry.getNumEnabledRecvAdaptersForChain(me, 2) == 1, "Count should drop to one");
 
         // Disabling the last adapter should decrease the count back to zero.
         adapterRegistry.disableRecvAdapter(me, 2, address(0x02));
-        require(adapterRegistry._getNumEnabledRecvAdaptersForChain(me, 2) == 0, "Count should drop to zero");
+        require(adapterRegistry.getNumEnabledRecvAdaptersForChain(me, 2) == 0, "Count should drop to zero");
     }
 
     function test_chainsEnabled() public {
@@ -447,8 +447,17 @@ contract AdapterRegistryTest is Test {
         assertEq(40, chains[1]);
         assertEq(43, chains[2]);
 
-        // Adding something that's already there should do no harm.
+        // WARNING: Adding something that's already there will duplicate it.
         adapterRegistry.addEnabledChainForSend(me, 40);
+        chains = adapterRegistry.getChainsEnabledForSend(me);
+        assertEq(4, chains.length);
+        assertEq(42, chains[0]);
+        assertEq(40, chains[1]);
+        assertEq(43, chains[2]);
+        assertEq(40, chains[3]);
+
+        // Before we start testing remove, clean up the mess we made by getting rid of the duplicate.
+        adapterRegistry.removeEnabledChainForSend(me, 40);
         chains = adapterRegistry.getChainsEnabledForSend(me);
         assertEq(3, chains.length);
         assertEq(42, chains[0]);

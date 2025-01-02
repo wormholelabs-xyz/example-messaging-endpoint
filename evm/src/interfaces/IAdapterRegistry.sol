@@ -109,6 +109,23 @@ interface IAdapterRegistry {
     /// @return uint8 The maximum number of adapters allowed.
     function maxAdapters() external pure returns (uint8);
 
+    /// @notice Returns all the registered adapter addresses for the given integrator.
+    /// @param integrator The integrator address.
+    /// @return result The registered adapters for the given integrator.
+    function getAdapters(address integrator) external view returns (address[] memory result);
+
+    /// @notice Returns the queried adapter addresses.
+    /// @param integrator The integrator address.
+    /// @param index The index into the integrator's adapters array.
+    /// @return result The registered adapter address.
+    function getAdapterByIndex(address integrator, uint8 index) external view returns (address result);
+
+    /// @notice Returns the queried adapter's index.
+    /// @param integrator The integrator address.
+    /// @param adapter The address of this adapter.
+    /// @return result The registered adapter index.
+    function getAdapterIndex(address integrator, address adapter) external view returns (uint8 result);
+
     /// @notice Returns the enabled send side adapter addresses for the given integrator.
     /// @param integrator The integrator address.
     /// @param chain The Wormhole chain ID for the desired adapters.
@@ -138,8 +155,5 @@ interface IAdapterRegistry {
     /// @param integrator The integrator address.
     /// @param chain The Wormhole chain ID for the desired adapters.
     /// @return result The number of enabled receive adapters for that chain.
-    function _getNumEnabledRecvAdaptersForChain(address integrator, uint16 chain)
-        external
-        view
-        returns (uint8 result);
+    function getNumEnabledRecvAdaptersForChain(address integrator, uint16 chain) external view returns (uint8 result);
 }
