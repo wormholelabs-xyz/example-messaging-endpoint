@@ -765,7 +765,7 @@ contract EndpointTest is Test {
         require(price == 300, "Triple price is wrong");
     }
 
-    function testgetNumEnabledRecvAdaptersForChain() public view {
+    function test_getNumEnabledRecvAdaptersForChain() public view {
         // This function is actually tested in the AdapterRegistry tests. Just call it here for code coverage.
         require(endpoint.getNumEnabledRecvAdaptersForChain(address(0x01), 2) == 0, "Count should be zero");
     }
