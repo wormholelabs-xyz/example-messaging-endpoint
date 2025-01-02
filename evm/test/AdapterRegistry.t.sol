@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
 import "../src/AdapterRegistry.sol";
+import "../src/interfaces/IAdapterRegistry.sol";
 
 contract ConcreteAdapterRegistry is AdapterRegistry {
     function addAdapter(address integrator, address adapter) public returns (uint8 index) {
@@ -60,6 +61,17 @@ contract ConcreteAdapterRegistry is AdapterRegistry {
     {
         return _isRecvAdapterEnabledForChainWithCheck(integrator, chainId, adapter);
     }
+
+    /// @dev This is here because the real one is private in AdapterRegistry.
+    bytes32 private constant SEND_ENABLED_CHAINS_SLOT = bytes32(uint256(keccak256("registry.sendEnabledChains")) - 1);
+
+    function addEnabledChainForSend(address integrator, uint16 chain) public {
+        _addEnabledChain(SEND_ENABLED_CHAINS_SLOT, integrator, chain);
+    }
+
+    function removeEnabledChainForSend(address integrator, uint16 chain) public {
+        _removeEnabledChain(SEND_ENABLED_CHAINS_SLOT, integrator, chain);
+    }
 }
 
 contract AdapterRegistryTest is Test {
@@ -101,53 +113,53 @@ contract AdapterRegistryTest is Test {
         // Need to add adapter, then enable it, then disable it
         address me = address(this);
         // Send side
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.NonRegisteredAdapter.selector, sendAdapter));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.NonRegisteredAdapter.selector, sendAdapter));
         adapterRegistry.disableSendAdapter(me, chain, sendAdapter);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidAdapterZeroAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidAdapterZeroAddress.selector));
         adapterRegistry.addAdapter(me, zeroAdapter);
         require(adapterRegistry.getRegisteredAdaptersStorage(me).length == 0, "S1");
         adapterRegistry.addAdapter(me, sendAdapter);
         require(adapterRegistry.getRegisteredAdaptersStorage(me).length == 1, "S3");
         // assertEq(adapterRegistry.getSendAdapterInfos(integrator1).length, 1);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidChain.selector, zeroChain));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidChain.selector, zeroChain));
         adapterRegistry.disableSendAdapter(me, zeroChain, sendAdapter);
         require(adapterRegistry.getRegisteredAdaptersStorage(me).length == 1, "S5");
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.AdapterAlreadyDisabled.selector, sendAdapter));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.AdapterAlreadyDisabled.selector, sendAdapter));
         adapterRegistry.disableSendAdapter(me, chain, sendAdapter);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidChain.selector, zeroChain));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidChain.selector, zeroChain));
         adapterRegistry.enableSendAdapter(me, zeroChain, sendAdapter);
         adapterRegistry.enableSendAdapter(me, chain, sendAdapter);
         require(adapterRegistry.getRegisteredAdaptersStorage(me).length == 1, "S7");
         adapterRegistry.disableSendAdapter(me, chain, sendAdapter);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.AdapterAlreadyDisabled.selector, sendAdapter));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.AdapterAlreadyDisabled.selector, sendAdapter));
         adapterRegistry.disableSendAdapter(me, chain, sendAdapter);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidAdapterZeroAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidAdapterZeroAddress.selector));
         adapterRegistry.disableSendAdapter(me, chain, zeroAdapter);
         // assertEq(adapterRegistry.getSendAdapterInfos(integrator1).length, 0);
 
         // Recv side
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.NonRegisteredAdapter.selector, recvAdapter));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.NonRegisteredAdapter.selector, recvAdapter));
         adapterRegistry.disableRecvAdapter(me, chain, recvAdapter);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidAdapterZeroAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidAdapterZeroAddress.selector));
         adapterRegistry.addAdapter(me, zeroAdapter);
         // Carry over from send side test
         require(adapterRegistry.getRegisteredAdaptersStorage(me).length == 1, "R1");
         adapterRegistry.addAdapter(me, recvAdapter);
         require(adapterRegistry.getRegisteredAdaptersStorage(me).length == 2, "R3");
         // assertEq(adapterRegistry.getRecvAdapterInfos(integrator1).length, 1);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidChain.selector, zeroChain));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidChain.selector, zeroChain));
         adapterRegistry.disableRecvAdapter(me, zeroChain, recvAdapter);
         require(adapterRegistry.getRegisteredAdaptersStorage(me).length == 2, "R5");
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.AdapterAlreadyDisabled.selector, recvAdapter));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.AdapterAlreadyDisabled.selector, recvAdapter));
         adapterRegistry.disableRecvAdapter(me, chain, recvAdapter);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidChain.selector, zeroChain));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidChain.selector, zeroChain));
         adapterRegistry.enableRecvAdapter(me, zeroChain, recvAdapter);
         adapterRegistry.enableRecvAdapter(me, chain, recvAdapter);
         require(adapterRegistry.getRegisteredAdaptersStorage(me).length == 2, "R7");
         adapterRegistry.disableRecvAdapter(me, chain, recvAdapter);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.AdapterAlreadyDisabled.selector, recvAdapter));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.AdapterAlreadyDisabled.selector, recvAdapter));
         adapterRegistry.disableRecvAdapter(me, chain, recvAdapter);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidAdapterZeroAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidAdapterZeroAddress.selector));
         adapterRegistry.disableRecvAdapter(me, chain, zeroAdapter);
         // assertEq(adapterRegistry.getRecvAdapterInfos(integrator1).length, 0);
     }
@@ -156,13 +168,13 @@ contract AdapterRegistryTest is Test {
         // Send side
         assertEq(adapterRegistry.getRegisteredAdaptersStorage(integrator1).length, 0);
         assertEq(adapterRegistry.getEnabledSendAdaptersBitmapForChain(integrator1, chain).length, 0);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidChain.selector, zeroChain));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidChain.selector, zeroChain));
         assertEq(adapterRegistry.getEnabledSendAdaptersBitmapForChain(integrator1, zeroChain).length, 0);
 
         // Recv side
         assertEq(adapterRegistry.getRegisteredAdaptersStorage(integrator1).length, 0);
         assertEq(adapterRegistry.getEnabledRecvAdaptersBitmapForChain(integrator1, chain), 0);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidChain.selector, zeroChain));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidChain.selector, zeroChain));
         assertEq(adapterRegistry.getEnabledRecvAdaptersBitmapForChain(integrator1, zeroChain), 0);
     }
 
@@ -179,12 +191,12 @@ contract AdapterRegistryTest is Test {
         address me = address(this);
         // Send side
         address sAdapter = address(0x456);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.NonRegisteredAdapter.selector, sAdapter));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.NonRegisteredAdapter.selector, sAdapter));
         adapterRegistry.enableSendAdapter(me, chain, sAdapter);
 
         // Recv side
         address rAdapter = address(0x567);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.NonRegisteredAdapter.selector, rAdapter));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.NonRegisteredAdapter.selector, rAdapter));
         adapterRegistry.enableRecvAdapter(me, chain, rAdapter);
     }
 
@@ -194,19 +206,19 @@ contract AdapterRegistryTest is Test {
         address me = address(this);
 
         // Send side
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidAdapterZeroAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidAdapterZeroAddress.selector));
         adapterRegistry.enableSendAdapter(me, chainId, zeroAdapter);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidAdapterZeroAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidAdapterZeroAddress.selector));
         adapterRegistry.isSendAdapterEnabledForChain(me, chainId, zeroAdapter);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidChain.selector, zeroChainId));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidChain.selector, zeroChainId));
         adapterRegistry.isSendAdapterEnabledForChain(me, zeroChainId, me);
 
         // // Recv side
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidAdapterZeroAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidAdapterZeroAddress.selector));
         adapterRegistry.enableRecvAdapter(me, chainId, zeroAdapter);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidAdapterZeroAddress.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidAdapterZeroAddress.selector));
         adapterRegistry.isRecvAdapterEnabledForChain(me, chainId, zeroAdapter);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidChain.selector, zeroChainId));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidChain.selector, zeroChainId));
         adapterRegistry.isRecvAdapterEnabledForChain(me, zeroChainId, me);
     }
 
@@ -216,7 +228,7 @@ contract AdapterRegistryTest is Test {
 
         // Send side
         address sAdapter = address(0x345);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.NonRegisteredAdapter.selector, sAdapter));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.NonRegisteredAdapter.selector, sAdapter));
         require(adapterRegistry.isSendAdapterEnabledForChain(me, chainId, sAdapter) == false, "S1");
         adapterRegistry.addAdapter(me, sAdapter);
         require(adapterRegistry.getRegisteredAdaptersStorage(me).length == 1, "S2");
@@ -227,7 +239,7 @@ contract AdapterRegistryTest is Test {
 
         // Recv side
         address rAdapter = address(0x453);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.NonRegisteredAdapter.selector, rAdapter));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.NonRegisteredAdapter.selector, rAdapter));
         require(adapterRegistry.isRecvAdapterEnabledForChain(me, chainId, rAdapter) == false, "R1");
         adapterRegistry.addAdapter(me, rAdapter);
         require(adapterRegistry.getRegisteredAdaptersStorage(me).length == 2, "R2");
@@ -246,7 +258,7 @@ contract AdapterRegistryTest is Test {
             adapterRegistry.addAdapter(me, address(uint160(i + 1)));
         }
         assertEq(adapterRegistry.getRegisteredAdaptersStorage(me).length, maxAdapters);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.TooManyAdapters.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.TooManyAdapters.selector));
         adapterRegistry.addAdapter(me, address(0x111));
         assertEq(adapterRegistry.getRegisteredAdaptersStorage(me).length, maxAdapters);
         assertEq(adapterRegistry.getRegisteredAdaptersStorage(me).length, maxAdapters);
@@ -254,7 +266,7 @@ contract AdapterRegistryTest is Test {
             adapterRegistry.enableSendAdapter(me, chain, address(uint160(i + 1)));
         }
         adapterRegistry.disableSendAdapter(me, chain, address(uint160(30)));
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.AdapterAlreadyDisabled.selector, address(uint160(30))));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.AdapterAlreadyDisabled.selector, address(uint160(30))));
         adapterRegistry.disableSendAdapter(me, chain, address(uint160(30)));
         adapterRegistry.getSendAdaptersByChain(me, chain);
     }
@@ -268,17 +280,17 @@ contract AdapterRegistryTest is Test {
             adapterRegistry.addAdapter(me, address(uint160(i + 1)));
         }
         assertEq(adapterRegistry.getRegisteredAdaptersStorage(me).length, maxAdapters);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.TooManyAdapters.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.TooManyAdapters.selector));
         adapterRegistry.addAdapter(me, address(0x111));
         assertEq(adapterRegistry.getRegisteredAdaptersStorage(me).length, maxAdapters);
         adapterRegistry.enableRecvAdapter(me, chain, address(0x1));
         adapterRegistry.enableRecvAdapter(me, chain, address(0x2));
         adapterRegistry.disableRecvAdapter(me, chain, address(0x2));
         adapterRegistry.disableRecvAdapter(me, chain, address(0x1));
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.AdapterAlreadyDisabled.selector, address(0x1)));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.AdapterAlreadyDisabled.selector, address(0x1)));
         adapterRegistry.disableSendAdapter(me, chain, address(0x1));
         assertEq(adapterRegistry.getRegisteredAdaptersStorage(me).length, maxAdapters);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.TooManyAdapters.selector));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.TooManyAdapters.selector));
         adapterRegistry.addAdapter(me, address(0x111));
     }
 
@@ -298,9 +310,9 @@ contract AdapterRegistryTest is Test {
         adapterRegistry.addAdapter(me, adapter3);
         adapterRegistry.enableSendAdapter(me, chain2, adapter3);
         adapterRegistry.addAdapter(me, adapter4);
-        AdapterRegistry.PerSendAdapterInfo[] memory chain1Addrs = adapterRegistry.getSendAdaptersByChain(me, chain1);
+        IAdapterRegistry.PerSendAdapterInfo[] memory chain1Addrs = adapterRegistry.getSendAdaptersByChain(me, chain1);
         require(chain1Addrs.length == 2, "Wrong number of adapters enabled on chain one");
-        AdapterRegistry.PerSendAdapterInfo[] memory chain2Addrs = adapterRegistry.getSendAdaptersByChain(me, chain2);
+        IAdapterRegistry.PerSendAdapterInfo[] memory chain2Addrs = adapterRegistry.getSendAdaptersByChain(me, chain2);
         require(chain2Addrs.length == 1, "Wrong number of adapters enabled on chain two");
         adapterRegistry.enableSendAdapter(me, chain2, adapter4);
         adapterRegistry.disableSendAdapter(me, chain2, adapter3);
@@ -360,7 +372,7 @@ contract AdapterRegistryTest is Test {
         require(adapterRegistry.getAdapters(me).length == 3, "Invalid number of adapters");
         require(adapterRegistry.getAdapterIndex(me, address(0x1)) == 0, "Invalid index");
         require(adapterRegistry.getAdapterIndex(me, address(0x2)) == 1, "Invalid index");
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.NonRegisteredAdapter.selector, address(0x4)));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.NonRegisteredAdapter.selector, address(0x4)));
         adapterRegistry.getAdapterIndex(me, address(0x4));
     }
 
@@ -399,5 +411,143 @@ contract AdapterRegistryTest is Test {
         // Disabling the last adapter should decrease the count back to zero.
         adapterRegistry.disableRecvAdapter(me, 2, address(0x02));
         require(adapterRegistry._getNumEnabledRecvAdaptersForChain(me, 2) == 0, "Count should drop to zero");
+    }
+
+    function test_chainsEnabled() public {
+        address me = address(this);
+        uint16[] memory chains;
+
+        // A non-existent integrator should return zero.
+        assertEq(0, adapterRegistry.getChainsEnabledForSend(address(0xdeadbeef)).length);
+        assertEq(0, adapterRegistry.getChainsEnabledForRecv(address(0xdeadbeef)).length);
+
+        // Not testing add/remove of non-existent integrator. They don't check for that
+        // because they are internal functions and the functions that call them handle that.
+
+        // Should start out empty.
+        assertEq(0, adapterRegistry.getChainsEnabledForSend(me).length);
+        assertEq(0, adapterRegistry.getChainsEnabledForRecv(me).length);
+
+        // Test an assortment of adds.
+        adapterRegistry.addEnabledChainForSend(me, 42);
+        chains = adapterRegistry.getChainsEnabledForSend(me);
+        assertEq(1, chains.length);
+        assertEq(42, chains[0]);
+
+        adapterRegistry.addEnabledChainForSend(me, 40);
+        chains = adapterRegistry.getChainsEnabledForSend(me);
+        assertEq(2, chains.length);
+        assertEq(42, chains[0]);
+        assertEq(40, chains[1]);
+
+        adapterRegistry.addEnabledChainForSend(me, 43);
+        chains = adapterRegistry.getChainsEnabledForSend(me);
+        assertEq(3, chains.length);
+        assertEq(42, chains[0]);
+        assertEq(40, chains[1]);
+        assertEq(43, chains[2]);
+
+        // Adding something that's already there should do no harm.
+        adapterRegistry.addEnabledChainForSend(me, 40);
+        chains = adapterRegistry.getChainsEnabledForSend(me);
+        assertEq(3, chains.length);
+        assertEq(42, chains[0]);
+        assertEq(40, chains[1]);
+        assertEq(43, chains[2]);
+
+        // Now test an assortment of removes.
+        adapterRegistry.removeEnabledChainForSend(me, 40);
+        chains = adapterRegistry.getChainsEnabledForSend(me);
+        assertEq(2, chains.length);
+        assertEq(42, chains[0]);
+        assertEq(43, chains[1]);
+
+        // Removing something not in the list should do no harm.
+        adapterRegistry.removeEnabledChainForSend(me, 40);
+        chains = adapterRegistry.getChainsEnabledForSend(me);
+        assertEq(2, chains.length);
+        assertEq(42, chains[0]);
+        assertEq(43, chains[1]);
+
+        adapterRegistry.removeEnabledChainForSend(me, 42);
+        chains = adapterRegistry.getChainsEnabledForSend(me);
+        assertEq(1, chains.length);
+        assertEq(43, chains[0]);
+
+        adapterRegistry.removeEnabledChainForSend(me, 43);
+        chains = adapterRegistry.getChainsEnabledForSend(me);
+        assertEq(0, chains.length);
+    }
+
+    function test_chainsEnabledForSend() public {
+        address me = address(this);
+        address adapter1 = address(0x1);
+        address adapter2 = address(0x2);
+
+        adapterRegistry.addAdapter(me, adapter1);
+        adapterRegistry.addAdapter(me, adapter2);
+
+        adapterRegistry.enableSendAdapter(me, 42, adapter1);
+        adapterRegistry.enableSendAdapter(me, 42, adapter2);
+        adapterRegistry.enableSendAdapter(me, 43, adapter1);
+
+        uint16[] memory chains = adapterRegistry.getChainsEnabledForSend(me);
+        assertEq(2, chains.length);
+        assertEq(42, chains[0]);
+        assertEq(43, chains[1]);
+
+        // Disabling one of two adapters for a chain shouldn't change anything.
+        adapterRegistry.disableSendAdapter(me, 42, adapter1);
+        chains = adapterRegistry.getChainsEnabledForSend(me);
+        assertEq(2, chains.length);
+        assertEq(42, chains[0]);
+        assertEq(43, chains[1]);
+
+        // But this should.
+        adapterRegistry.disableSendAdapter(me, 42, adapter2);
+        chains = adapterRegistry.getChainsEnabledForSend(me);
+        assertEq(1, chains.length);
+        assertEq(43, chains[0]);
+
+        // This should leave us with no chains.
+        adapterRegistry.disableSendAdapter(me, 43, adapter1);
+        chains = adapterRegistry.getChainsEnabledForSend(me);
+        assertEq(0, chains.length);
+    }
+
+    function test_chainsEnabledForRecv() public {
+        address me = address(this);
+        address adapter1 = address(0x1);
+        address adapter2 = address(0x2);
+
+        adapterRegistry.addAdapter(me, adapter1);
+        adapterRegistry.addAdapter(me, adapter2);
+
+        adapterRegistry.enableRecvAdapter(me, 42, adapter1);
+        adapterRegistry.enableRecvAdapter(me, 42, adapter2);
+        adapterRegistry.enableRecvAdapter(me, 43, adapter1);
+
+        uint16[] memory chains = adapterRegistry.getChainsEnabledForRecv(me);
+        assertEq(2, chains.length);
+        assertEq(42, chains[0]);
+        assertEq(43, chains[1]);
+
+        // Disabling one of two adapters for a chain shouldn't change anything.
+        adapterRegistry.disableRecvAdapter(me, 42, adapter1);
+        chains = adapterRegistry.getChainsEnabledForRecv(me);
+        assertEq(2, chains.length);
+        assertEq(42, chains[0]);
+        assertEq(43, chains[1]);
+
+        // But this should.
+        adapterRegistry.disableRecvAdapter(me, 42, adapter2);
+        chains = adapterRegistry.getChainsEnabledForRecv(me);
+        assertEq(1, chains.length);
+        assertEq(43, chains[0]);
+
+        // This should leave us with no chains.
+        adapterRegistry.disableRecvAdapter(me, 43, adapter1);
+        chains = adapterRegistry.getChainsEnabledForRecv(me);
+        assertEq(0, chains.length);
     }
 }

@@ -6,6 +6,7 @@ import "forge-std/console.sol";
 import "../src/libraries/UniversalAddress.sol";
 import {Endpoint} from "../src/Endpoint.sol";
 import {AdapterRegistry} from "../src/AdapterRegistry.sol";
+import "../src/interfaces/IAdapterRegistry.sol";
 import {IAdapter} from "../src/interfaces/IAdapter.sol";
 import "../src/libraries/AdapterInstructions.sol";
 
@@ -220,7 +221,7 @@ contract EndpointTest is Test {
         // The admin can add an adapter.
         vm.startPrank(admin);
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.AdapterAdded(integrator, taddr1, 1);
+        emit IAdapterRegistry.AdapterAdded(integrator, taddr1, 1);
         endpoint.addAdapter(integrator, taddr1);
 
         // Others cannot add an adapter.
@@ -230,27 +231,27 @@ contract EndpointTest is Test {
 
         // Can't register the adapter twice.
         vm.startPrank(admin);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.AdapterAlreadyRegistered.selector, taddr1));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.AdapterAlreadyRegistered.selector, taddr1));
         endpoint.addAdapter(integrator, taddr1);
         // Can't enable the adapter twice.
         endpoint.enableSendAdapter(integrator, 1, taddr1);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.AdapterAlreadyEnabled.selector, taddr1));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.AdapterAlreadyEnabled.selector, taddr1));
         endpoint.enableSendAdapter(integrator, 1, taddr1);
 
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.AdapterAdded(integrator, taddr2, 2);
+        emit IAdapterRegistry.AdapterAdded(integrator, taddr2, 2);
         endpoint.addAdapter(integrator, taddr2);
-        AdapterRegistry.PerSendAdapterInfo[] memory adapters = endpoint.getSendAdaptersByChain(integrator, 1);
+        IAdapterRegistry.PerSendAdapterInfo[] memory adapters = endpoint.getSendAdaptersByChain(integrator, 1);
         require(adapters.length == 1, "Wrong number of adapters enabled on chain one, should be 1");
         // Enable another adapter on chain one and one on chain two.
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.SendAdapterEnabledForChain(integrator, 1, taddr2);
+        emit IAdapterRegistry.SendAdapterEnabledForChain(integrator, 1, taddr2);
         endpoint.enableSendAdapter(integrator, 1, taddr2);
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.AdapterAdded(integrator, taddr3, 3);
+        emit IAdapterRegistry.AdapterAdded(integrator, taddr3, 3);
         endpoint.addAdapter(integrator, taddr3);
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.SendAdapterEnabledForChain(integrator, 2, taddr3);
+        emit IAdapterRegistry.SendAdapterEnabledForChain(integrator, 2, taddr3);
         endpoint.enableSendAdapter(integrator, 2, taddr3);
 
         // And verify they got set properly.
@@ -265,7 +266,7 @@ contract EndpointTest is Test {
         require(adapters[0].addr == taddr3, "Wrong adapter one on chain two");
         require(adapters[0].index == 2, "Wrong adapter index one on chain two");
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.SendAdapterDisabledForChain(integrator, 2, taddr3);
+        emit IAdapterRegistry.SendAdapterDisabledForChain(integrator, 2, taddr3);
         endpoint.disableSendAdapter(integrator, 2, taddr3);
         require(adapters.length == 1, "Wrong number of adapters enabled on chain two");
     }
@@ -294,7 +295,7 @@ contract EndpointTest is Test {
         // The admin can add an adapter.
         vm.startPrank(admin);
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.AdapterAdded(integrator, taddr1, 1);
+        emit IAdapterRegistry.AdapterAdded(integrator, taddr1, 1);
         endpoint.addAdapter(integrator, taddr1);
 
         // Others cannot add an adapter.
@@ -304,29 +305,29 @@ contract EndpointTest is Test {
 
         // Can't register the adapter twice.
         vm.startPrank(admin);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.AdapterAlreadyRegistered.selector, taddr1));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.AdapterAlreadyRegistered.selector, taddr1));
         endpoint.addAdapter(integrator, taddr1);
         // Can't enable the adapter twice.
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.RecvAdapterEnabledForChain(integrator, 1, taddr1);
+        emit IAdapterRegistry.RecvAdapterEnabledForChain(integrator, 1, taddr1);
         endpoint.enableRecvAdapter(integrator, 1, taddr1);
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.AdapterAlreadyEnabled.selector, taddr1));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.AdapterAlreadyEnabled.selector, taddr1));
         endpoint.enableRecvAdapter(integrator, 1, taddr1);
 
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.AdapterAdded(integrator, taddr2, 2);
+        emit IAdapterRegistry.AdapterAdded(integrator, taddr2, 2);
         endpoint.addAdapter(integrator, taddr2);
         address[] memory adapters = endpoint.getRecvAdaptersByChain(integrator, 1);
         require(adapters.length == 1, "Wrong number of adapters enabled on chain one, should be 1");
         // Enable another adapter on chain one and one on chain two.
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.RecvAdapterEnabledForChain(integrator, 1, taddr2);
+        emit IAdapterRegistry.RecvAdapterEnabledForChain(integrator, 1, taddr2);
         endpoint.enableRecvAdapter(integrator, 1, taddr2);
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.AdapterAdded(integrator, taddr3, 3);
+        emit IAdapterRegistry.AdapterAdded(integrator, taddr3, 3);
         endpoint.addAdapter(integrator, taddr3);
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.RecvAdapterEnabledForChain(integrator, 2, taddr3);
+        emit IAdapterRegistry.RecvAdapterEnabledForChain(integrator, 2, taddr3);
         endpoint.enableRecvAdapter(integrator, 2, taddr3);
 
         // And verify they got set properly.
@@ -362,22 +363,22 @@ contract EndpointTest is Test {
         // Now enable some adapters.
         vm.startPrank(admin);
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.AdapterAdded(integrator, address(adapter1), 1);
+        emit IAdapterRegistry.AdapterAdded(integrator, address(adapter1), 1);
         endpoint.addAdapter(integrator, address(adapter1));
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.SendAdapterEnabledForChain(integrator, 2, address(adapter1));
+        emit IAdapterRegistry.SendAdapterEnabledForChain(integrator, 2, address(adapter1));
         endpoint.enableSendAdapter(integrator, 2, address(adapter1));
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.AdapterAdded(integrator, address(adapter2), 2);
+        emit IAdapterRegistry.AdapterAdded(integrator, address(adapter2), 2);
         endpoint.addAdapter(integrator, address(adapter2));
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.SendAdapterEnabledForChain(integrator, 2, address(adapter2));
+        emit IAdapterRegistry.SendAdapterEnabledForChain(integrator, 2, address(adapter2));
         endpoint.enableSendAdapter(integrator, 2, address(adapter2));
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.AdapterAdded(integrator, address(adapter3), 3);
+        emit IAdapterRegistry.AdapterAdded(integrator, address(adapter3), 3);
         endpoint.addAdapter(integrator, address(adapter3));
         vm.expectEmit(true, true, false, true);
-        emit AdapterRegistry.SendAdapterEnabledForChain(integrator, 3, address(adapter3));
+        emit IAdapterRegistry.SendAdapterEnabledForChain(integrator, 3, address(adapter3));
         endpoint.enableSendAdapter(integrator, 3, address(adapter3));
 
         // Only an integrator can call send.
@@ -418,7 +419,7 @@ contract EndpointTest is Test {
         require(adapter2.getMessagesSent() == 2, "Failed to send second message on adapter 2");
         require(adapter3.getMessagesSent() == 0, "Should not have sent second message on adapter 3");
 
-        vm.expectRevert(abi.encodeWithSelector(AdapterRegistry.InvalidChain.selector, zeroChain));
+        vm.expectRevert(abi.encodeWithSelector(IAdapterRegistry.InvalidChain.selector, zeroChain));
         sequence =
             endpoint.sendMessage(zeroChain, UniversalAddressLibrary.fromAddress(userA), payloadHash, refundAddr, insts);
         require(sequence == 0, "Failed sequence number is wrong"); // 0 because of the revert
