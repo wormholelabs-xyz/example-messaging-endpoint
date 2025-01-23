@@ -21,7 +21,6 @@ use solana_sdk::{
     instruction::InstructionError, signature::Keypair, signer::Signer,
     transaction::TransactionError,
 };
-use universal_address::UniversalAddress;
 
 async fn setup_test_environment() -> (
     ProgramTestContext,
@@ -113,7 +112,7 @@ async fn create_and_send_message(
 ) -> Keypair {
     let outbox_message = Keypair::new();
     let (sequence_tracker_pda, _) = SequenceTracker::pda(&integrator_program_id);
-    let dst_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let dst_addr = [1u8; 32];
     let payload_hash = [2u8; 32];
 
     send_message(

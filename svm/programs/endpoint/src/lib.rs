@@ -219,7 +219,7 @@ pub mod endpoint {
     /// * `args` - The `RecvMessageArgs` struct containing:
     ///     * `integrator_program_pda_bump` - The bump seed for the integrator program PDA
     ///     * `src_chain` - The source chain ID
-    ///     * `src_addr` - The source address as a UniversalAddress
+    ///     * `src_addr` - The source address as a [u8; 32]
     ///     * `sequence` - The sequence number of the message
     ///     * `dst_chain` - The destination chain ID
     ///     * `integrator_program_id` - The program ID of the integrator, aka dst_addr

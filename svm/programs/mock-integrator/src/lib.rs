@@ -5,7 +5,6 @@ use endpoint::{
     cpi::accounts::{RecvMessage, Register, SendMessage},
     instructions::{RegisterArgs, SendMessageArgs},
 };
-use universal_address::UniversalAddress;
 
 declare_id!("661Ly6gSCDiGWzC4tKJhS8tqXNWJU6yfbhxNKC4gPF5t");
 
@@ -154,7 +153,7 @@ impl<'info> InvokeRegister<'info> {
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct InvokeSendMessageArgs {
     pub dst_chain: u16,
-    pub dst_addr: UniversalAddress,
+    pub dst_addr: [u8; 32],
     pub payload_hash: [u8; 32],
 }
 

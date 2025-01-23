@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use universal_address::UniversalAddress;
 
 use crate::{
     error::EndpointError,
@@ -12,7 +11,7 @@ pub struct SendMessageArgs {
     pub integrator_program_id: Pubkey,
     pub integrator_program_pda_bump: u8,
     pub dst_chain: u16,
-    pub dst_addr: UniversalAddress,
+    pub dst_addr: [u8; 32],
     pub payload_hash: [u8; 32],
 }
 
@@ -78,7 +77,7 @@ pub struct SendMessage<'info> {
 ///   * `integrator_program_id`: The program ID of the integrator.
 ///   * `integrator_program_pda_bump`: The bump seed for the integrator program PDA.
 ///   * `dst_chain`: The destination chain ID.
-///   * `dst_addr`: The destination address as a UniversalAddress.
+///   * `dst_addr`: The destination address as a [u8; 32].
 ///   * `payload_hash`: The hash of the message payload.
 ///
 /// # Errors
@@ -106,7 +105,7 @@ pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<
 
     // Create and initialize the outbox message
     ctx.accounts.outbox_message.set_inner(OutboxMessage {
-        src_addr: UniversalAddress::from(args.integrator_program_id),
+        src_addr: args.integrator_program_id.to_bytes(),
         sequence: ctx.accounts.sequence_tracker.next_sequence(),
         dst_chain: args.dst_chain,
         dst_addr: args.dst_addr,
@@ -116,7 +115,7 @@ pub fn send_message(ctx: Context<SendMessage>, args: SendMessageArgs) -> Result<
     });
 
     emit_cpi!(MessageSent {
-        sender: UniversalAddress::from(args.integrator_program_id),
+        sender: args.integrator_program_id.to_bytes(),
         sequence: ctx.accounts.sequence_tracker.sequence,
         recipient: args.dst_addr,
         recipient_chain: args.dst_chain,

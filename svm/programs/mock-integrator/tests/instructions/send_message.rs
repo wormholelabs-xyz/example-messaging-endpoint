@@ -6,7 +6,6 @@ use solana_sdk::{
     pubkey::Pubkey,
     signer::{keypair::Keypair, Signer},
 };
-use universal_address::UniversalAddress;
 
 use crate::common::execute_transaction::execute_transaction;
 
@@ -51,7 +50,7 @@ pub async fn send_message(
     outbox_message: &Keypair,
     sequence_tracker: Pubkey,
     dst_chain: u16,
-    dst_addr: UniversalAddress,
+    dst_addr: [u8; 32],
     payload_hash: [u8; 32],
 ) -> Result<(), BanksClientError> {
     let args = InvokeSendMessageArgs {

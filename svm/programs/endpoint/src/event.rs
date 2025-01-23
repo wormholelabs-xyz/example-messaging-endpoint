@@ -1,6 +1,5 @@
 use anchor_lang::event;
 use anchor_lang::prelude::*;
-use universal_address::UniversalAddress;
 
 /// Event emitted when a new integrator is registered
 #[event]
@@ -28,9 +27,9 @@ pub struct AdminUpdateRequested {
 /// Event emitted when a message is sent
 #[event]
 pub struct MessageSent {
-    pub sender: UniversalAddress,
+    pub sender: [u8; 32],
     pub sequence: u64,
-    pub recipient: UniversalAddress,
+    pub recipient: [u8; 32],
     pub recipient_chain: u16,
     pub payload_digest: [u8; 32],
 }
@@ -38,10 +37,10 @@ pub struct MessageSent {
 /// Event emitted when a message is picked up by an adapter
 #[event]
 pub struct MessagePickedUp {
-    pub src_addr: UniversalAddress,
+    pub src_addr: [u8; 32],
     pub sequence: u64,
     pub dst_chain: u16,
-    pub dst_addr: UniversalAddress,
+    pub dst_addr: [u8; 32],
     pub payload_hash: [u8; 32],
     pub adapter: Pubkey,
     pub remaining_adapters: u128,
@@ -52,13 +51,13 @@ pub struct MessagePickedUp {
 pub struct MessageAttestedTo {
     pub message_hash: [u8; 32],
     pub src_chain: u16,
-    pub src_addr: UniversalAddress,
+    pub src_addr: [u8; 32],
     pub sequence: u64,
     pub dst_chain: u16,
-    pub dst_addr: UniversalAddress,
+    pub dst_addr: [u8; 32],
     pub payload_hash: [u8; 32],
     pub attested_bitmap: u128,
-    pub attesting_adapter: UniversalAddress,
+    pub attesting_adapter: [u8; 32],
 }
 
 /// Event emitted when a message is received
@@ -66,10 +65,10 @@ pub struct MessageAttestedTo {
 pub struct MessageReceived {
     pub message_hash: [u8; 32],
     pub src_chain: u16,
-    pub src_addr: UniversalAddress,
+    pub src_addr: [u8; 32],
     pub sequence: u64,
     pub dst_chain: u16,
-    pub dst_addr: UniversalAddress,
+    pub dst_addr: [u8; 32],
     pub payload_hash: [u8; 32],
     pub enabled_bitmap: u128,
     pub attested_bitmap: u128,
@@ -80,10 +79,10 @@ pub struct MessageReceived {
 pub struct MessageExecuted {
     pub message_hash: [u8; 32],
     pub src_chain: u16,
-    pub src_addr: UniversalAddress,
+    pub src_addr: [u8; 32],
     pub sequence: u64,
     pub dst_chain: u16,
-    pub dst_addr: UniversalAddress,
+    pub dst_addr: [u8; 32],
     pub payload_hash: [u8; 32],
 }
 

@@ -28,7 +28,7 @@ pub struct PickUpMessage<'info> {
     #[account(
         seeds = [
             AdapterInfo::SEED_PREFIX,
-            outbox_message.src_addr.to_pubkey().as_ref(),
+            outbox_message.src_addr.as_ref(),
             args.adapter_program_id.as_ref(),
         ],
         bump = adapter_info.bump,

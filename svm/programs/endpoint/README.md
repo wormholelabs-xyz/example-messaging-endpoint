@@ -44,20 +44,20 @@ classDiagram
         *bump: u8
         *message_hash: [u8; 32]
         src_chain: u16
-        src_addr: UniversalAddress
+        src_addr: [u8; 32]
         sequence: u64
         dst_chain: u16
-        dst_addr: UniversalAddress
+        dst_addr: [u8; 32]
         payload_hash: [u8; 32]
         executed: bool
         attested_adapters: Bitmap
     }
 
     class OutboxMessage {
-        src_addr: UniversalAddress
+        src_addr: [u8; 32]
         sequence: u64
         dst_chain: u16
-        dst_addr: UniversalAddress
+        dst_addr: [u8; 32]
         payload_hash: [u8; 32]
         outstanding_adapters: Bitmap
     }
@@ -308,19 +308,19 @@ The program uses a custom `EndpointError` enum to handle various error cases, in
 
 > Note that these events are emitted through a CPI call
 
-| Event Name                  | Description                                                     | Fields                                                                                                                                                                                                                                              |
-| --------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| IntegratorRegistered        | Emitted when a new integrator is registered                     | - integrator: Pubkey<br>- admin: Pubkey                                                                                                                                                                                                             |
-| AdminUpdated                | Emitted when an integrator's admin is updated                   | - integrator: Pubkey<br>- old_admin: Pubkey<br>- new_admin: Pubkey                                                                                                                                                                                  |
-| AdminUpdateRequested        | Emitted when an admin update is requested                       | - integrator: Pubkey<br>- old_admin: Pubkey<br>- new_admin: Pubkey                                                                                                                                                                                  |
-| MessageSent                 | Emitted when a message is sent                                  | - sender: UniversalAddress<br>- sequence: u64<br>- recipient: UniversalAddress<br>- recipient_chain: u16<br>- payload_digest: [u8; 32]                                                                                                              |
-| MessagePickedUp             | Emitted when a message is picked up by an adapter               | - src_addr: UniversalAddress<br>- sequence: u64<br>- dst_chain: u16<br>- dst_addr: UniversalAddress<br>- payload_hash: [u8; 32]<br>- adapter: Pubkey<br>- remaining_adapters: u128                                                                  |
-| MessageAttestedTo           | Emitted when a message is attested to by an adapter             | - message_hash: [u8; 32]<br>- src_chain: u16<br>- src_addr: UniversalAddress<br>- sequence: u64<br>- dst_chain: u16<br>- dst_addr: UniversalAddress<br>- payload_hash: [u8; 32]<br>- attested_bitmap: u128<br>- attesting_adapter: UniversalAddress |
-| MessageReceived             | Emitted when a message is received                              | - message_hash: [u8; 32]<br>- src_chain: u16<br>- src_addr: UniversalAddress<br>- sequence: u64<br>- dst_chain: u16<br>- dst_addr: UniversalAddress<br>- payload_hash: [u8; 32]<br>- enabled_bitmap: u128<br>- attested_bitmap: u128                |
-| MessageExecuted             | Emitted when a message is executed                              | - message_hash: [u8; 32]<br>- src_chain: u16<br>- src_addr: UniversalAddress<br>- sequence: u64<br>- dst_chain: u16<br>- dst_addr: UniversalAddress<br>- payload_hash: [u8; 32]                                                                     |
-| AdapterAdded                | Emitted when a new adapter is added to an integrator            | - integrator: Pubkey<br>- adapter: Pubkey<br>- adapters_num: u8                                                                                                                                                                                     |
-| SendAdapterEnabledForChain  | Emitted when a send adapter is enabled for a specific chain     | - integrator: Pubkey<br>- chain: u16<br>- adapter: Pubkey                                                                                                                                                                                           |
-| RecvAdapterEnabledForChain  | Emitted when a receive adapter is enabled for a specific chain  | - integrator: Pubkey<br>- chain: u16<br>- adapter: Pubkey                                                                                                                                                                                           |
-| SendAdapterDisabledForChain | Emitted when a send adapter is disabled for a specific chain    | - integrator: Pubkey<br>- chain: u16<br>- adapter: Pubkey                                                                                                                                                                                           |
-| RecvAdapterDisabledForChain | Emitted when a receive adapter is disabled for a specific chain | - integrator: Pubkey<br>- chain: u16<br>- adapter: Pubkey                                                                                                                                                                                           |
-| AdminDiscarded              | Emitted when an admin is discarded for an integrator            | - integrator: Pubkey                                                                                                                                                                                                                                |
+| Event Name                  | Description                                                     | Fields                                                                                                                                                                                                                      |
+| --------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| IntegratorRegistered        | Emitted when a new integrator is registered                     | - integrator: Pubkey<br>- admin: Pubkey                                                                                                                                                                                     |
+| AdminUpdated                | Emitted when an integrator's admin is updated                   | - integrator: Pubkey<br>- old_admin: Pubkey<br>- new_admin: Pubkey                                                                                                                                                          |
+| AdminUpdateRequested        | Emitted when an admin update is requested                       | - integrator: Pubkey<br>- old_admin: Pubkey<br>- new_admin: Pubkey                                                                                                                                                          |
+| MessageSent                 | Emitted when a message is sent                                  | - sender: [u8; 32]<br>- sequence: u64<br>- recipient: [u8; 32]<br>- recipient_chain: u16<br>- payload_digest: [u8; 32]                                                                                                      |
+| MessagePickedUp             | Emitted when a message is picked up by an adapter               | - src_addr: [u8; 32]<br>- sequence: u64<br>- dst_chain: u16<br>- dst_addr: [u8; 32]<br>- payload_hash: [u8; 32]<br>- adapter: Pubkey<br>- remaining_adapters: u128                                                          |
+| MessageAttestedTo           | Emitted when a message is attested to by an adapter             | - message_hash: [u8; 32]<br>- src_chain: u16<br>- src_addr: [u8; 32]<br>- sequence: u64<br>- dst_chain: u16<br>- dst_addr: [u8; 32]<br>- payload_hash: [u8; 32]<br>- attested_bitmap: u128<br>- attesting_adapter: [u8; 32] |
+| MessageReceived             | Emitted when a message is received                              | - message_hash: [u8; 32]<br>- src_chain: u16<br>- src_addr: [u8; 32]<br>- sequence: u64<br>- dst_chain: u16<br>- dst_addr: [u8; 32]<br>- payload_hash: [u8; 32]<br>- enabled_bitmap: u128<br>- attested_bitmap: u128        |
+| MessageExecuted             | Emitted when a message is executed                              | - message_hash: [u8; 32]<br>- src_chain: u16<br>- src_addr: [u8; 32]<br>- sequence: u64<br>- dst_chain: u16<br>- dst_addr: [u8; 32]<br>- payload_hash: [u8; 32]                                                             |
+| AdapterAdded                | Emitted when a new adapter is added to an integrator            | - integrator: Pubkey<br>- adapter: Pubkey<br>- adapters_num: u8                                                                                                                                                             |
+| SendAdapterEnabledForChain  | Emitted when a send adapter is enabled for a specific chain     | - integrator: Pubkey<br>- chain: u16<br>- adapter: Pubkey                                                                                                                                                                   |
+| RecvAdapterEnabledForChain  | Emitted when a receive adapter is enabled for a specific chain  | - integrator: Pubkey<br>- chain: u16<br>- adapter: Pubkey                                                                                                                                                                   |
+| SendAdapterDisabledForChain | Emitted when a send adapter is disabled for a specific chain    | - integrator: Pubkey<br>- chain: u16<br>- adapter: Pubkey                                                                                                                                                                   |
+| RecvAdapterDisabledForChain | Emitted when a receive adapter is disabled for a specific chain | - integrator: Pubkey<br>- chain: u16<br>- adapter: Pubkey                                                                                                                                                                   |
+| AdminDiscarded              | Emitted when an admin is discarded for an integrator            | - integrator: Pubkey                                                                                                                                                                                                        |

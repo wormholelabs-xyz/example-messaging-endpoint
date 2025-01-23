@@ -21,7 +21,6 @@ test-sbf = ["solana"]
 anchor-lang = { workspace = true, features = ["init-if-needed", "event-cpi"] }
 bitmaps = "3.2.1"
 cfg-if = { workspace = true }
-universal-address = { workspace = true }
 
 [dev-dependencies]
 bincode = { workspace = true }

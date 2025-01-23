@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use universal_address::UniversalAddress;
 
 use crate::{error::EndpointError, event::MessageExecuted, state::AttestationInfo};
 
@@ -7,7 +6,7 @@ use crate::{error::EndpointError, event::MessageExecuted, state::AttestationInfo
 pub struct ExecMessageArgs {
     pub integrator_program_pda_bump: u8,
     pub src_chain: u16,
-    pub src_addr: UniversalAddress,
+    pub src_addr: [u8; 32],
     pub sequence: u64,
     pub dst_chain: u16,
     pub integrator_program_id: Pubkey,
@@ -43,7 +42,7 @@ pub struct ExecMessage<'info> {
                 args.src_addr,
                 args.sequence,
                 args.dst_chain,
-                UniversalAddress::from_pubkey(&args.integrator_program_id),
+                args.integrator_program_id.to_bytes(),
                 args.payload_hash
             )
         ],
@@ -68,10 +67,10 @@ pub struct ExecMessage<'info> {
 /// * `args` - The arguments for the exec_message instruction:
 ///   - `integrator_program_pda_bump`: The bump seed for the integrator program's PDA
 ///   - `src_chain`: The source chain ID
-///   - `src_addr`: The source address (UniversalAddress)
+///   - `src_addr`: The source address ([u8; 32])
 ///   - `sequence`: The sequence number of the message
 ///   - `dst_chain`: The destination chain ID
-///   - `dst_addr`: The destination address (UniversalAddress)
+///   - `dst_addr`: The destination address ([u8; 32])
 ///   - `payload_hash`: The hash of the message payload
 ///
 /// # Returns
@@ -100,7 +99,7 @@ pub fn exec_message(ctx: Context<ExecMessage>, args: ExecMessageArgs) -> Result<
             args.src_addr,
             args.sequence,
             args.dst_chain,
-            UniversalAddress::from_pubkey(&args.integrator_program_id),
+            args.integrator_program_id.to_bytes(),
             args.payload_hash,
         )?);
     }
@@ -114,7 +113,7 @@ pub fn exec_message(ctx: Context<ExecMessage>, args: ExecMessageArgs) -> Result<
         src_addr: args.src_addr,
         sequence: args.sequence,
         dst_chain: args.dst_chain,
-        dst_addr: UniversalAddress::from_pubkey(&args.integrator_program_id),
+        dst_addr: args.integrator_program_id.to_bytes(),
         payload_hash: args.payload_hash,
     });
 
