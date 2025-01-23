@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use universal_address::UniversalAddress;
 
 use crate::{
     error::EndpointError,
@@ -11,7 +10,7 @@ use crate::{
 pub struct RecvMessageArgs {
     pub integrator_program_pda_bump: u8,
     pub src_chain: u16,
-    pub src_addr: UniversalAddress,
+    pub src_addr: [u8; 32],
     pub sequence: u64,
     pub dst_chain: u16,
     pub integrator_program_id: Pubkey,
@@ -57,7 +56,7 @@ pub struct RecvMessage<'info> {
                 args.src_addr,
                 args.sequence,
                 args.dst_chain,
-                UniversalAddress::from_pubkey(&args.integrator_program_id),
+                args.integrator_program_id.to_bytes(),
                 args.payload_hash
             )
         ],
@@ -81,7 +80,7 @@ pub struct RecvMessage<'info> {
 /// * `args` - The arguments for the recv_message instruction, including:
 ///   * `integrator_program_pda_bump`: The bump seed for the integrator program PDA.
 ///   * `src_chain`: The source chain ID.
-///   * `src_addr`: The source address as a UniversalAddress.
+///   * `src_addr`: The source address as a [u8; 32].
 ///   * `sequence`: The sequence number of the message.
 ///   * `dst_chain`: The destination chain ID.
 ///   * `integrator_program_id`: The public key of the integrator program.

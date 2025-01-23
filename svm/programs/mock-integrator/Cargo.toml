@@ -21,7 +21,6 @@ test-sbf = ["no-entrypoint", "solana"]
 [dependencies]
 anchor-lang = { workspace = true }
 endpoint = { workspace = true, features = ["cpi"] }
-universal-address = { workspace = true }
 
 [dev-dependencies]
 mock-adapter = { workspace = true }

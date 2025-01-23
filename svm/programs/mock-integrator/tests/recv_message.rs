@@ -18,7 +18,6 @@ use solana_sdk::{
     instruction::InstructionError, signature::Keypair, signer::Signer,
     transaction::TransactionError,
 };
-use universal_address::UniversalAddress;
 
 async fn setup_test_environment() -> (
     ProgramTestContext,
@@ -109,10 +108,10 @@ async fn test_recv_message_success() {
     ) = setup_test_environment().await;
 
     let src_chain: u16 = chain_id;
-    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let src_addr = [1u8; 32];
     let sequence: u64 = 1;
     let dst_chain = 1;
-    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let dst_addr = mock_integrator::id().to_bytes();
     let payload_hash = [3u8; 32];
 
     // First, attest the message
@@ -190,10 +189,10 @@ async fn test_recv_message_already_executed() {
     ) = setup_test_environment().await;
 
     let src_chain: u16 = chain_id;
-    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let src_addr = [1u8; 32];
     let sequence: u64 = 1;
     let dst_chain = 1;
-    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let dst_addr = mock_integrator::id().to_bytes();
     let payload_hash = [3u8; 32];
 
     // First, attest and receive the message
@@ -264,10 +263,10 @@ async fn test_recv_message_no_attestation() {
         setup_test_environment().await;
 
     let src_chain: u16 = chain_id;
-    let src_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let src_addr = [1u8; 32];
     let sequence: u64 = 1;
     let dst_chain = 1;
-    let dst_addr = UniversalAddress::from_pubkey(&mock_integrator::id());
+    let dst_addr = mock_integrator::id().to_bytes();
     let payload_hash = [3u8; 32];
 
     let (attestation_info_pda, _) = AttestationInfo::pda(AttestationInfo::compute_message_hash(

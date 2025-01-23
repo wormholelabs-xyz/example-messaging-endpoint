@@ -19,7 +19,6 @@ use solana_sdk::{
     instruction::InstructionError, signature::Keypair, signer::Signer,
     transaction::TransactionError,
 };
-use universal_address::UniversalAddress;
 
 async fn initialize_test_environment(
     context: &mut ProgramTestContext,
@@ -106,7 +105,7 @@ async fn test_send_message_success() {
         chain_id,
     ) = initialize_test_environment(&mut context).await;
 
-    let dst_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let dst_addr = [1u8; 32];
     let payload_hash = [2u8; 32];
 
     let (sequence_tracker_pda, _) = SequenceTracker::pda(&integrator_program_id);
@@ -131,8 +130,8 @@ async fn test_send_message_success() {
     let outbox_msg: OutboxMessage =
         get_account(&mut context.banks_client, outbox_message.pubkey()).await;
     assert_eq!(
-        outbox_msg.src_addr,
-        UniversalAddress::from(mock_integrator::id())
+        &outbox_msg.src_addr[..],
+        &mock_integrator::id().to_bytes()[..]
     );
     assert_eq!(outbox_msg.sequence, 0);
     assert_eq!(outbox_msg.dst_chain, chain_id);
@@ -157,7 +156,7 @@ async fn test_send_message_increments_sequence() {
         chain_id,
     ) = initialize_test_environment(&mut context).await;
 
-    let dst_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let dst_addr = [1u8; 32];
     let payload_hash = [2u8; 32];
     let (sequence_tracker_pda, _) = SequenceTracker::pda(&integrator_program_id);
 
@@ -236,7 +235,7 @@ async fn test_send_message_no_enabled_adapters() {
     .await
     .unwrap();
 
-    let dst_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let dst_addr = [1u8; 32];
     let payload_hash = [2u8; 32];
     let (sequence_tracker_pda, _) = SequenceTracker::pda(&integrator_program_id);
     let outbox_message = Keypair::new();
@@ -281,7 +280,7 @@ async fn test_send_message_unregistered_chain() {
     let (unregistered_chain_config_pda, _) =
         IntegratorChainConfig::pda(&integrator_program_id, unregistered_chain_id);
 
-    let dst_addr = UniversalAddress::from_bytes([1u8; 32]);
+    let dst_addr = [1u8; 32];
     let payload_hash = [2u8; 32];
     let (sequence_tracker_pda, _) = SequenceTracker::pda(&integrator_program_id);
     let outbox_message = Keypair::new();
